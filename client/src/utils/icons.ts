@@ -23,7 +23,8 @@ import {
   mdiAlert,
   mdiInformation,
   mdiThemeLightDark,
-  mdiChevronDown
+  mdiChevronDown,
+  mdiGoogle
 } from '@mdi/js'
 
 export const customIcons = {
@@ -51,5 +52,6 @@ export const customIcons = {
   alert: mdiAlert,
   information: mdiInformation,
   themeLightDark: mdiThemeLightDark,
-  chevronDown: mdiChevronDown
+  chevronDown: mdiChevronDown,
+  google: mdiGoogle
 }
