@@ -23,6 +23,22 @@ class authService {
     const { user } = await signInWithEmailAndPassword(auth, email, password);
     return user;
   }
+
+  async signInGoogle() {
+    const provider = new GoogleAuthProvider();
+
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken;
+      const user = result.user;
+
+      return { user, token };
+    } catch (error: any) {
+      console.error("Error signing in with Google:", error);
+      throw error;
+    }
+  }
 }
 
 export const authServiceInstance = new authService();

@@ -50,6 +50,21 @@
                 Entrar
               </v-btn>
 
+              <v-btn
+                color="red"
+                variant="outlined"
+                size="large"
+                block
+                :loading="authStore.loading"
+                class="mb-4"
+                @click="handleGoogleLogin"
+              >
+                <v-icon :icon="customIcons.google" class="me-2" />
+                Entrar com Google
+              </v-btn>
+
+              
+
               <!-- Demo Mode -->
               <v-divider class="my-4" />
 
@@ -147,6 +162,19 @@ const handleLogin = async () => {
   // } else {
   //   showSnackbar("Erro ao fazer login. Tente novamente.", "error");
   // }
+};
+
+const handleGoogleLogin = async () => {
+  try {
+    const result = await authServiceInstance.signInGoogle();
+    console.log("Google login success");
+
+    // showSnackbar("Login realizado com sucesso!", "success");
+    router.push("/meus-lances");
+  } catch (error) {
+    console.error("Erro ao fazer login com Google:", error);
+    showSnackbar("Erro ao fazer login com Google. Tente novamente.", "error");
+  }
 };
 
 const handleDemoLogin = async () => {
