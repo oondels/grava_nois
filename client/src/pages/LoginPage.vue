@@ -11,8 +11,8 @@
                   {{ customIcons.play }}
                 </v-icon>
                 <div>
-                  <h1 class="text-h4 text-primary font-weight-bold">
-                    SportClips
+                  <h1 class="text-h4 text-green-darken-2 font-weight-bold">
+                    Grava Nóis!
                   </h1>
                   <p class="text-body-2 text-medium-emphasis mb-0">
                     Seus melhores lances em alta qualidade

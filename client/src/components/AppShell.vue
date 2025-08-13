@@ -16,8 +16,8 @@
           <v-icon color="primary" size="32" class="me-2">
             {{ customIcons.play }}
           </v-icon>
-          <h2 class="text-primary font-weight-bold">
-            SportClips
+          <h2 class="text-green-darken-2 font-weight-bold">
+            Grava Nóis!
           </h2>
         </div>
       </template>
