@@ -1,0 +1,21 @@
+// Customizações específicas de utilitários sem Bootstrap
+.text-sport-primary { color: var(--primary-color) !important; }
+.text-sport-secondary { color: var(--secondary-color) !important; }
+.bg-sport-primary { background-color: var(--primary-color) !important; }
+.bg-sport-secondary { background-color: var(--secondary-color) !important; }
+
+// Espaçamentos customizados seguindo sistema 8px
+.p-xs { padding: var(--spacing-xs) !important; }
+.p-sm { padding: var(--spacing-sm) !important; }
+.p-md { padding: var(--spacing-md) !important; }
+.p-lg { padding: var(--spacing-lg) !important; }
+
+.m-xs { margin: var(--spacing-xs) !important; }
+.m-sm { margin: var(--spacing-sm) !important; }
+.m-md { margin: var(--spacing-md) !important; }
+.m-lg { margin: var(--spacing-lg) !important; }
+
+// Shadows customizados
+.shadow-sport-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow-sport-md { box-shadow: var(--shadow-md) !important; }
+.shadow-sport-lg { box-shadow: var(--shadow-lg) !important; }

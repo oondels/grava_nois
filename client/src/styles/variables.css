@@ -1,0 +1,46 @@
+:root {
+  /* Paleta de cores configurável */
+  --primary-color: #1B5E20;
+  --primary-light: #4CAF50;
+  --primary-dark: #0D4E12;
+  
+  --secondary-color: #F57C00;
+  --secondary-light: #FF9800;
+  --secondary-dark: #D84315;
+  
+  --accent-color: #D32F2F;
+  --accent-light: #F44336;
+  --accent-dark: #B71C1C;
+  
+  --success-color: #2E7D32;
+  --warning-color: #F57F17;
+  --error-color: #C62828;
+  --info-color: #1976D2;
+  
+  /* Neutrals */
+  --surface-color: #121212;
+  --surface-variant: #1E1E1E;
+  --background-color: #0A0A0A;
+  --on-surface: #FFFFFF;
+  --on-background: #FFFFFF;
+  
+  /* Light theme overrides */
+  --light-surface-color: #FFFFFF;
+  --light-surface-variant: #F5F5F5;
+  --light-background-color: #FAFAFA;
+  --light-on-surface: #212121;
+  --light-on-background: #212121;
+  
+  /* Spacing system (8px base) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --shadow-md: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  --shadow-lg: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
