@@ -1,10 +1,4 @@
-// Import apenas utilities do Bootstrap, sem reset/base
-@import "bootstrap/scss/functions";
-@import "bootstrap/scss/variables";
-@import "bootstrap/scss/mixins";
-@import "bootstrap/scss/utilities";
-
-// Customizações específicas
+// Customizações específicas de utilitários sem Bootstrap
 .text-sport-primary { color: var(--primary-color) !important; }
 .text-sport-secondary { color: var(--secondary-color) !important; }
 .bg-sport-primary { background-color: var(--primary-color) !important; }
