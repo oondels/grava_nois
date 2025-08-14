@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "DEV_ENV=development nodemon --watch './**/*.ts' --exec ts-node ./src/index.ts"
+    "dev": "NODE_ENV=development nodemon --watch './**/*.ts' --exec ts-node ./src/index.ts",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm migration:generate -- -d src/config/database.ts",
+    "migration:run": "npm run typeorm migration:run -- -d src/config/database.ts",
+    "migration:revert": "npm run typeorm migration:revert -- -d src/config/database.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,13 +25,18 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",
+    "@types/express": "^5.0.3",
+    "@types/multer": "^2.0.0",
+    "amqplib": "^0.10.8",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "firebase": "^12.1.0",
     "multer": "^2.0.2",
     "pg": "^8.16.3",
-    "typeorm": "^0.3.25"
+    "typeorm": "^0.3.25",
+    "zod": "^4.0.17"
   }
 }

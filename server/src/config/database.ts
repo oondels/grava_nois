@@ -4,6 +4,7 @@ import { config } from "./dotenv";
 import { Client } from "../models/Clients";
 import { VenueInstallation } from "../models/VenueInstallations";
 import { Payment } from "../models/Payments";
+import { Video } from "../models/Videos";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -14,7 +15,7 @@ export const AppDataSource = new DataSource({
   database: config.database.name,
   synchronize: config.env === 'development', // Keep just in development mode
   logging: false,
-  entities: [Client, VenueInstallation, Payment],
+  entities: [Client, VenueInstallation, Payment, Video],
   subscribers: [],
   migrations: [path.join(__dirname, '../migrations/*.{ts,js}')],
   migrationsTableName: "grava_nois_migrations",
