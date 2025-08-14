@@ -1,3 +1,4 @@
+import path from "path";
 import { DataSource } from "typeorm";
 import { config } from "./dotenv";
 import { Client } from "../models/Clients";
@@ -15,5 +16,6 @@ export const AppDataSource = new DataSource({
   logging: false,
   entities: [Client, VenueInstallation, Payment],
   subscribers: [],
-  migrations: [],
+  migrations: [path.join(__dirname, '../migrations/*.{ts,js}')],
+  migrationsTableName: "grava_nois_migrations",
 })
