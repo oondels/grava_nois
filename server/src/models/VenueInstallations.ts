@@ -38,7 +38,7 @@ export class VenueInstallation {
   @Column({ type: 'uuid', name: 'client_id' })
   clientId!: string; // FK -> clients.id
 
-  @ManyToOne(() => Client, { nullable: false }) // define Client entity elsewhere
+  @ManyToOne(() => Client, { nullable: false })
   @JoinColumn({ name: 'client_id' })
   client!: Client;
 
