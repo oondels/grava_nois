@@ -35,7 +35,7 @@ export enum PaymentStatus {
   CANCELED = 'canceled',    // voided before payment
 }
 
-@Entity({ schema: 'grava_nois', name: 'payments' })
+@Entity({ schema: 'grn_billing', name: 'payments' })
 @Index(['clientId', 'installationId'])
 @Index(['status'])
 export class Payment {

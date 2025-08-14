@@ -28,7 +28,7 @@ export enum InstallationStatus {
   DECOMMISSIONED = 'decommissioned',
 }
 
-@Entity({ schema: 'grava_nois', name: 'venue_installations' })
+@Entity({ schema: 'grn_core', name: 'venue_installations' })
 @Index(['clientId', 'city'])
 export class VenueInstallation {
   @PrimaryGeneratedColumn('uuid')

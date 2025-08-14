@@ -5,7 +5,7 @@ import {
   ManyToOne, JoinColumn
 } from 'typeorm';
 
-@Entity({ schema: 'grava_nois', name: 'clients' })
+@Entity({ schema: 'grn_clients', name: 'clients' })
 @Index(['cnpj'], { unique: true, where: '"cnpj" IS NOT NULL' })
 export class Client {
   @PrimaryGeneratedColumn('uuid')
