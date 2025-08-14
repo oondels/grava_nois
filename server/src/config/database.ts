@@ -1,5 +1,8 @@
 import { DataSource } from "typeorm";
 import { config } from "./dotenv";
+import { Client } from "../models/Clients";
+import { VenueInstallation } from "../models/VenueInstallations";
+import { Payment } from "../models/Payments";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -10,7 +13,7 @@ export const AppDataSource = new DataSource({
   database: config.database.name,
   synchronize: config.env === 'development', // Keep just in development mode
   logging: false,
-  entities: [],
+  entities: [Client, VenueInstallation, Payment],
   subscribers: [],
   migrations: [],
 })
