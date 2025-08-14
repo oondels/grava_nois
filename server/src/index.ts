@@ -5,6 +5,8 @@ import { v4 as uuid } from 'uuid';
 import path from 'path';
 import { AppDataSource } from './config/database';
 import dotenv from 'dotenv';
+import { z } from 'zod';
+import { randomUUID } from 'crypto';
 dotenv.config();
 
 AppDataSource.initialize()
@@ -26,10 +28,10 @@ AppDataSource.initialize()
         res.send("Video upload api is running.");
       })
 
-
       /**
        * Recebe metadados do vídeo
        * @param clientId - ID do cliente
+       * @param venueId - ID do local // Evita pegar a instalação errada se o cliente tiver várias
        * @description Este endpoint recebe metadados do vídeo e inicia o processo de upload.
        * 1. Descobre contrato (`monthly` | `per_video`).
        * 2. Define destino (path):
@@ -56,7 +58,119 @@ AppDataSource.initialize()
        *  "expires_hint_hours": 12
        * }
       */
-      app.post("/api/videos/metadados/client/:clientId/", async (req: Request, res: Response) => {
+      app.post("/api/videos/metadados/client/:clientId/venue/:venueId", async (req: Request, res: Response) => {
+        try {
+          const { clientId, venueId } = req.params;
+
+          const bodySchema = z.object({
+            venue_id: z.string().uuid(),
+            duration_sec: z.number().int().positive(),
+            captured_at: z.string().datetime(),
+            meta: z.object({
+              codec: z.string(),
+              fps: z.number().int().positive(),
+              width: z.number().int().positive(),
+              height: z.number().int().positive()
+            }),
+            sha256: z.string().regex(/^[a-f0-9]{64}$/i)
+          });
+
+          // Validate Body
+          const parsed = bodySchema.safeParse(req.body);
+          if (!parsed.success) {
+            res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
+            return;
+          }
+          const { duration_sec, captured_at, meta, sha256 } = parsed.data;
+
+          // Validate Client ID
+          const clientRepository = AppDataSource.getRepository("Clients");
+          const client = await clientRepository.findOne({ where: { id: clientId } });
+
+          if (!client) {
+            res.status(404).json({ error: "Client not found." });
+            return;
+          }
+
+          // 1. Descobre contrato
+          let contractType: string; // Lógica para determinar o tipo de contrato
+
+          const venueInstalationRepo = AppDataSource.getRepository("VenueInstallations")
+          const venue = await venueInstalationRepo.findOne({
+            where: { clientId: clientId, id: venueId },
+            select: ["contractMethod"]
+          })
+
+          if (!venue?.contractMethod) {
+            // TODO: Adicionar lógica de erro e envio de mensagem para central do cliente
+            res.status(404).json({ error: "Venue installation not found or contract method not defined." });
+            return;
+          }
+          contractType = venue.contractMethod; // "monthly_subscription" | "per_video"
+
+          // 2. Define destino
+          let storagePath: string;
+          const clip_id = randomUUID();
+          if (contractType === "monthly_subscription") {
+            const clipDate = new Date(captured_at);
+
+            const month = clipDate.getMonth() + 1;
+            const day = clipDate.getDate();
+            storagePath = `main/clients/${clientId}/venues/${venueId}/${month}/${day}/${clip_id}.mp4`;
+          } else {
+            storagePath = `temp/${clientId}/${venueId}/${clip_id}.mp4`;
+          }
+
+          const capturedAtDate = new Date(captured_at);
+
+          // 3. Cria registro `clips`
+          // TODO: Adicionar informações no banco de dados
+          const clip = {
+            clipId: clip_id,
+            clientId: clientId,
+            venueId: venueId,
+            durationSec: duration_sec,
+            capturedAt: capturedAtDate,
+            meta,
+            sha256,
+            status: "queued",
+            storagePath
+          };
+
+          const videoRepository = AppDataSource.getRepository("Videos");
+
+          const existingClip = await videoRepository.findOne({ where: { clipId: clip.clipId } });
+          if (existingClip) {
+            res.status(409).json({ error: "Clip with this ID already exists." });
+            return
+          }
+
+          const videoClip = videoRepository.create(clip);
+          await videoRepository.save(videoClip);
+
+          // Gera URL assinada para upload
+          const { data, error } = await supabase
+            .storage
+            .from("videos")
+            .createSignedUploadUrl(storagePath);
+
+          if (error || !data?.signedUrl) {
+            console.error('createSignedUploadUrl error:', error);
+            return res.status(500).json({ error: 'Failed to create signed upload URL' });
+          }
+
+          res.status(201).json({
+            clip_id: clip.clipId,
+            contract_type: contractType,
+            storage_path: storagePath,
+            upload_url: data.signedUrl,
+            expires_hint_hours: 12
+          });
+        } catch (error) {
+          console.error("Error processing video metadata:", error);
+          res.status(500).json({ error: "Internal server error." });
+          return;
+        }
       });
 
       /** 
