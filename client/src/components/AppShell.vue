@@ -47,8 +47,8 @@
           <h4>Suporte</h4>
             <ul>
               <li><router-link to="/suporte">Central de Ajuda</router-link></li>
-              <li><router-link to="/orcamento">Instalar no meu campo</router-link></li>
-              <li><a href="mailto:contato@gravanois.com">Contato</a></li>
+              <li><router-link to="/contato">Instalar no meu campo</router-link></li>
+              <li><router-link to="/contato">Contato</router-link></li>
             </ul>
         </nav>
         <div class="social-col" aria-label="Social e status">
