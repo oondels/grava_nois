@@ -3,7 +3,9 @@
     <div class="container nav-inner">
       <div class="brand">
         <span class="logo-gravanois ml-2">
-          <img role="button" :src="LogoGravaNois" alt="Logo Grava Nóis" />
+          <router-link to="/">
+            <img role="button" :src="LogoGravaNois" alt="Logo Grava Nóis" />
+          </router-link>
         </span>
       </div>
 
@@ -15,28 +17,55 @@
         aria-controls="primary-navigation"
         @click="toggleMenu"
       >
-        <span class="sr-only">{{ isOpen ? 'Fechar menu' : 'Abrir menu' }}</span>
-        <svg v-if="!isOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span class="sr-only">{{ isOpen ? "Fechar menu" : "Abrir menu" }}</span>
+        <svg
+          v-if="!isOpen"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+        <svg
+          v-else
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
       </button>
 
-      <nav
-        id="primary-navigation"
-        :class="['links', { open: isOpen }]"
-        @click="handleLinkClick"
-      >
+      <nav id="primary-navigation" :class="['links', { open: isOpen }]" @click="handleLinkClick">
         <a href="#how">Clipes</a>
         <a href="#security">Sobre</a>
         <a href="#faq">Ajuda</a>
-        <a href="#cta">Instalar no meu campo</a>
-        <a href="#login">Login</a>
+        <router-link to="/contato">Instalar no meu campo</router-link>
+        <v-tooltip text="Em desenvolvimento" location="bottom">
+          <template #activator="{ props }">
+            <a v-bind="props" href="#login" class="disabled-link" aria-disabled="true" @click.prevent>Login</a>
+          </template>
+        </v-tooltip>
       </nav>
     </div>
   </header>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import LogoGravaNois from "../assets/icons/grava-nois.png";
 import LogoGravaNoisBranco from "../assets/icons/grava-nois-branco.png";
 
@@ -59,11 +88,11 @@ function onResize() {
 }
 
 onMounted(() => {
-  window.addEventListener('resize', onResize);
+  window.addEventListener("resize", onResize);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', onResize);
+  window.removeEventListener("resize", onResize);
 });
 </script>
 
@@ -104,7 +133,7 @@ onBeforeUnmount(() => {
   border-radius: 0.5rem;
   cursor: pointer;
   color: #1f2937;
-  transition: background .2s;
+  transition: background 0.2s;
 }
 .menu-toggle:focus-visible,
 .menu-toggle:hover {
@@ -127,7 +156,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-  transition: all .25s ease;
+  transition: all 0.25s ease;
 }
 .links a {
   text-decoration: none;
@@ -135,16 +164,34 @@ onBeforeUnmount(() => {
   font-weight: 600;
   padding: 0.4rem 0.6rem;
   border-radius: 0.5rem;
-  transition: background .2s, color .2s;
+  transition: background 0.2s, color 0.2s;
 }
 .links a:hover {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
+/* Visually disable the Login link */
+.disabled-link {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none; /* evita clique */
+  position: relative;
+}
+.disabled-link::after {
+  content: "⚙";
+  font-size: 0.75rem;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+
 /* Mobile styles */
 @media screen and (max-width: 660px) {
-  .menu-toggle { display: inline-flex; }
-  .nav-inner { align-items: flex-start; }
+  .menu-toggle {
+    display: inline-flex;
+  }
+  .nav-inner {
+    align-items: flex-start;
+  }
   .links {
     position: absolute;
     top: 80px; /* below header */
