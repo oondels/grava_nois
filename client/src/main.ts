@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import router from '@/router'
 import App from '@/App.vue'
 import './style.css'
+import '@mdi/font/css/materialdesignicons.min.css';
 
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
