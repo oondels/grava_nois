@@ -686,6 +686,9 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   .stats-inner {
     grid-template-columns: 1fr 1fr;
   }
+  .showcase-grid .media-card.wide {
+    grid-column: auto; /* remove span 2 que escondia o restante */
+  }
 }
 
 /* Motion accessibility */
