@@ -11,9 +11,9 @@
               No esporte amador, cada jogada é única. O <strong>Grava Nóis</strong> nasceu para garantir que seus
               momentos mais incríveis nunca se percam.
             </p>
-            <div class="hero-cta">
-              <v-btn href="#how" variant="outlined">Ver como funciona</v-btn>
-              <v-btn href="#mission" color="green-darken-3" variant="outlined">Nossa missão</v-btn>
+            <div class="flex flex-wrap gap-3 justify-center sm:justify-around">
+              <v-btn href="#how" variant="outlined" class="w-full sm:w-auto mr-2">Ver como funciona</v-btn>
+              <v-btn href="#mission" variant="outlined" class="w-full sm:w-auto">Nossa missão</v-btn>
             </div>
           </div>
           <div class="hero-media" aria-hidden="true">
@@ -54,7 +54,9 @@
       <!-- HOW IT WORKS -->
       <section id="how" class="section alt" aria-labelledby="how-title">
         <div class="container">
-          <h2 id="how-title" class="section-title">Como funciona?</h2>
+          <div class="d-flex justify-center align-center">
+            <h2 id="how-title" class="section-title">Como funciona?</h2>
+          </div>
           <ul class="steps">
             <li class="step-card">
               <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
@@ -62,28 +64,96 @@
                 <div class="logo-dot ml-3" aria-hidden="true"></div>
               </div>
               <h3>Câmeras atentas</h3>
-              <p>Câmeras instaladas no campo ou quadra registram todo o jogo.</p>
+              <p>Captura contínua em Full HD mantendo um buffer circular de alguns minutos.</p>
             </li>
             <li class="step-card">
-              <div class="step-icon" aria-hidden="true">🔴</div>
+              <div class="step-icon" aria-hidden="true">
+                <span class="mdi mdi-gesture-tap-button fs-"></span>
+              </div>
               <h3>Botão do lance</h3>
-              <p>Ao fazer um lance incrível, aperte o botão físico na lateral da quadra.</p>
+              <p>No momento do lance você aperta o botão físico ou futuro atalho no app.</p>
             </li>
             <li class="step-card">
               <div class="step-icon" aria-hidden="true">
                 <ClockPlus />
               </div>
-              <h3>Pré & pós-buffer</h3>
-              <p>Salvamos automaticamente os segundos antes e depois do clique.</p>
+              <h3>Recorte inteligente</h3>
+              <p>O sistema salva automaticamente segundos antes e depois, totalizando 40 segundos.</p>
             </li>
             <li class="step-card">
               <div class="step-icon" aria-hidden="true"><CloudDownload /></div>
-              <h3>Plataforma</h3>
-              <p>O vídeo vai para a plataforma, onde você pode assistir e baixar.</p>
+              <h3>Processo & plataforma</h3>
+              <p>Transcodifica, envia e disponibiliza para assistir, compartilhar e baixar.</p>
             </li>
           </ul>
+          <v-btn size="small" variant="text" color="primary" class="mt-2" @click="showHowDialog = true"
+            >Mais Detalhes</v-btn
+          >
         </div>
       </section>
+
+      <!-- Dialog explicação detalhada -->
+      <v-dialog v-model="showHowDialog" max-width="680" :scrim="true" transition="dialog-bottom-transition">
+        <v-card
+          class="relative bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-2xl rounded-2xl overflow-hidden"
+        >
+          <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-sky-400 to-emerald-500"></div>
+          <v-card-title
+            class="flex items-center justify-between px-5 py-4 border-b border-zinc-200/70 dark:border-white/10"
+          >
+            <span class="text-base font-semibold tracking-tight text-zinc-800 dark:text-zinc-100"
+              >Como o fluxo funciona na prática</span
+            >
+          </v-card-title>
+          <v-card-text class="pt-5 pb-2 px-5">
+            <ol class="list-decimal pl-5 space-y-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+              <li>
+                <strong class="font-semibold text-zinc-900 dark:text-white">Captura contínua:</strong> as câmeras gravam
+                sem parar usando um buffer que é constantemente sobrescrito.
+              </li>
+              <li>
+                <strong class="font-semibold text-zinc-900 dark:text-white">Ação do Jogador:</strong> o botão físico
+                fica posicionado nas laterias do campo, o jogador aciona o sistema no momento do clique.
+              </li>
+              <li>
+                <strong class="font-semibold text-zinc-900 dark:text-white">Recorte:</strong> o serviço de captura
+                extrai a gravação no intervalo [30s pré] até [10s pós] (configurável).
+              </li>
+              <li>
+                <strong class="font-semibold text-zinc-900 dark:text-white">Processamento:</strong> normaliza, aplica
+                cortes, gera thumbnail e aplica marca d'água do campo (se desejável).
+              </li>
+              <li>
+                <strong class="font-semibold text-zinc-900 dark:text-white">Upload resiliente:</strong> envia em blocos
+                com retomada; gera URL segura para download.
+              </li>
+              <li>
+                <strong class="font-semibold text-zinc-900 dark:text-white">Plataforma:</strong> o clip aparece na sua
+                lista, podendo ser marcado como favorito, compartilhado ou baixado.
+              </li>
+              <li>
+                <strong class="font-semibold text-zinc-900 dark:text-white">Segurança:</strong> criptografia em
+                trânsito, hash de integridade e políticas de expiração configuráveis.
+              </li>
+            </ol>
+            <p class="mt-6 text-xs md:text-sm text-zinc-500 dark:text-zinc-400">
+              Tem outra dúvida? Veja também a seção de
+              <a
+                href="#faq"
+                @click.prevent="scrollToFaqFromDialog"
+                class="text-emerald-600 dark:text-emerald-400 underline decoration-dotted hover:decoration-solid focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-sm"
+              >
+                Perguntas Frequentes </a
+              >.
+            </p>
+          </v-card-text>
+          <v-card-actions
+            class="px-5 py-3 flex justify-end gap-2 bg-zinc-50/70 dark:bg-white/5 border-t border-zinc-200/70 dark:border-white/10"
+          >
+            <v-btn color="danger" variant="outlined" class="font-medium" @click="showHowDialog = false">Fechar</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <v-divider :thickness="4" color="success"></v-divider>
 
@@ -93,11 +163,11 @@
           <h2 id="diff-title" class="section-title">Por que somos diferentes</h2>
           <div class="card-grid">
             <article class="card">
-              <h3>🎯 Foco no amador</h3>
+              <h3><Target color="red" /> Foco no amador</h3>
               <p>Feito para quem joga por paixão, não por contrato.</p>
             </article>
             <article class="card">
-              <h3><Zap /> Replays instantâneos</h3>
+              <h3><Zap color="yellow" /> Replays instantâneos</h3>
               <p>Reviva o lance na hora, sem esperar o jogo acabar.</p>
             </article>
             <article class="card">
@@ -155,7 +225,7 @@
 
       <!-- STATS STRIP -->
       <section class="stats" aria-label="Nossos números (placeholders)">
-        <div class="container stats-inner">
+        <div class="container stats-inner my-4">
           <div class="stat">
             <span class="num"><Infinity /></span><span class="label">Replays</span>
           </div>
@@ -196,11 +266,15 @@
           </details>
           <details class="faq-item">
             <summary>Funciona com internet instável?</summary>
-            <p class="mt-3">Sim. Gravamos localmente com buffer e fazemos upload resiliente em blocos quando a conexão permite.</p>
+            <p class="mt-3">
+              Sim. Gravamos localmente com buffer e fazemos upload resiliente em blocos quando a conexão permite.
+            </p>
           </details>
           <details class="faq-item">
             <summary>Como pago e baixo meus vídeos?</summary>
-            <p class="mt-3">Os vídeos ficam na plataforma; você paga por clip ou pacote e recebe um link seguro para download.</p>
+            <p class="mt-3">
+              Os vídeos ficam na plataforma; você paga por clip ou pacote e recebe um link seguro para download.
+            </p>
           </details>
         </div>
       </section>
@@ -218,7 +292,7 @@
 
       <!-- Back to top button -->
       <button class="to-top" :class="{ show: showTop }" @click="scrollToTop" aria-label="Voltar ao topo">
-        <ArrowBigUp color="green"/>
+        <ArrowBigUp color="green" />
       </button>
     </main>
   </div>
@@ -226,7 +300,16 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
-import { VideoIcon, ClockPlus, CloudDownload, Zap, ShieldCheckIcon, Infinity, ArrowBigUp } from "lucide-vue-next";
+import {
+  VideoIcon,
+  ClockPlus,
+  CloudDownload,
+  Zap,
+  ShieldCheckIcon,
+  Infinity,
+  ArrowBigUp,
+  Target,
+} from "lucide-vue-next";
 
 import hero from "@/assets/images/hero-about.png";
 import soccer from "@/assets/images/society-about.png";
@@ -242,10 +325,39 @@ const IMAGES = {
 };
 
 const showTop = ref(false);
+const showHowDialog = ref(false);
 const onScroll = () => {
   showTop.value = window.scrollY > 600;
 };
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+const goFaq = () => {
+  const faqSection = document.getElementById("faq");
+  if (faqSection) {
+    faqSection.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
+function scrollToFaqFromDialog() {
+  // close dialog first (for accessibility) then smooth scroll
+  showHowDialog.value = false;
+  const HEADER_OFFSET = 80;
+  // wait for dialog close animation
+  setTimeout(() => {
+    const el = document.getElementById("faq");
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+      window.scrollTo({ top: y, behavior: "smooth" });
+      // move focus to heading for a11y
+      const heading = el.querySelector("h2, h1, [id]");
+      if (heading instanceof HTMLElement) {
+        heading.setAttribute("tabindex", "-1");
+        heading.focus({ preventScroll: true });
+        setTimeout(() => heading.removeAttribute("tabindex"), 1000);
+      }
+    }
+  }, 220); // matches dialog transition timing
+}
 
 onMounted(() => window.addEventListener("scroll", onScroll));
 onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
@@ -521,6 +633,27 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 }
 .to-top:hover {
   transform: translateY(-2px);
+}
+
+/* HOW IT WORKS */
+.how-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.how-head .section-title {
+  margin: 0;
+}
+.how-list {
+  padding-left: 1.1rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.how-list li {
+  line-height: 1.35;
 }
 
 /* Responsive */
