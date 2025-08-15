@@ -14,4 +14,9 @@ export const config = {
   },
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),
+  mail_user: process.env.EMAIL_USER || '',
+  mail_pass: process.env.EMAIL_PASS || '',
+  mail_host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  supabaseUrl: process.env.SUPABASE_URL || '',
+  supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
 }

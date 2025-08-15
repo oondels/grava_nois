@@ -1,37 +1,128 @@
 <template>
   <div class="orcamento-wrapper">
     <div class="container-grid">
-      <!-- Col: Form -->
       <div class="form-col">
         <header class="page-head">
-          <h1 class="title">Solicitar Orçamento</h1>
+          <h1 class="title">Solicitar Instalação</h1>
           <p class="subtitle">
-            Instale o <strong>Grava Nóis</strong> no seu espaço esportivo. Preencha os dados e retornaremos com uma proposta personalizada.
+            Instale o <strong>Grava Nóis</strong> no seu espaço esportivo. Preencha os dados e retornaremos com uma
+            proposta personalizada.
           </p>
         </header>
 
         <v-card elevation="3" class="form-card">
           <v-card-text class="pa-4 pa-sm-6">
-            <v-form ref="formRef" v-model="isValid" @submit.prevent="handleSubmit">
+            <v-form ref="formRef" @submit.prevent="handleSubmit">
               <div class="field-stack">
-                <v-text-field v-model="form.estabelecimento" label="Estabelecimento *" :rules="reqRules" variant="outlined" density="comfortable" />
-                <v-text-field v-model="form.cnpjCpf" label="CNPJ / CPF *" :rules="[...reqRules, cpfCnpjRule]" variant="outlined" density="comfortable" />
-                <v-text-field v-model="form.cep" label="CEP *" :rules="[...reqRules, cepRule]" variant="outlined" density="comfortable" @blur="autoFillAddress" />
-                <v-text-field v-model="form.endereco" label="Endereço *" :rules="reqRules" variant="outlined" density="comfortable" />
+                <v-text-field
+                  v-model="form.estabelecimento"
+                  label="Estabelecimento *"
+                  :rules="reqRules"
+                  variant="outlined"
+                  density="comfortable"
+                />
+                <v-text-field
+                  v-model="form.cnpjCpf"
+                  label="CNPJ / CPF *"
+                  :rules="[...reqRules, cpfCnpjRule]"
+                  variant="outlined"
+                  density="comfortable"
+                />
+                <v-text-field
+                  v-model="form.cep"
+                  label="CEP *"
+                  :rules="[...reqRules, cepRule]"
+                  variant="outlined"
+                  density="comfortable"
+                  @blur="autoFillAddress"
+                />
+                <v-text-field
+                  v-model="form.endereco"
+                  label="Endereço *"
+                  :rules="reqRules"
+                  variant="outlined"
+                  density="comfortable"
+                />
+
                 <div class="inline-pair">
-                  <v-select v-model="form.estado" :items="estados" label="Estado *" :rules="reqRules" variant="outlined" density="comfortable" class="grow" />
-                  <v-text-field v-model="form.cidade" label="Cidade *" :rules="reqRules" variant="outlined" density="comfortable" class="grow" />
+                  <v-select
+                    v-model="form.estado"
+                    :items="estados"
+                    label="Estado *"
+                    :rules="reqRules"
+                    variant="outlined"
+                    density="comfortable"
+                    class="grow"
+                  />
+                  <v-text-field
+                    v-model="form.cidade"
+                    label="Cidade *"
+                    :rules="reqRules"
+                    variant="outlined"
+                    density="comfortable"
+                    class="grow"
+                  />
                 </div>
-                <v-text-field v-model="form.segmento" label="Segmento (Esporte) *" :rules="reqRules" placeholder="Futebol, Vôlei..." variant="outlined" density="comfortable" />
+                <v-text-field
+                  v-model="form.segmento"
+                  label="Segmento (Esporte) *"
+                  :rules="reqRules"
+                  placeholder="Futebol, Vôlei..."
+                  variant="outlined"
+                  density="comfortable"
+                />
                 <div class="inline-pair">
-                  <v-text-field v-model.number="form.qtdCameras" type="number" min="1" label="Qtde de Câmeras" :rules="qtdCamerasRule" variant="outlined" density="comfortable" class="grow" />
-                  <v-text-field v-model="form.telefone" label="Telefone *" :rules="[...reqRules, telefoneRule]" variant="outlined" density="comfortable" class="grow" />
+                  <v-text-field
+                    v-model.number="form.qtdCameras"
+                    type="number"
+                    min="1"
+                    label="Qtde de Câmeras"
+                    :rules="qtdCamerasRule"
+                    variant="outlined"
+                    density="comfortable"
+                    class="grow"
+                  />
+                  <v-text-field
+                    v-model="form.telefone"
+                    label="Telefone *"
+                    :rules="[...reqRules, telefoneRule]"
+                    variant="outlined"
+                    density="comfortable"
+                    class="grow"
+                  />
                 </div>
-                <v-text-field v-model="form.nome" label="Nome de Contato *" :rules="reqRules" variant="outlined" density="comfortable" />
-                <v-text-field v-model="form.email" label="Email *" :rules="[...reqRules, emailRule]" variant="outlined" density="comfortable" />
-                <v-textarea v-model="form.obs" label="Observações" rows="3" auto-grow variant="outlined" density="comfortable" />
+                <v-text-field
+                  v-model="form.nome"
+                  label="Nome de Contato *"
+                  :rules="reqRules"
+                  variant="outlined"
+                  density="comfortable"
+                />
+                <v-text-field
+                  v-model="form.email"
+                  label="Email *"
+                  :rules="[...reqRules, emailRule]"
+                  variant="outlined"
+                  density="comfortable"
+                />
+                <v-textarea
+                  v-model="form.obs"
+                  label="Observações"
+                  rows="3"
+                  auto-grow
+                  variant="outlined"
+                  density="comfortable"
+                />
                 <div class="actions">
-                  <v-btn :disabled="submitting" color="primary" type="submit" variant="flat" :loading="submitting" size="large" block>
+                  <v-btn
+                    :disabled="submitting"
+                    color="primary"
+                    type="submit"
+                    variant="flat"
+                    :loading="submitting"
+                    size="large"
+                    block
+                  >
                     Enviar Solicitação
                   </v-btn>
                   <small class="hint text-medium-emphasis">Campos com * são obrigatórios.</small>
@@ -57,71 +148,119 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useSnackbar } from '@/composables/useSnackbar'
+import { ref, reactive } from "vue";
+import { useSnackbar } from "@/composables/useSnackbar";
+import { solicitarInstalacao } from "@/services/solicitarInstalacao";
 
-const { showSnackbar } = useSnackbar()
-const formRef = ref()
-const isValid = ref(false)
-const submitting = ref(false)
+const { showSnackbar } = useSnackbar();
+const formRef = ref();
+const isValid = ref(false);
+const submitting = ref(false);
 
 const form = reactive({
-  estabelecimento: '',
-  cnpjCpf: '',
-  cep: '',
-  endereco: '',
-  estado: '',
-  cidade: '',
-  nome: '',
-  telefone: '',
-  email: '',
-  segmento: '',
+  estabelecimento: "",
+  cnpjCpf: "",
+  cep: "",
+  endereco: "",
+  estado: "",
+  cidade: "",
+  nome: "",
+  telefone: "",
+  email: "",
+  segmento: "",
   qtdCameras: 1,
-  obs: ''
-})
+  obs: "",
+});
 
 const estados = [
-  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
-]
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
+];
 
-const reqRules = [ (v: string) => !!v || 'Obrigatório' ]
-const emailRule = (v: string) => /.+@.+\..+/.test(v) || 'Email inválido'
-const cepRule = (v: string) => /^\d{5}-?\d{3}$/.test(v) || 'CEP inválido'
-const telefoneRule = (v: string) => v.replace(/\D/g,'').length >= 10 || 'Telefone inválido'
-const cpfCnpjRule = (v: string) => v.replace(/\D/g,'').length >= 11 || 'CNPJ/CPF inválido'
-const qtdCamerasRule = [ (v: number) => v == null || v >= 1 || 'Mínimo 1' ]
+const reqRules = [(v: string) => !!v || "Obrigatório"];
+const emailRule = (v: string) => /.+@.+\..+/.test(v) || "Email inválido";
+const cepRule = (v: string) => /^\d{5}-?\d{3}$/.test(v) || "CEP inválido";
+const telefoneRule = (v: string) => v.replace(/\D/g, "").length >= 10 || "Telefone inválido";
+const cpfCnpjRule = (v: string) => v.replace(/\D/g, "").length >= 11 || "CNPJ/CPF inválido";
+const qtdCamerasRule = [(v: number) => v == null || v >= 1 || "Mínimo 1"];
 
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
-  submitting.value = true
-  try {
-    // Simular envio
-    await new Promise(r => setTimeout(r, 900))
-    showSnackbar('Solicitação enviada! Entraremos em contato em breve.', 'success')
-    // Poderia limpar parcial mantendo contato
-    // reset
-    Object.assign(form, { estabelecimento:'', cnpjCpf:'', cep:'', endereco:'', estado:'', cidade:'', nome:'', telefone:'', email:'', segmento:'', qtdCameras:1, obs:'' })
-    formRef.value?.resetValidation()
-  } catch (e) {
-    showSnackbar('Erro ao enviar. Tente novamente.', 'error')
-  } finally {
-    submitting.value = false
-  }
-}
+  // const valid = await formRef.value?.validate();
+  // if (!valid) {
+  //   console.warn("Formulário inválido");
+  //   return;
+  // }
 
-// Auto-preenchimento simples via ViaCEP (opcional)
-async function autoFillAddress() {
-  const cep = form.cep.replace(/\D/g,'')
-  if (cep.length !== 8) return
+  submitting.value = true;
   try {
-    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
-    if (!resp.ok) return
-    const data = await resp.json()
-    if (data.erro) return
-    form.endereco = data.logradouro || form.endereco
-    form.cidade = data.localidade || form.cidade
-    form.estado = data.uf || form.estado
+    console.log("enviado");
+    await solicitarInstalacao(form);
+
+    //! Fix
+    // showSnackbar("Solicitação enviada! Entraremos em contato em breve.", "success");
+
+    // reset
+    // Object.assign(form, {
+    //   estabelecimento: "",
+    //   cnpjCpf: "",
+    //   cep: "",
+    //   endereco: "",
+    //   estado: "",
+    //   cidade: "",
+    //   nome: "",
+    //   telefone: "",
+    //   email: "",
+    //   segmento: "",
+    //   qtdCameras: 1,
+    //   obs: "",
+    // });
+    // formRef.value?.resetValidation();
+  } catch (e) {
+    console.error("Erro ao enviar formulário:", e);
+
+    showSnackbar("Erro ao enviar. Tente novamente.", "error");
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// Auto-preenchimento simples via ViaCEP
+async function autoFillAddress() {
+  const cep = form.cep.replace(/\D/g, "");
+  if (cep.length !== 8) return;
+  try {
+    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.erro) return;
+    form.endereco = data.logradouro || form.endereco;
+    form.cidade = data.localidade || form.cidade;
+    form.estado = data.uf || form.estado;
   } catch {}
 }
 </script>
@@ -130,8 +269,11 @@ async function autoFillAddress() {
 .orcamento-wrapper {
   width: min(1100px, 100% - 2rem);
   padding: clamp(1rem, 2vw, 2rem) 0 3rem;
-  background:
-    radial-gradient(900px 300px at 10% -10%, color-mix(in srgb, var(--brand) 14%, transparent), transparent 60%),
+  background: radial-gradient(
+      900px 300px at 10% -10%,
+      color-mix(in srgb, var(--brand) 14%, transparent),
+      transparent 60%
+    ),
     var(--bg);
   min-height: 100%;
 }
@@ -143,34 +285,67 @@ async function autoFillAddress() {
 }
 /* Two columns from 900px */
 @media (min-width: 900px) {
-  .container-grid { grid-template-columns: 1fr 0.9fr; align-items: start; }
+  .container-grid {
+    grid-template-columns: 1fr 0.9fr;
+    align-items: start;
+  }
 }
-.page-head { margin-bottom: 1.25rem; }
+.page-head {
+  margin-bottom: 1.25rem;
+}
 .title {
   font-size: clamp(1.6rem, 2.2vw + 0.8rem, 2.4rem);
   font-weight: 800;
   letter-spacing: -0.02em;
-  margin: 0 0 .5rem;
+  margin: 0 0 0.5rem;
 }
-.subtitle { margin: 0; color: var(--muted); line-height: 1.35; }
-.form-card { backdrop-filter: saturate(180%) blur(6px); }
-.field-stack { display: flex; flex-direction: column; gap: .85rem; }
-.inline-pair { display: flex; gap: .85rem; flex-wrap: wrap; }
-.inline-pair .grow { flex: 1 1 220px; }
-.actions { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
-.hint { display: block; text-align: center; }
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.form-card {
+  backdrop-filter: saturate(180%) blur(6px);
+}
+.field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.inline-pair {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+.inline-pair .grow {
+  flex: 1 1 220px;
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.hint {
+  display: block;
+  text-align: center;
+}
 
 /* Media Placeholder */
-.media-col { display: none; }
-@media (min-width: 900px) { .media-col { display: block; } }
+.media-col {
+  display: none;
+}
+@media (min-width: 900px) {
+  .media-col {
+    display: block;
+  }
+}
 .media-placeholder {
   position: relative;
   min-height: 560px;
   border: 2px dashed color-mix(in srgb, var(--ink) 25%, transparent);
   border-radius: 1.25rem;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--brand) 18%, transparent), transparent),
-    var(--bg-alt);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 18%, transparent), transparent), var(--bg-alt);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -181,15 +356,42 @@ async function autoFillAddress() {
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 12px, rgba(0,0,0,0.03) 12px 24px);
+  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.04) 0 12px, rgba(0, 0, 0, 0.03) 12px 24px);
   mix-blend-mode: overlay;
   pointer-events: none;
 }
-.media-placeholder .inner { max-width: 420px; text-align: center; position: relative; z-index: 2; }
-.media-placeholder h2 { margin: .25rem 0 .5rem; font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
-.media-placeholder .muted { color: var(--muted); font-size: .95rem; }
-.badge { display: inline-block; background: color-mix(in srgb, var(--brand) 70%, var(--ink)); color: #fff; padding: .25rem .65rem; border-radius: 999px; font-size: .65rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.media-placeholder .inner {
+  max-width: 420px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+.media-placeholder h2 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.media-placeholder .muted {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.badge {
+  display: inline-block;
+  background: color-mix(in srgb, var(--brand) 70%, var(--ink));
+  color: #fff;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 
 /* Reduce motion */
-@media (prefers-reduced-motion: reduce) { .media-placeholder::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .media-placeholder::after {
+    animation: none;
+  }
+}
 </style>
