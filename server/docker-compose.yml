@@ -1,0 +1,12 @@
+services:
+  pense_aja_service:
+    build: .
+    container_name: pense_aja_service
+    ports:
+      - "2399:2399"
+    env_file:
+      - .env.production
+    environment:
+      - DEV_ENV=production
+    networks:
+      - dass_private
