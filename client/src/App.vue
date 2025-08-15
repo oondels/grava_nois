@@ -1,8 +1,8 @@
 <template>
   <div>
     <Header/>
-    <router-view v-if="!authStore.isAuthenticated" />
-    <AppLayout v-else />
+    <router-view />
+    <!-- <AppLayout v-else /> -->
   </div>
 </template>
 
@@ -31,6 +31,7 @@ onMounted(() => {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100% !important;
 }
 
 ::-webkit-scrollbar {
@@ -80,6 +81,4 @@ onMounted(() => {
   opacity: 0;
   transform: translateY(-30px);
 }
-
-
 </style>
