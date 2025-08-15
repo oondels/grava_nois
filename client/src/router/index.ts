@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/auth";
 const routes = [
   {
     path: "/",
-    redirect: "/meus-lances",
+    component: () => import("@/pages/HomePage.vue"),
   },
   {
     path: "/login",
@@ -34,12 +34,6 @@ const routes = [
     path: "/suporte",
     name: "Suporte",
     component: () => import("@/pages/SuportePage.vue"),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/sobre",
-    name: "Sobre",
-    component: () => import("@/pages/AboutPage.vue"),
     meta: { requiresAuth: false },
   },
   {
