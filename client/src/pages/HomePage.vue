@@ -5,7 +5,8 @@
       <section class="hero" aria-labelledby="hero-title">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <h1 id="hero-title">Grava Nóis — Seu lance, sua história.</h1>
+            <h1 id="hero-title">Grava Nóis</h1>
+            <p class="hero-subtitle">Seu lance, sua história.</p>
             <p>
               No esporte amador, cada jogada é única. O <strong>Grava Nóis</strong> nasceu para garantir que seus
               momentos mais incríveis nunca se percam.
@@ -211,7 +212,7 @@
         <div class="container cta-inner">
           <h2 id="cta-title">Pronto para eternizar seus lances?</h2>
           <p>Leve o Grava Nóis para sua quadra e não perca mais nenhum momento.</p>
-          <a href="#" class="btn btn-primary btn-lg">Saiba como instalar no seu campo</a>
+          <v-btn variant="outlined">Agende a sua instalação</v-btn>
         </div>
       </section>
 
@@ -307,7 +308,13 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   font-size: clamp(2rem, 5vw + 0.5rem, 3.25rem);
   line-height: 1.05;
   letter-spacing: -0.03em;
+  margin: 0 0 0.25rem;
+}
+.hero-subtitle {
+  font-size: clamp(1.4rem, 1.25vw + 0.5rem, 1.5rem);
+  font-weight: 600;
   margin: 0 0 0.75rem;
+  color: var(--muted);
 }
 .hero-copy p {
   font-size: 1.1rem;
