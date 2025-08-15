@@ -1,9 +1,5 @@
 <template>
-  <div>
-    <Header/>
-    <router-view />
-    <!-- <AppLayout v-else /> -->
-  </div>
+    <AppLayout />
 </template>
 
 <script setup lang="ts">
