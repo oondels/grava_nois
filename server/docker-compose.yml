@@ -1,12 +1,10 @@
 services:
-  pense_aja_service:
+  grava_nois_service:
     build: .
-    container_name: pense_aja_service
+    container_name: grava_nois_service
     ports:
       - "2399:2399"
     env_file:
       - .env.production
     environment:
-      - DEV_ENV=production
-    networks:
-      - dass_private
+      - NODE_ENV=production
