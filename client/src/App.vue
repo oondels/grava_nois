@@ -1,8 +1,8 @@
 <template>
-  <div id="app">
+  <div>
     <Header/>
-    <router-view v-if="!authStore.isAuthenticated" />
-    <AppLayout v-else />
+    <router-view />
+    <!-- <AppLayout v-else /> -->
   </div>
 </template>
 
@@ -27,10 +27,11 @@ onMounted(() => {
 @import "@/styles/variables.css";
 @import "@/styles/utilities.scss";
 
-/* #app {
+#app {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100% !important;
 }
 
 ::-webkit-scrollbar {
@@ -79,7 +80,5 @@ onMounted(() => {
 .slide-up-leave-to {
   opacity: 0;
   transform: translateY(-30px);
-} */
-
-
+}
 </style>

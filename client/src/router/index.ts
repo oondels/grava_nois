@@ -4,43 +4,43 @@ import { useAuthStore } from "@/store/auth";
 const routes = [
   {
     path: "/",
-    redirect: "/meus-lances",
+    component: () => import("@/pages/HomePage.vue"),
   },
+  // {
+  //   path: "/login",
+  //   name: "Login",
+  //   component: () => import("@/pages/LoginPage.vue"),
+  //   meta: { requiresGuest: false },
+  // },
+  // {
+  //   path: "/meus-lances",
+  //   name: "MeusLances",
+  //   component: () => import("@/pages/MeusLancesPage.vue"),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: "/lance/:id",
+  //   name: "LanceDetails",
+  //   component: () => import("@/pages/LanceDetailsPage.vue"),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: "/downloads",
+  //   name: "Downloads",
+  //   component: () => import("@/pages/DownloadsPage.vue"),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: "/suporte",
+  //   name: "Suporte",
+  //   component: () => import("@/pages/SuportePage.vue"),
+  //   meta: { requiresAuth: false },
+  // },
   {
-    path: "/login",
-    name: "Login",
-    component: () => import("@/pages/LoginPage.vue"),
-    meta: { requiresGuest: false },
-  },
-  {
-    path: "/meus-lances",
-    name: "MeusLances",
-    component: () => import("@/pages/MeusLancesPage.vue"),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/lance/:id",
-    name: "LanceDetails",
-    component: () => import("@/pages/LanceDetailsPage.vue"),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/downloads",
-    name: "Downloads",
-    component: () => import("@/pages/DownloadsPage.vue"),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/suporte",
-    name: "Suporte",
-    component: () => import("@/pages/SuportePage.vue"),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: "/sobre",
-    name: "Sobre",
-    component: () => import("@/pages/AboutPage.vue"),
-    meta: { requiresAuth: false },
+    path: '/contato',
+    name: 'Contato',
+    component: () => import('@/pages/ContactPage.vue'),
+    meta: { requiresAuth: false }
   },
   {
     path: "/:pathMatch(.*)*",

@@ -1,18 +1,19 @@
 <template>
-  <div class="about">
+  <div>
     <main>
       <!-- HERO -->
       <section class="hero" aria-labelledby="hero-title">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <h1 id="hero-title">Grava Nóis — Seu lance, sua história.</h1>
+            <h1 id="hero-title">Grava Nóis</h1>
+            <p class="hero-subtitle">Seu lance, sua história.</p>
             <p>
               No esporte amador, cada jogada é única. O <strong>Grava Nóis</strong> nasceu para garantir que seus
               momentos mais incríveis nunca se percam.
             </p>
             <div class="hero-cta">
-              <a href="#how" class="btn btn-primary">Ver como funciona</a>
-              <a href="#mission" class="btn btn-ghost">Nossa missão</a>
+              <v-btn href="#how" variant="outlined">Ver como funciona</v-btn>
+              <v-btn href="#mission" color="green-darken-3" variant="outlined">Nossa missão</v-btn>
             </div>
           </div>
           <div class="hero-media" aria-hidden="true">
@@ -30,6 +31,8 @@
         </div>
       </section>
 
+      <v-divider :thickness="4" color="success"></v-divider>
+
       <!-- MISSION -->
       <section id="mission" class="section" aria-labelledby="mission-title">
         <div class="container narrow">
@@ -46,13 +49,18 @@
         </div>
       </section>
 
+      <v-divider :thickness="4" color="success"></v-divider>
+
       <!-- HOW IT WORKS -->
       <section id="how" class="section alt" aria-labelledby="how-title">
         <div class="container">
           <h2 id="how-title" class="section-title">Como funciona?</h2>
           <ul class="steps">
             <li class="step-card">
-              <div class="step-icon" aria-hidden="true">📹</div>
+              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
+                <VideoIcon />
+                <div class="logo-dot ml-3" aria-hidden="true"></div>
+              </div>
               <h3>Câmeras atentas</h3>
               <p>Câmeras instaladas no campo ou quadra registram todo o jogo.</p>
             </li>
@@ -62,18 +70,22 @@
               <p>Ao fazer um lance incrível, aperte o botão físico na lateral da quadra.</p>
             </li>
             <li class="step-card">
-              <div class="step-icon" aria-hidden="true">⏱️</div>
+              <div class="step-icon" aria-hidden="true">
+                <ClockPlus />
+              </div>
               <h3>Pré & pós-buffer</h3>
               <p>Salvamos automaticamente os segundos antes e depois do clique.</p>
             </li>
             <li class="step-card">
-              <div class="step-icon" aria-hidden="true">☁️</div>
+              <div class="step-icon" aria-hidden="true"><CloudDownload /></div>
               <h3>Plataforma</h3>
               <p>O vídeo vai para a plataforma, onde você pode assistir e baixar.</p>
             </li>
           </ul>
         </div>
       </section>
+
+      <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- DIFFERENTIALS -->
       <section id="differentials" class="section" aria-labelledby="diff-title">
@@ -85,7 +97,7 @@
               <p>Feito para quem joga por paixão, não por contrato.</p>
             </article>
             <article class="card">
-              <h3>⚡ Replays instantâneos</h3>
+              <h3><Zap /> Replays instantâneos</h3>
               <p>Reviva o lance na hora, sem esperar o jogo acabar.</p>
             </article>
             <article class="card">
@@ -93,12 +105,14 @@
               <p>Baixe seus vídeos quando quiser, com poucos cliques.</p>
             </article>
             <article class="card">
-              <h3>🔒 Segurança</h3>
+              <h3><ShieldCheckIcon /> Segurança</h3>
               <p>Criptografia em trânsito, URLs assinadas e verificação de integridade.</p>
             </article>
           </div>
         </div>
       </section>
+
+      <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- SHOWCASE (visual-heavy block, Netflix-style) -->
       <section class="section alt" aria-labelledby="showcase-title">
@@ -137,15 +151,23 @@
         </div>
       </section>
 
+      <v-divider :thickness="4" color="success"></v-divider>
+
       <!-- STATS STRIP -->
       <section class="stats" aria-label="Nossos números (placeholders)">
         <div class="container stats-inner">
-          <div class="stat"><span class="num">∞</span><span class="label">Replays</span></div>
-          <div class="stat"><span class="num">4</span><span class="label">Esportes</span></div>
+          <div class="stat">
+            <span class="num"><Infinity /></span><span class="label">Replays</span>
+          </div>
+          <div class="stat">
+            <span class="num"><Infinity /></span><span class="label">Esportes</span>
+          </div>
           <div class="stat"><span class="num">24/7</span><span class="label">Disponível</span></div>
           <div class="stat"><span class="num">Pronto</span><span class="label">para escalar</span></div>
         </div>
       </section>
+
+      <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- SECURITY -->
       <section id="security" class="section" aria-labelledby="security-title">
@@ -160,45 +182,51 @@
         </div>
       </section>
 
+      <v-divider :thickness="4" color="success"></v-divider>
+
       <!-- FAQ (Netflix uses expandable sections; here using native details) -->
       <section id="faq" class="section alt" aria-labelledby="faq-title">
         <div class="container narrow">
           <h2 id="faq-title" class="section-title">Perguntas frequentes</h2>
           <details class="faq-item">
             <summary>Como instalo o sistema no meu campo?</summary>
-            <p>
-              Você precisa de câmeras IP robustas, um Raspberry Pi (ou NVR) por ponto, nosso botão físico e internet.
-              Fornecemos guia e suporte.
+            <p class="mt-3">
+              A instalaçõa é feita por nossa equipe técnica. Basta entrar em contato e agendamos uma visita.
             </p>
           </details>
           <details class="faq-item">
             <summary>Funciona com internet instável?</summary>
-            <p>Sim. Gravamos localmente com buffer e fazemos upload resiliente em blocos quando a conexão permite.</p>
+            <p class="mt-3">Sim. Gravamos localmente com buffer e fazemos upload resiliente em blocos quando a conexão permite.</p>
           </details>
           <details class="faq-item">
             <summary>Como pago e baixo meus vídeos?</summary>
-            <p>Os vídeos ficam na plataforma; você paga por clip ou pacote e recebe um link seguro para download.</p>
+            <p class="mt-3">Os vídeos ficam na plataforma; você paga por clip ou pacote e recebe um link seguro para download.</p>
           </details>
         </div>
       </section>
+
+      <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- CTA -->
       <section id="cta" class="cta" aria-labelledby="cta-title">
         <div class="container cta-inner">
           <h2 id="cta-title">Pronto para eternizar seus lances?</h2>
           <p>Leve o Grava Nóis para sua quadra e não perca mais nenhum momento.</p>
-          <a href="#" class="btn btn-primary btn-lg">Saiba como instalar no seu campo</a>
+          <v-btn variant="outlined">Agende a sua instalação</v-btn>
         </div>
       </section>
 
       <!-- Back to top button -->
-      <button class="to-top" :class="{ show: showTop }" @click="scrollToTop" aria-label="Voltar ao topo">↑</button>
+      <button class="to-top" :class="{ show: showTop }" @click="scrollToTop" aria-label="Voltar ao topo">
+        <ArrowBigUp color="green"/>
+      </button>
     </main>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
+import { VideoIcon, ClockPlus, CloudDownload, Zap, ShieldCheckIcon, Infinity, ArrowBigUp } from "lucide-vue-next";
 
 import hero from "@/assets/images/hero-about.png";
 import soccer from "@/assets/images/society-about.png";
@@ -224,29 +252,6 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 </script>
 
 <style scoped>
-:root {
-  --brand: #e63946;
-  --brand-ink: #1d1d1f;
-  --ink: #1f2937;
-  --muted: #60636b;
-  --bg: #ffffff;
-  --bg-alt: #f6f7f9;
-  --card: #ffffff;
-  --ring: rgba(230, 57, 70, 0.3);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --brand: #ff4d5a;
-    --brand-ink: #f3f4f6;
-    --ink: #e5e7eb;
-    --muted: #a1a1aa;
-    --bg: #0b0c0f;
-    --bg-alt: #121318;
-    --card: #16181d;
-    --ring: rgba(255, 77, 90, 0.25);
-  }
-}
-
 .about {
   min-height: 100%;
   background: var(--bg);
@@ -275,41 +280,12 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   color: var(--muted);
 }
 
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.2s ease;
-}
-.btn:hover {
-  transform: translateY(-1px);
-}
-.btn:active {
-  transform: translateY(0);
-}
-.btn-primary {
-  background: var(--brand);
-  color: white;
-  box-shadow: 0 8px 20px -8px var(--ring);
-}
-.btn-primary:hover {
-  box-shadow: 0 16px 28px -12px var(--ring);
-}
-.btn-ghost {
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-}
-.btn-lg {
-  padding: 1rem 1.25rem;
-  font-size: 1.05rem;
+.logo-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: red;
+  box-shadow: 0 0 0 6px var(--ring);
 }
 
 /* Hero */
@@ -332,7 +308,13 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   font-size: clamp(2rem, 5vw + 0.5rem, 3.25rem);
   line-height: 1.05;
   letter-spacing: -0.03em;
+  margin: 0 0 0.25rem;
+}
+.hero-subtitle {
+  font-size: clamp(1.4rem, 1.25vw + 0.5rem, 1.5rem);
+  font-weight: 600;
   margin: 0 0 0.75rem;
+  color: var(--muted);
 }
 .hero-copy p {
   font-size: 1.1rem;
@@ -556,6 +538,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
     grid-template-columns: 1fr 1fr;
   }
 }
+
 @media (max-width: 640px) {
   .links a:not(.btn) {
     display: none;
