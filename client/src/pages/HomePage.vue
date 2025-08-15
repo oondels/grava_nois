@@ -1,5 +1,5 @@
 <template>
-  <div class="about">
+  <div>
     <main>
       <!-- HERO -->
       <section class="hero" aria-labelledby="hero-title">
