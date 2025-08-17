@@ -1,23 +1,18 @@
-#!/usr/bin/env python3
 from __future__ import annotations
-import os
-import re
-import time
-import threading
-import subprocess
+import os, re, json, time, hashlib, subprocess, threading
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from collections import deque
-from typing import Deque, List, Optional
+from typing import Deque, List, Optional, Tuple, Dict, Any
 
 
-# -----------------------------
-# Configuração e utilidades
-# -----------------------------
+# ---- CONFIG & TYPES ---------------------------------------------------------
 @dataclass
 class CaptureConfig:
     buffer_dir: Path
-    current_dir: Path
+    clips_dir: Path  # onde o highlight nasce
+    queue_dir: Path  # fila para tratamento posterior (raw)
     device: str = "/dev/video0"
     seg_time: int = 1
     pre_seconds: int = 40
@@ -31,9 +26,11 @@ class CaptureConfig:
 
     def ensure_dirs(self) -> None:
         self.buffer_dir.mkdir(parents=True, exist_ok=True)
-        self.current_dir.mkdir(parents=True, exist_ok=True)
+        self.clips_dir.mkdir(parents=True, exist_ok=True)
+        self.queue_dir.mkdir(parents=True, exist_ok=True)
 
 
+# ---- FFmpeg recorder --------------------------------------------------------
 def _calc_start_number(buffer_dir: Path) -> int:
     pattern = re.compile(r"buffer(\d{3,})\.mp4$")
     nums: List[int] = []
@@ -50,7 +47,6 @@ def _calc_start_number(buffer_dir: Path) -> int:
 def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
-
     ffmpeg_cmd = [
         "ffmpeg",
         "-nostdin",
@@ -76,7 +72,6 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "1",
         out_pattern,
     ]
-
     return subprocess.Popen(
         ffmpeg_cmd,
         stdout=subprocess.DEVNULL,
@@ -85,9 +80,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     )
 
 
-# -----------------------------
-# Buffer de segmentos (indexador)
-# -----------------------------
+# ---- Segment buffer (indexer thread) ---------------------------------------
 class SegmentBuffer:
     def __init__(self, cfg: CaptureConfig):
         self.cfg = cfg
@@ -114,7 +107,6 @@ class SegmentBuffer:
             files = sorted(
                 self.cfg.buffer_dir.glob("buffer*.mp4"), key=lambda p: p.stat().st_mtime
             )
-
             # limpa excedentes no disco
             extra = files[: -self.cfg.max_segments]
             for p in extra:
@@ -122,19 +114,14 @@ class SegmentBuffer:
                     p.unlink()
                 except FileNotFoundError:
                     pass
-
             files = files[-self.cfg.max_segments :]
-
             with self._lock:
                 self._segments.clear()
                 self._segments.extend(str(p) for p in files)
-
             self._stop.wait(self.cfg.scan_interval)
 
 
-# -----------------------------
-# Construção do highlight
-# -----------------------------
+# ---- Highlight builder ------------------------------------------------------
 def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]:
     click_ts = time.time()
     print("Botão apertado! Aguardando pós-buffer…")
@@ -142,7 +129,6 @@ def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]
 
     need = max(1, int(round((cfg.pre_seconds + cfg.post_seconds) / cfg.seg_time)))
     selected = segbuf.snapshot_last(need)
-
     if not selected:
         print("Nenhum segmento disponível — encerrando.")
         return None
@@ -153,10 +139,9 @@ def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]
             f.write(f"file '{seg}'\n")
 
     out = (
-        cfg.current_dir
-        / f"highlight_{time.strftime('%Y%m%d-%H%M%S', time.localtime(click_ts))}.mp4"
+        cfg.clips_dir
+        / f"highlight_{datetime.fromtimestamp(click_ts, tz=timezone.utc).strftime('%Y%m%d-%H%M%SZ')}.mp4"
     )
-
     subprocess.run(
         [
             "ffmpeg",
@@ -173,7 +158,6 @@ def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]
         ],
         check=True,
     )
-
     try:
         list_txt.unlink()
     except FileNotFoundError:
@@ -181,3 +165,142 @@ def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]
 
     print(f"Saved {out}")
     return out
+
+
+# ---- Queueing & metadata ----------------------------------------------------
+def _sha256_file(p: Path, chunk: int = 1024 * 1024) -> str:
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        while True:
+            b = f.read(chunk)
+            if not b:
+                break
+            h.update(b)
+    return h.hexdigest()
+
+
+def ffprobe_metadata(path: Path) -> Dict[str, Any]:
+    """
+    Usa ffprobe para extrair metadados básicos.
+    Requer ffprobe no PATH.
+    """
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=codec_name,width,height,r_frame_rate",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        str(path),
+    ]
+    r = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    info = json.loads(r.stdout)
+    stream = info.get("streams", [{}])[0]
+    fmt = info.get("format", {})
+    fps_str = stream.get("r_frame_rate", "0/1")
+    try:
+        num, den = fps_str.split("/")
+        fps = float(num) / float(den) if float(den) != 0 else 0.0
+    except Exception:
+        fps = 0.0
+    return {
+        "codec": stream.get("codec_name"),
+        "width": stream.get("width"),
+        "height": stream.get("height"),
+        "fps": fps,
+        "duration_sec": float(fmt.get("duration", 0.0)),
+    }
+
+
+def enqueue_clip(cfg: CaptureConfig, clip_path: Path) -> Path:
+    """
+    Move o arquivo para a fila (queue_dir) e salva metadados .json ao lado.
+    """
+    clip_path = clip_path.resolve()
+    size_bytes = clip_path.stat().st_size
+    sha256 = _sha256_file(clip_path)
+    meta = ffprobe_metadata(clip_path)
+    payload = {
+        "type": "highlight_raw",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "file_name": clip_path.name,
+        "size_bytes": size_bytes,
+        "sha256": sha256,
+        "meta": meta,
+        "pre_seconds": cfg.pre_seconds,
+        "post_seconds": cfg.post_seconds,
+        "seg_time": cfg.seg_time,
+        "status": "queued",
+    }
+
+    dst = cfg.queue_dir / clip_path.name
+    meta_path = cfg.queue_dir / (clip_path.stem + ".json")
+
+    # move para a fila e grava sidecar
+    clip_path.replace(dst)
+    meta_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
+    print(f"Enfileirado para tratamento: {dst}")
+    return dst
+
+
+# ---- Watermark util (MoviePy v2) -------------------------------------------
+# Posição corrigida para canto inferior direito
+def add_image_watermark(
+    input_path: str,
+    watermark_path: str,
+    output_path: str,
+    margin: int = 24,
+    opacity: float = 0.6,
+    rel_width: float = 0.2,
+    codec: str = "libx264",
+    crf: int = 20,
+    preset: str = "medium",
+) -> None:
+    """
+    Mantém a marca d'água no canto inferior direito, com margem fixa.
+    Requer MoviePy v2: from moviepy import VideoFileClip, ImageClip, CompositeVideoClip
+    """
+    from moviepy import (
+        VideoFileClip,
+        ImageClip,
+        CompositeVideoClip,
+    )  # import local p/ opção de não instalar no Pi de captura
+
+    video = VideoFileClip(input_path)
+    wmark = (
+        ImageClip(watermark_path)
+        .resized(width=int(video.w * rel_width))
+        .with_duration(video.duration)
+        .with_opacity(opacity)
+    )
+
+    x = int(video.w - wmark.w - margin)
+    y = int(video.h - wmark.h - margin)
+    wmark = wmark.with_position((x, y))
+
+    out = CompositeVideoClip([video, wmark])
+    out.write_videofile(
+        output_path,
+        codec=codec,
+        audio_codec="aac",
+        preset=preset,
+        ffmpeg_params=["-crf", str(crf)],
+    )
+
+
+# ---- Thumbnail helper (opcional) -------------------------------------------
+def generate_thumbnail(
+    input_path: Path, output_path: Path, at_sec: float | None = None
+) -> None:
+    """Gera thumbnail .jpg no meio do vídeo (ou em at_sec)."""
+    from moviepy import VideoFileClip  # MoviePy v2
+
+    clip = VideoFileClip(str(input_path))
+    t = at_sec if at_sec is not None else max(0.0, clip.duration * 0.5)
+    # save_frame aceita extensão pelo caminho
+    clip.save_frame(str(output_path), t=t)
