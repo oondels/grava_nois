@@ -209,7 +209,7 @@ AppDataSource.initialize()
           const bodySchema = z.object({
             venue_id: z.string().uuid(),
             duration_sec: z.number().int().positive(),
-            captured_at: z.string().datetime(),
+            captured_at: z.string(),
             meta: z.object({
               codec: z.string(),
               fps: z.number().int().positive(),
@@ -228,7 +228,7 @@ AppDataSource.initialize()
           const { duration_sec, captured_at, meta, sha256 } = parsed.data;
 
           // Validate Client ID
-          const clientRepository = AppDataSource.getRepository("Clients");
+          const clientRepository = AppDataSource.getRepository("Client");
           const client = await clientRepository.findOne({ where: { id: clientId } });
 
           if (!client) {
@@ -239,7 +239,7 @@ AppDataSource.initialize()
           // 1. Descobre contrato
           let contractType: string; // Lógica para determinar o tipo de contrato
 
-          const venueInstalationRepo = AppDataSource.getRepository("VenueInstallations")
+          const venueInstalationRepo = AppDataSource.getRepository("VenueInstallation")
           const venue = await venueInstalationRepo.findOne({
             where: { clientId: clientId, id: venueId },
             select: ["contractMethod"]
@@ -252,7 +252,7 @@ AppDataSource.initialize()
           }
           contractType = venue.contractMethod; // "monthly_subscription" | "per_video"
 
-          // 2. Define destino
+          // Define destino
           let storagePath: string;
           const clip_id = randomUUID();
           if (contractType === "monthly_subscription") {
@@ -275,13 +275,14 @@ AppDataSource.initialize()
             venueId: venueId,
             durationSec: duration_sec,
             capturedAt: capturedAtDate,
+            contract: contractType,
             meta,
             sha256,
             status: "queued",
             storagePath
           };
 
-          const videoRepository = AppDataSource.getRepository("Videos");
+          const videoRepository = AppDataSource.getRepository("Video");
 
           const existingClip = await videoRepository.findOne({ where: { clipId: clip.clipId } });
           if (existingClip) {
@@ -295,7 +296,7 @@ AppDataSource.initialize()
           // Gera URL assinada para upload
           const { data, error } = await supabase
             .storage
-            .from("videos")
+            .from("temp") // Bucket temporário do supabase
             .createSignedUploadUrl(storagePath);
 
           if (error || !data?.signedUrl) {
