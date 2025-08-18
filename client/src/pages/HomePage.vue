@@ -4,6 +4,19 @@
       <!-- HERO -->
       <section class="hero" aria-labelledby="hero-title">
         <div class="container hero-grid">
+          <!-- Teaser de funcionalidade -->
+          <!-- <div class="relative">
+            <span
+              class="absolute -right-3 -top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
+            >
+              EM BREVE
+            </span>
+            <p class="mt-1">
+              Em breve: Feed de lances em vídeo (estilo TikTok) com <strong>premiações</strong> para as quadras e
+              clientes parceiros.
+            </p>
+          </div> -->
+
           <div class="hero-copy">
             <h1 id="hero-title">Grava Nóis</h1>
             <p class="hero-subtitle">Seu lance, sua história.</p>
@@ -185,8 +198,13 @@
 
             <article class="card">
               <h3 class="flex flex-row justify-center align-center">
-                <AppWindow class="mr-2" color="green" />Plataforma intuitiva
+                <Banknote class="mr-2" color="green" /> Premiações (em breve)
               </h3>
+              <p>Ganhe prêmios com seus clipes! Ideal para quadras parceiras e atletas criadores.</p>
+            </article>
+
+            <article class="card">
+              <h3 class="flex flex-row justify-center align-center"><AppWindow class="mr-2" />Plataforma intuitiva</h3>
               <p>Baixe seus vídeos quando quiser, com poucos cliques.</p>
             </article>
 
@@ -196,6 +214,53 @@
               </h3>
               <p>Criptografia em trânsito, URLs assinadas e verificação de integridade.</p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <v-divider :thickness="4" color="success"></v-divider>
+
+      <section id="social" class="section alt" aria-labelledby="social-title">
+        <div class="container">
+          <div class="d-flex justify-space-between align-center mb-3">
+            <h2 id="social-title" class="section-title">
+              Feed vertical & premiações<small style="font-size: 0.7em; opacity: 0.8"> (em breve)</small>
+            </h2>
+            <v-chip size="small" label color="amber">PILOTO</v-chip>
+          </div>
+          <p class="lede">
+            Descoberta de lances no formato que o público já ama — com oportunidades reais de receita para quadras e
+            atletas.
+          </p>
+
+          <div class="teaser-grid d-flex flex-row">
+            <div>
+              <ul class="checklist">
+                <li><strong>Descoberta fácil:</strong> lances em formato vertical, deslize para ver mais.</li>
+                <li>
+                  <strong>Premiação:</strong> poste clipes, seja avaliado, acumule pontos e troque por prêmios com
+                  nossos parceiros.
+                </li>
+                <li><strong>Visibilidade local:</strong> ranking por quadra, eventos e campeonatos.</li>
+                <li><strong>Parcerias:</strong> espaço para marcas locais e ações no dia do jogo.</li>
+              </ul>
+
+              <!-- <div class="mt-4">
+                <router-link to="/contato?tipo=parceria" class="v-btn v-btn--variant-outlined p-1">
+                  Quero participar do piloto
+                </router-link>
+              </div> -->
+            </div>
+
+            <div class="">
+              <img
+                class="media-img"
+                :src="IMAGES.feed"
+                alt="Preview do feed vertical de lances"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -239,9 +304,7 @@
       <section class="stats" aria-label="Nossos números (placeholders)">
         <div class="container stats-inner my-4">
           <div class="stat d-flex flex-column justify-center align-center">
-            <span class="num">
-              <Infinity /> </span
-            ><span class="label">Replays</span>
+            <span class="num"> <Infinity /> </span><span class="label">Replays</span>
           </div>
 
           <div class="stat d-flex flex-column justify-center align-center">
@@ -285,16 +348,26 @@
               A instalaçõa é feita por nossa equipe técnica. Basta entrar em contato e agendamos uma visita.
             </p>
           </details>
+
           <details class="faq-item">
             <summary>Funciona com internet instável?</summary>
             <p class="mt-3">
               Sim. Gravamos localmente com buffer e fazemos upload resiliente em blocos quando a conexão permite.
             </p>
           </details>
+
           <details class="faq-item">
             <summary>Como pago e baixo meus vídeos?</summary>
             <p class="mt-3">
               Os vídeos ficam na plataforma; você paga por clip ou pacote e recebe um link seguro para download.
+            </p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Como vai funcionar a premiação?</summary>
+            <p class="mt-3">
+              Durante o piloto, quadras e atletas parceiros concorrerão a prêmios mensais baseados em engajamento e
+              desempenho dos vídeos na plataforma. Acumule pontos no app e troque por prêmios!
             </p>
           </details>
         </div>
@@ -307,12 +380,21 @@
         <div class="container cta-inner">
           <h2 id="cta-title">Pronto para eternizar seus lances?</h2>
           <p>Leve o Grava Nóis para sua quadra e não perca mais nenhum momento.</p>
-          <router-link to="/contato" variant="outlined">Agende a sua instalação</router-link>
+
+          <!-- <router-link to="/contato">Agende a sua instalação</router-link>
+          <router-link to="/contato?tipo=parceria" class="v-btn v-btn--variant-outlined">
+            Seja parceiro do piloto
+          </router-link> -->
         </div>
       </section>
 
       <!-- Back to top button -->
-      <span class="to-top z-50 d-flex align-center justify-center" :class="{ show: showTop }" @click="scrollToTop" aria-label="Voltar ao topo">
+      <span
+        class="to-top z-50 d-flex align-center justify-center"
+        :class="{ show: showTop }"
+        @click="scrollToTop"
+        aria-label="Voltar ao topo"
+      >
         <ArrowBigUp color="white" />
       </span>
     </main>
@@ -331,6 +413,7 @@ import {
   Infinity,
   ArrowBigUp,
   Target,
+  Banknote,
 } from "lucide-vue-next";
 
 import hero from "@/assets/images/hero-about.webp";
@@ -338,12 +421,14 @@ import soccer from "@/assets/images/society-about.webp";
 import volleyball from "@/assets/images/volleyball-about.webp";
 import basketball from "@/assets/images/basketball-about.webp";
 import outdoor from "@/assets/images/futbolley-about.webp";
+import feed from "@/assets/images/feed-preview.webp";
 const IMAGES = {
   hero: hero,
   soccer: soccer,
   volleyball: volleyball,
   basketball: basketball,
   outdoor: outdoor,
+  feed: feed,
 };
 
 const showTop = ref(false);
@@ -353,24 +438,15 @@ const onScroll = () => {
 };
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-const goFaq = () => {
-  const faqSection = document.getElementById("faq");
-  if (faqSection) {
-    faqSection.scrollIntoView({ behavior: "smooth" });
-  }
-};
-
 function scrollToFaqFromDialog() {
-  // close dialog first (for accessibility) then smooth scroll
   showHowDialog.value = false;
   const HEADER_OFFSET = 80;
-  // wait for dialog close animation
+
   setTimeout(() => {
     const el = document.getElementById("faq");
     if (el) {
       const y = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
       window.scrollTo({ top: y, behavior: "smooth" });
-      // move focus to heading for a11y
       const heading = el.querySelector("h2, h1, [id]");
       if (heading instanceof HTMLElement) {
         heading.setAttribute("tabindex", "-1");
@@ -378,7 +454,7 @@ function scrollToFaqFromDialog() {
         setTimeout(() => heading.removeAttribute("tabindex"), 1000);
       }
     }
-  }, 220); // matches dialog transition timing
+  }, 220);
 }
 
 onMounted(() => window.addEventListener("scroll", onScroll));
@@ -581,6 +657,19 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 .stat .label {
   color: var(--muted);
   font-weight: 600;
+}
+
+/* Teaser  */
+.teaser-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 1rem 2rem;
+  align-items: center;
+}
+@media (max-width: 960px) {
+  .teaser-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Security */
