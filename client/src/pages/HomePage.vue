@@ -51,7 +51,7 @@
 
       <v-divider :thickness="4" color="success"></v-divider>
 
-      <!-- HOW IT WORKS -->
+      <!-- Como Funciona -->
       <section id="how" class="section alt" aria-labelledby="how-title">
         <div class="container">
           <div class="d-flex justify-center align-center">
@@ -66,29 +66,36 @@
               <h3>Câmeras atentas</h3>
               <p>Captura contínua em Full HD mantendo um buffer circular de alguns minutos.</p>
             </li>
+
             <li class="step-card">
-              <div class="step-icon" aria-hidden="true">
+              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
                 <span class="mdi mdi-gesture-tap-button fs-"></span>
               </div>
+              <div class="step-icon" aria-hidden="true"></div>
               <h3>Botão do lance</h3>
               <p>No momento do lance você aperta o botão físico ou futuro atalho no app.</p>
             </li>
+
             <li class="step-card">
-              <div class="step-icon" aria-hidden="true">
+              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
                 <ClockPlus />
               </div>
               <h3>Recorte inteligente</h3>
               <p>O sistema salva automaticamente segundos antes e depois, totalizando 40 segundos.</p>
             </li>
+
             <li class="step-card">
-              <div class="step-icon" aria-hidden="true"><CloudDownload /></div>
+              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
+                <CloudDownload />
+              </div>
               <h3>Processo & plataforma</h3>
               <p>Transcodifica, envia e disponibiliza para assistir, compartilhar e baixar.</p>
             </li>
           </ul>
-          <v-btn size="small" variant="text" color="primary" class="mt-2" @click="showHowDialog = true"
-            >Mais Detalhes</v-btn
-          >
+
+          <v-btn size="small" variant="text" color="primary" class="mt-2" @click="showHowDialog = true">
+            Mais Detalhes
+          </v-btn>
         </div>
       </section>
 
@@ -162,20 +169,31 @@
         <div class="container">
           <h2 id="diff-title" class="section-title">Por que somos diferentes</h2>
           <div class="card-grid">
-            <article class="card">
-              <h3><Target color="red" /> Foco no amador</h3>
+            <article class="card flex flex-column justify-center align-center">
+              <h3 class="flex flex-row justify-center align-center">
+                <Target color="red" class="mr-2" /> Foco no amador
+              </h3>
               <p>Feito para quem joga por paixão, não por contrato.</p>
             </article>
+
             <article class="card">
-              <h3><Zap color="yellow" /> Replays instantâneos</h3>
+              <h3 class="flex flex-row justify-center align-center">
+                <Zap color="yellow" class="mr-2" /> Replays instantâneos
+              </h3>
               <p>Reviva o lance na hora, sem esperar o jogo acabar.</p>
             </article>
+
             <article class="card">
-              <h3>☁ Plataforma intuitiva</h3>
+              <h3 class="flex flex-row justify-center align-center">
+                <AppWindow class="mr-2" color="green" />Plataforma intuitiva
+              </h3>
               <p>Baixe seus vídeos quando quiser, com poucos cliques.</p>
             </article>
+
             <article class="card">
-              <h3><ShieldCheckIcon /> Segurança</h3>
+              <h3 class="flex flex-row justify-center align-center">
+                <ShieldCheckIcon class="mr-2" color="orange" /> Segurança
+              </h3>
               <p>Criptografia em trânsito, URLs assinadas e verificação de integridade.</p>
             </article>
           </div>
@@ -190,14 +208,8 @@
           <h2 id="showcase-title" class="section-title">Feito para qualquer quadra, qualquer time</h2>
           <div class="showcase-grid">
             <div class="media-card tall">
-              <img
-                class="media-img"
-                :src="IMAGES.soccer"
-                alt="Partida de futebol society"
-                loading="lazy"
-                decoding="async"
-              />
-              <div class="media-label">Futebol society</div>
+              <img class="media-img" :src="IMAGES.soccer" alt="Partida de Futebol" loading="lazy" decoding="async" />
+              <div class="media-label">Futebol</div>
             </div>
             <div class="media-card">
               <img class="media-img" :src="IMAGES.volleyball" alt="Quadra de vôlei" loading="lazy" decoding="async" />
@@ -226,14 +238,23 @@
       <!-- STATS STRIP -->
       <section class="stats" aria-label="Nossos números (placeholders)">
         <div class="container stats-inner my-4">
-          <div class="stat">
-            <span class="num"><Infinity /></span><span class="label">Replays</span>
+          <div class="stat d-flex flex-column justify-center align-center">
+            <span class="num">
+              <Infinity /> </span
+            ><span class="label">Replays</span>
           </div>
-          <div class="stat">
+
+          <div class="stat d-flex flex-column justify-center align-center">
             <span class="num"><Infinity /></span><span class="label">Esportes</span>
           </div>
-          <div class="stat"><span class="num">24/7</span><span class="label">Disponível</span></div>
-          <div class="stat"><span class="num">Pronto</span><span class="label">para escalar</span></div>
+
+          <div class="stat d-flex flex-column justify-center align-center">
+            <span class="num">24/7</span><span class="label">Disponível</span>
+          </div>
+
+          <div class="stat d-flex flex-column justify-center align-center">
+            <span class="num">Pronto</span><span class="label">para escalar</span>
+          </div>
         </div>
       </section>
 
@@ -244,9 +265,9 @@
         <div class="container narrow">
           <h2 id="security-title" class="section-title">Segurança e privacidade</h2>
           <ul class="checklist">
-            <li>Criptografia TLS em trânsito; storage com verificação de integridade (hash).</li>
-            <li>URLs de download assinadas e com expiração; controle de acesso por token.</li>
-            <li>Backups versionados; redundância geográfica opcional.</li>
+            <li>Criptografia TLS em trânsito; Logins com segurança de ponta a ponta.</li>
+            <li>URLs de download assinadas e com expiração; controle de acesso por usuário/campo.</li>
+            <li>Backups versionados.</li>
             <li>Conformidade com boas práticas de LGPD (minimização, consentimento, retenção).</li>
           </ul>
         </div>
@@ -254,7 +275,7 @@
 
       <v-divider :thickness="4" color="success"></v-divider>
 
-      <!-- FAQ (Netflix uses expandable sections; here using native details) -->
+      <!-- FAQ -->
       <section id="faq" class="section alt" aria-labelledby="faq-title">
         <div class="container narrow">
           <h2 id="faq-title" class="section-title">Perguntas frequentes</h2>
@@ -286,14 +307,14 @@
         <div class="container cta-inner">
           <h2 id="cta-title">Pronto para eternizar seus lances?</h2>
           <p>Leve o Grava Nóis para sua quadra e não perca mais nenhum momento.</p>
-          <v-btn variant="outlined">Agende a sua instalação</v-btn>
+          <router-link to="/contato" variant="outlined">Agende a sua instalação</router-link>
         </div>
       </section>
 
       <!-- Back to top button -->
-      <button class="to-top" :class="{ show: showTop }" @click="scrollToTop" aria-label="Voltar ao topo">
-        <ArrowBigUp color="green" />
-      </button>
+      <span class="to-top z-50 d-flex align-center justify-center" :class="{ show: showTop }" @click="scrollToTop" aria-label="Voltar ao topo">
+        <ArrowBigUp color="white" />
+      </span>
     </main>
   </div>
 </template>
@@ -304,6 +325,7 @@ import {
   VideoIcon,
   ClockPlus,
   CloudDownload,
+  AppWindow,
   Zap,
   ShieldCheckIcon,
   Infinity,
@@ -565,6 +587,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 .checklist {
   margin: 1rem 0 0;
   padding-left: 1.25rem;
+  text-align: left;
 }
 .checklist li {
   margin: 0.5rem 0;
@@ -613,14 +636,12 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 .to-top {
   position: fixed;
   right: 1rem;
-  bottom: 1rem;
+  bottom: 4rem;
   width: 40px;
   height: 40px;
   border-radius: 999px;
   border: none;
   background: var(--brand);
-  color: #fff;
-  font-weight: 900;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
