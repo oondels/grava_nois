@@ -1,28 +1,14 @@
 <template>
-  <Header/>
+  <!-- Nova navegação responsiva -->
+  <AppHeader class="hidden md:block" />
   <v-app>
     <!-- Main Content -->
-    <v-main class="d-flex flex-column">
+    <v-main id="main" class="d-flex flex-column">
       <router-view />
     </v-main>
-
-    <!-- Bottom Navigation (Mobile) -->
-    <!-- <v-bottom-navigation 
-      v-if="$vuetify.display.mobile"
-      v-model="bottomNav"
-      color="primary"
-      grow
-    >
-      <v-btn
-        v-for="item in navigationItems"
-        :key="item.to"
-        :to="item.to"
-        :value="item.to"
-      >
-        <v-icon>{{ item.icon }}</v-icon>
-        <span class="text-caption">{{ item.title }}</span>
-      </v-btn>
-    </v-bottom-navigation> -->
+    
+    <!-- Mobile Bottom Nav (visível apenas em dispositivos móveis) -->
+    <MobileBottomNav class="md:hidden" />
 
     <!-- Footer -->
     <footer class="app-footer">
@@ -66,48 +52,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { useThemeStore } from '@/store/theme'
 import { useClipsStore } from '@/store/clips'
-import { customIcons } from '@/utils/icons'
-import Header from './Header.vue'
 
-const router = useRouter()
+// Importando os novos componentes de navegação
+import AppHeader from '@/components/navigation/AppHeader.vue'
+import MobileBottomNav from '@/components/navigation/MobileBottomNav.vue'
+
+// Store instances
 const route = useRoute()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const clipsStore = useClipsStore()
 
-const drawer = ref(false)
-const bottomNav = ref()
-const searchQuery = ref('')
-
-const navigationItems = [
-  {
-    title: 'Meus Lances',
-    to: '/meus-lances',
-    icon: customIcons.home
-  },
-  {
-    title: 'Downloads',
-    to: '/downloads',
-    icon: customIcons.download
-  },
-  {
-    title: 'Suporte',
-    to: '/suporte',
-    icon: customIcons.help
-  }
-]
-
+// Handler para filtros de busca
 const handleSearch = (value: string | null) => {
   clipsStore.updateFilters({ search: value || '' })
 }
 
 onMounted(() => {
-  bottomNav.value = route.path
+  // Inicializar tema e outras configurações necessárias
 })
 </script>
 
