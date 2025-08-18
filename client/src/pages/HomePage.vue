@@ -311,11 +311,11 @@ import {
   Target,
 } from "lucide-vue-next";
 
-import hero from "@/assets/images/hero-about.png";
-import soccer from "@/assets/images/society-about.png";
-import volleyball from "@/assets/images/volleyball-about.png";
-import basketball from "@/assets/images/basketball-about.png";
-import outdoor from "@/assets/images/futbolley-about.png";
+import hero from "@/assets/images/hero-about.webp";
+import soccer from "@/assets/images/society-about.webp";
+import volleyball from "@/assets/images/volleyball-about.webp";
+import basketball from "@/assets/images/basketball-about.webp";
+import outdoor from "@/assets/images/futbolley-about.webp";
 const IMAGES = {
   hero: hero,
   soccer: soccer,
