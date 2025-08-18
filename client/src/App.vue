@@ -1,5 +1,5 @@
 <template>
-    <AppLayout />
+  <AppLayout />
 </template>
 
 <script setup lang="ts">
@@ -13,7 +13,7 @@ const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
 onMounted(() => {
-  // Initialize theme
+  // Always initialize with dark theme regardless of system preference
   themeStore.setTheme(true);
 });
 </script>
@@ -24,7 +24,7 @@ onMounted(() => {
 @import "@/styles/utilities.scss";
 
 #app {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   width: 100% !important;

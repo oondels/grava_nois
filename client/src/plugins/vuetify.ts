@@ -1,6 +1,6 @@
-import { createVuetify } from 'vuetify'
-import 'vuetify/styles'
-import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
+import { createVuetify } from "vuetify";
+import "vuetify/styles";
+import { aliases, mdi } from "vuetify/iconsets/mdi-svg";
 
 // Ícones necessários
 import {
@@ -28,8 +28,8 @@ import {
   mdiAlert,
   mdiInformation,
   mdiThemeLightDark,
-  mdiChevronDown
-} from '@mdi/js'
+  mdiChevronDown,
+} from "@mdi/js";
 
 const customIcons = {
   ...aliases,
@@ -57,54 +57,56 @@ const customIcons = {
   alert: mdiAlert,
   information: mdiInformation,
   themeLightDark: mdiThemeLightDark,
-  chevronDown: mdiChevronDown
-}
+  chevronDown: mdiChevronDown,
+};
 
 const vuetify = createVuetify({
   theme: {
-    defaultTheme: 'dark',
+    defaultTheme: "dark",
+    // Disable auto detection of system theme
+    variations: { colors: [], lighten: 0, darken: 0 },
     themes: {
       dark: {
         colors: {
-          primary: '#1B5E20',
-          secondary: '#F57C00',
-          accent: '#D32F2F',
-          success: '#2E7D32',
-          warning: '#F57F17',
-          error: '#C62828',
-          info: '#1976D2',
-          surface: '#121212',
-          background: '#0A0A0A'
-        }
+          primary: "#1B5E20",
+          secondary: "#F57C00",
+          accent: "#D32F2F",
+          success: "#2E7D32",
+          warning: "#F57F17",
+          error: "#C62828",
+          info: "#1976D2",
+          surface: "#121212",
+          background: "#0A0A0A",
+        },
       },
       light: {
         colors: {
-          primary: '#1B5E20',
-          secondary: '#F57C00',
-          accent: '#D32F2F',
-          success: '#2E7D32',
-          warning: '#F57F17',
-          error: '#C62828',
-          info: '#1976D2',
-          surface: '#FFFFFF',
-          background: '#FAFAFA'
-        }
-      }
-    }
+          primary: "#1B5E20",
+          secondary: "#F57C00",
+          accent: "#D32F2F",
+          success: "#2E7D32",
+          warning: "#F57F17",
+          error: "#C62828",
+          info: "#1976D2",
+          surface: "#FFFFFF",
+          background: "#FAFAFA",
+        },
+      },
+    },
   },
   icons: {
-    defaultSet: 'mdi',
+    defaultSet: "mdi",
     aliases: customIcons,
-    sets: { mdi }
+    sets: { mdi },
   },
   defaults: {
     VBtn: {
-      style: 'text-transform: none;'
+      style: "text-transform: none;",
     },
     VCard: {
-      elevation: 2
-    }
-  }
-})
+      elevation: 2,
+    },
+  },
+});
 
-export default vuetify
+export default vuetify;

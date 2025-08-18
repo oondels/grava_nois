@@ -16,14 +16,30 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --brand: rgba(4, 133, 0, 0.3);
+  /* Removido para manter somente em tema escuro--brand: rgba(4, 133, 0, 0.3);
+    --brand-ink: #f3f4f6;
+    --ink: #e5e7eb;
+    --muted: #a1a1aa;
+    --bg: #0b0c0f;
+    --bg-alt: #121318;
+    --card: #16181d;
+    --ring: rgba(255, 77, 90, 0.25); */
+  /* --brand: rgba(4, 133, 0, 0.3);
   --brand-ink: #1d1d1f;
   --ink: #1f2937;
   --muted: #60636b;
   --bg: #ffffff;
   --bg-alt: #f6f7f9;
   --card: #ffffff;
-  --ring: rgba(230, 57, 70, 0.3);
+  --ring: rgba(230, 57, 70, 0.3); */
+  --brand: rgba(4, 133, 0, 0.3);
+  --brand-ink: #f3f4f6;
+  --ink: #e5e7eb;
+  --muted: #a1a1aa;
+  --bg: #0b0c0f;
+  --bg-alt: #121318;
+  --card: #16181d;
+  --ring: rgba(255, 77, 90, 0.25);
 }
 
 @media (prefers-color-scheme: dark) {
