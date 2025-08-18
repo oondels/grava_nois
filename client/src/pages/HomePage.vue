@@ -44,6 +44,43 @@
         </div>
       </section>
 
+      <div
+        class="relative overflow-hidden px-6 lg:px-12 mx-auto max-w-4xl [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+      >
+        <!-- dica: o mask-image cria o fade nas bordas; pode usar pseudo-elemento se preferir -->
+
+        <!-- Patrocinadores -->
+        <div class="flex gap-8 flex-nowrap marquee-track animate-[marquee_var(--dur,60s)_linear_infinite]">
+          <!-- Conjunto A -->
+          <ul class="flex gap-8 flex-nowrap">
+            <li class="h-12 w-max">
+              <img class="h-12 w-auto" :src="hero" alt="Mozilla" draggable="false" />
+            </li>
+            <li class="h-12 w-max">
+              <img class="h-12 w-auto" :src="soccer" alt="GitHub" draggable="false" />
+            </li>
+            <li class="h-12 w-max">
+              <img class="h-12 w-auto" :src="volleyball" alt="1Password" draggable="false" />
+            </li>
+            <!-- ...demais logos -->
+          </ul>
+
+          <!-- Conjunto B (cópia exata) -->
+          <ul class="flex gap-8 flex-nowrap" aria-hidden="true">
+            <!-- repita os mesmos <li> de cima -->
+               <li class="h-12 w-max">
+              <img class="h-12 w-auto" :src="hero" alt="Mozilla" draggable="false" />
+            </li>
+            <li class="h-12 w-max">
+              <img class="h-12 w-auto" :src="soccer" alt="GitHub" draggable="false" />
+            </li>
+            <li class="h-12 w-max">
+              <img class="h-12 w-auto" :src="volleyball" alt="1Password" draggable="false" />
+            </li>
+          </ul>
+        </div>
+      </div>
+
       <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- MISSION -->
