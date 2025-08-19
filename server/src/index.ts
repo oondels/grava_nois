@@ -1,11 +1,10 @@
 import express, { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { createClient } from '@supabase/supabase-js';
-import { v4 as uuid } from 'uuid';
-import path from 'path';
 import { AppDataSource } from './config/database';
+import { VideoStatus } from './models/Videos';
 import { z } from 'zod';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import cors from "cors"
 import nodeMailer from "nodemailer"
 import { config } from './config/dotenv';
@@ -356,6 +355,89 @@ AppDataSource.initialize()
        * }
       */
       app.post('/api/videos/:videoId/uploaded', async (req: Request, res: Response) => {
+        try {
+          const { videoId } = req.params;
+
+          // 1) Validate body
+          const bodySchema = z.object({
+            size_bytes: z.number().int().nonnegative(),
+            sha256: z.string().regex(/^[a-f0-9]{64}$/i),
+          });
+          const parsed = bodySchema.safeParse(req.body);
+          if (!parsed.success) {
+            res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
+            return;
+          }
+          const { size_bytes, sha256 } = parsed.data;
+
+          // 2) Fetch video by clipId
+          const videoRepository = AppDataSource.getRepository('Video');
+          const video = await videoRepository.findOne({ where: { clipId: videoId } });
+          if (!video) {
+            res.status(404).json({ error: 'Video not found' });
+            return;
+          }
+
+          if (!video.storagePath) {
+            res.status(422).json({ error: 'Video has no storage_path set' });
+            return;
+          }
+
+          // 3) Check file existence in Supabase and compare metadata
+          // Note: Upload was created using bucket "temp" earlier in the flow
+          // so we verify against the same bucket.
+          const { data: downloaded, error: downloadError } = await supabase
+            .storage
+            .from('temp')
+            .download(video.storagePath);
+
+          if (downloadError || !downloaded) {
+            res.status(422).json({ error: 'Uploaded object not found in storage_path' });
+            return;
+          }
+
+          // Compute sha256 of the downloaded blob
+          const ab = await downloaded.arrayBuffer();
+          const buf = Buffer.from(ab);
+          const computedSha256 = createHash('sha256').update(buf).digest('hex');
+          const computedSize = downloaded.size; // bytes
+
+          const hashMatches = computedSha256.toLowerCase() === sha256.toLowerCase();
+          const sizeMatches = computedSize === size_bytes;
+          if (!hashMatches || !sizeMatches) {
+            res.status(422).json({
+              error: 'Uploaded object metadata mismatch',
+              details: {
+                size_matches: sizeMatches,
+                sha256_matches: hashMatches,
+                expected: { sha256, size_bytes },
+                got: { sha256: computedSha256, size_bytes: computedSize },
+              },
+            });
+            return;
+          }
+
+          // 4) Update status based on contract type and persist size/sha
+          const newStatus = video.contract === 'monthly_subscription'
+            ? VideoStatus.UPLOADED
+            : VideoStatus.UPLOADED_TEMP;
+
+          video.status = newStatus;
+          video.sha256 = sha256;
+          video.sizeBytes = String(size_bytes);
+          await videoRepository.save(video);
+
+          // 5) Return JSON
+          res.json({
+            clip_id: video.clipId,
+            contract_type: video.contract,
+            storage_path: video.storagePath,
+            status: newStatus === VideoStatus.UPLOADED ? 'uploaded' : 'uploaded_temp',
+          });
+        } catch (err) {
+          console.error('Error finalizing uploaded video:', err);
+          res.status(500).json({ error: 'Internal server error' });
+        }
       });
 
       // Realiza criação de novo client
@@ -423,5 +505,3 @@ AppDataSource.initialize()
   .catch(error => {
     console.error("Error initializing Data Source:", error);
   })
-
-
