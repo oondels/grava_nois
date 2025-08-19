@@ -47,13 +47,40 @@ def _calc_start_number(buffer_dir: Path) -> int:
 def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
+    # Old -> Camera do notebook
+    # ffmpeg_cmd = [
+    #     "ffmpeg",
+    #     "-nostdin",
+    #     "-f",
+    #     "v4l2",
+    #     "-i",
+    #     cfg.device,
+    #     "-c:v",
+    #     "libx264",
+    #     "-preset",
+    #     "ultrafast",
+    #     "-tune",
+    #     "zerolatency",
+    #     "-force_key_frames",
+    #     f"expr:gte(t,n_forced*{cfg.seg_time})",
+    #     "-f",
+    #     "segment",
+    #     "-segment_time",
+    #     str(cfg.seg_time),
+    #     "-segment_start_number",
+    #     str(start_num),
+    #     "-reset_timestamps",
+    #     "1",
+    #     out_pattern,
+    # ]
+
+    # Camera Dedicada
     ffmpeg_cmd = [
         "ffmpeg",
-        "-nostdin",
-        "-f",
-        "v4l2",
+        "-rtsp_transport",
+        "tcp",
         "-i",
-        cfg.device,
+        "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
         "-c:v",
         "libx264",
         "-preset",
@@ -61,7 +88,11 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "-tune",
         "zerolatency",
         "-force_key_frames",
-        f"expr:gte(t,n_forced*{cfg.seg_time})",
+        "expr:gte(t,n_forced*1)",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "96k",  # audio
         "-f",
         "segment",
         "-segment_time",
@@ -72,6 +103,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "1",
         out_pattern,
     ]
+
     return subprocess.Popen(
         ffmpeg_cmd,
         stdout=subprocess.DEVNULL,
