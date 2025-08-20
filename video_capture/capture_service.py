@@ -13,7 +13,9 @@ from video_core import (
     add_image_watermark,
     generate_thumbnail,
     ffprobe_metadata,
+    register_clip_metadados,
 )
+from video_core import _sha256_file  # util interno
 
 
 class ProcessingWorker:
@@ -162,6 +164,59 @@ class ProcessingWorker:
             }
         )
         meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+
+        # 3.1) registra intenção de upload no backend (POST /api/videos/metadados)
+        api_base = os.getenv("GN_API_BASE") or os.getenv("API_BASE_URL")
+        api_token = os.getenv("GN_API_TOKEN") or os.getenv("API_TOKEN")
+        client_id = os.getenv("GN_CLIENT_ID") or os.getenv("CLIENT_ID")
+        venue_id = os.getenv("GN_VENUE_ID") or os.getenv("VENUE_ID")
+        if api_base:
+            try:
+                size_wm = out_mp4.stat().st_size
+                sha256_wm = _sha256_file(out_mp4)
+                payload = {
+                    "venue_id": venue_id,
+                    "duration_sec": 15, # TODO: Fix this, put the real duration seconds
+                    "captured_at": meta.get("created_at"),
+                    "meta": meta.get("meta_wm") or {},
+                    "sha256": sha256_wm,
+                }
+                resp = register_clip_metadados(
+                    api_base, payload, token=api_token, timeout=15.0
+                )
+                meta.setdefault("remote_registration", {})
+                meta["remote_registration"].update(
+                    {
+                        "status": "registered",
+                        "registered_at": datetime.now(timezone.utc).isoformat(),
+                        "response": resp,
+                    }
+                )
+                # status opcional: manter "watermarked" e anotar registro remoto
+                meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+                print(f"[worker] registro remoto OK: clip_id={resp.get('clip_id')}")
+            except Exception as e:
+                meta.setdefault("remote_registration", {})
+                meta["remote_registration"].update(
+                    {
+                        "status": "failed",
+                        "error": str(e),
+                        "attempted_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+                meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+                print(f"[worker] registro remoto falhou: {e}")
+        else:
+            print("Sem api url configurada, pulando registro")
+            # sem configuração de API, apenas registra um hint no sidecar
+            meta.setdefault("remote_registration", {})
+            meta["remote_registration"].update(
+                {
+                    "status": "skipped",
+                    "reason": "GN_API_BASE ausente",
+                }
+            )
+            meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
 
         # 4) remove o original da fila
         try:

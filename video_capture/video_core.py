@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from collections import deque
 from typing import Deque, List, Optional, Tuple, Dict, Any
+import urllib.request
+import urllib.error
+import ssl
 
 
 # ---- CONFIG & TYPES ---------------------------------------------------------
@@ -48,39 +51,13 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
     # Old -> Camera do notebook
-    # ffmpeg_cmd = [
-    #     "ffmpeg",
-    #     "-nostdin",
-    #     "-f",
-    #     "v4l2",
-    #     "-i",
-    #     cfg.device,
-    #     "-c:v",
-    #     "libx264",
-    #     "-preset",
-    #     "ultrafast",
-    #     "-tune",
-    #     "zerolatency",
-    #     "-force_key_frames",
-    #     f"expr:gte(t,n_forced*{cfg.seg_time})",
-    #     "-f",
-    #     "segment",
-    #     "-segment_time",
-    #     str(cfg.seg_time),
-    #     "-segment_start_number",
-    #     str(start_num),
-    #     "-reset_timestamps",
-    #     "1",
-    #     out_pattern,
-    # ]
-
-    # Camera Dedicada
     ffmpeg_cmd = [
         "ffmpeg",
-        "-rtsp_transport",
-        "tcp",
+        "-nostdin",
+        "-f",
+        "v4l2",
         "-i",
-        "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
+        cfg.device,
         "-c:v",
         "libx264",
         "-preset",
@@ -88,11 +65,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "-tune",
         "zerolatency",
         "-force_key_frames",
-        "expr:gte(t,n_forced*1)",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "96k",  # audio
+        f"expr:gte(t,n_forced*{cfg.seg_time})",
         "-f",
         "segment",
         "-segment_time",
@@ -103,6 +76,36 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "1",
         out_pattern,
     ]
+
+    # Camera Dedicada
+    # ffmpeg_cmd = [
+    #     "ffmpeg",
+    #     "-rtsp_transport",
+    #     "tcp",
+    #     "-i",
+    #     "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
+    #     "-c:v",
+    #     "libx264",
+    #     "-preset",
+    #     "ultrafast",
+    #     "-tune",
+    #     "zerolatency",
+    #     "-force_key_frames",
+    #     "expr:gte(t,n_forced*1)",
+    #     "-c:a",
+    #     "aac",
+    #     "-b:a",
+    #     "96k",  # audio
+    #     "-f",
+    #     "segment",
+    #     "-segment_time",
+    #     str(cfg.seg_time),
+    #     "-segment_start_number",
+    #     str(start_num),
+    #     "-reset_timestamps",
+    #     "1",
+    #     out_pattern,
+    # ]
 
     return subprocess.Popen(
         ffmpeg_cmd,
@@ -336,3 +339,56 @@ def generate_thumbnail(
     t = at_sec if at_sec is not None else max(0.0, clip.duration * 0.5)
     # save_frame aceita extensão pelo caminho
     clip.save_frame(str(output_path), t=t)
+
+
+# ---- HTTP helper & registration --------------------------------------------
+def _http_post_json(
+    url: str,
+    payload: Dict[str, Any],
+    headers: Optional[Dict[str, str]] = None,
+    timeout: float = 10.0,
+) -> Dict[str, Any]:
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="POST")
+    req.add_header("Content-Type", "application/json")
+    if headers:
+        for k, v in headers.items():
+            req.add_header(k, v)
+    # permissivo para ambientes com certificados locais
+    ctx = ssl.create_default_context()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            charset = resp.headers.get_content_charset() or "utf-8"
+            body = resp.read().decode(charset)
+            return json.loads(body) if body else {}
+    except urllib.error.HTTPError as e:
+        try:
+            body = e.read().decode("utf-8")
+        except Exception:
+            body = ""
+        raise RuntimeError(f"HTTP {e.code} ao POST {url}: {body}")
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Erro de rede ao POST {url}: {e}")
+
+
+def register_clip_metadados(
+    api_base: str,
+    metadados: Dict[str, Any],
+    token: Optional[str] = None,
+    timeout: float = 10.0,
+) -> Dict[str, Any]:
+    """
+    Envia metadados do clipe para o backend e retorna o payload de resposta.
+
+    Espera que o backend exponha POST {api_base}/api/videos/metadados.
+    Se `token` for fornecido, envia como `Authorization: Bearer <token>`.
+    """
+    client_id = os.getenv("GN_CLIENT_ID") or os.getenv("CLIENT_ID")
+    venue_id = os.getenv("GN_VENUE_ID") or os.getenv("VENUE_ID")
+    base = api_base.rstrip("/")
+
+    url = f"{base}/api/videos/metadados/client/{client_id}/venue/{venue_id}"
+    headers: Dict[str, str] = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return _http_post_json(url, metadados, headers=headers, timeout=timeout)
