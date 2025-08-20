@@ -239,8 +239,8 @@ async function enableGyro() {
     // iOS permission flow
     // @ts-ignore
     if (
-      typeof DeviceOrientationEvent !== "undefined" &&
-      typeof DeviceOrientationEvent.requestPermission === "function"
+      typeof DeviceOrientationEvent !== "undefined"
+      // typeof DeviceOrientationEvent.requestPermission === "function"
     ) {
       // @ts-ignore
       const perm = await DeviceOrientationEvent.requestPermission();
@@ -572,11 +572,6 @@ onBeforeUnmount(() => {
 }
 .parallax--mockup {
   transform: translate3d(calc(var(--mx, 0) * -8px), calc(var(--my, 0) * -8px), 0);
-}
-
-/* Keep native vertical scroll available during interaction */
-.hero.is-interacting {
-  /* intentionally left without overrides */
 }
 
 /* Hint styles (mobile only) */
