@@ -5,7 +5,7 @@
       <div class="hero__logo-wrap parallax parallax--logo">
         <img
           class="hero__logo"
-          :src="logoSrc"
+          :src="currentIcon"
           alt="Grava Nóis logo"
           width="90"
           height="90"
@@ -26,9 +26,12 @@
           </div>
         </div>
 
-        <!-- Optional right-side mockup on desktop -->
+        <!-- Optional right-side mockup on desktop with crossfade carousel -->
         <div class="hero__mockup parallax parallax--mockup" aria-hidden="true">
-          <img :src="mockupSrc" alt="" />
+          <div class="mockup-fader">
+            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" />
+            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" />
+          </div>
         </div>
       </div>
     </div>
@@ -38,17 +41,47 @@
 <script setup lang="ts">
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
-import HeroBG from "@/assets/hero_sec_imgs/basket_ball.jpg";
+// import HeroBG from "@/assets/hero_sec_imgs/basket_ball.jpg";
 import BasketBall from "@/assets/hero_sec_imgs/basket_ball.png";
+
+// Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
+const heroModules = import.meta.glob("@/assets/hero_sec_imgs/*.{png,jpg,jpeg,webp}", { eager: true });
+const heroImages = Object.values(heroModules)
+  .map((m: any) => (m && m.default) || m)
+  .filter(Boolean) as string[];
 
 const logoSrc = LogoSymbol;
 const mockupSrc = Mockup;
-const heroBg = HeroBG;
 
 import { onMounted, onBeforeUnmount, ref } from "vue";
 
 const rootEl = ref<HTMLElement | null>(null);
 let raf = 0;
+let carouselTimer: number | undefined;
+
+// Background image state (also cycles)
+const currentIcon = ref<string>(heroImages[0] ?? (LogoSymbol as unknown as string));
+
+// Crossfade state
+const showA = ref(true);
+const imgA = ref<string>("");
+const imgB = ref<string>("");
+const idx = ref(0);
+
+function stepCarousel() {
+  if (heroImages.length === 0) return;
+  idx.value = (idx.value + 1) % heroImages.length;
+  if (showA.value) {
+    imgB.value = heroImages[idx.value];
+    console.log(heroImages);
+
+    showA.value = false;
+  } else {
+    imgA.value = heroImages[idx.value];
+    showA.value = true;
+  }
+  currentIcon.value = heroImages[idx.value];
+}
 
 function applyPointerVars(x: number, y: number) {
   // Normalize to 0..1 then to -1..1
@@ -94,6 +127,16 @@ onMounted(() => {
 
   el.addEventListener("pointermove", onPointerMove, { passive: true });
   el.addEventListener("touchmove", onTouchMove, { passive: true });
+
+  // Init carousel
+  if (heroImages.length > 0) {
+    imgA.value = heroImages[0];
+    imgB.value = heroImages[1 % heroImages.length];
+    showA.value = true;
+    currentIcon.value = heroImages[0];
+    // rotate every 3.6s
+    carouselTimer = window.setInterval(stepCarousel, 3600);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -102,6 +145,7 @@ onBeforeUnmount(() => {
   el.removeEventListener("pointermove", onPointerMove as any);
   el.removeEventListener("touchmove", onTouchMove as any);
   if (raf) cancelAnimationFrame(raf);
+  if (carouselTimer) window.clearInterval(carouselTimer);
 });
 </script>
 
@@ -132,10 +176,10 @@ onBeforeUnmount(() => {
 }
 
 .hero__logo-wrap {
-  display: flex;
-  justify-content: center;
-  padding-top: 28px;
-  padding-bottom: 20px;
+  display: grid;
+  place-items: center;
+  padding-top: 24px;
+  padding-bottom: 12px;
 }
 
 .hero__logo {
@@ -239,10 +283,28 @@ onBeforeUnmount(() => {
   display: none;
 }
 .hero__mockup img {
-  width: 100%;
-  height: auto;
+  display: block;
+}
+.mockup-fader {
+  position: relative;
   border-radius: 16px;
+  overflow: hidden;
   box-shadow: var(--shadow-lg);
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 240px;
+}
+.fade-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.fade-img.is-visible {
+  opacity: 1;
 }
 
 @media (min-width: 1024px) {
