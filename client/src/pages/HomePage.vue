@@ -1,54 +1,12 @@
 <template>
   <div>
     <main>
-      <!-- HERO -->
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="container hero-grid">
-          <!-- Teaser de funcionalidade -->
-          <!-- <div class="relative">
-            <span
-              class="absolute -right-3 -top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
-            >
-              EM BREVE
-            </span>
-            <p class="mt-1">
-              Em breve: Feed de lances em vídeo (estilo TikTok) com <strong>premiações</strong> para as quadras e
-              clientes parceiros.
-            </p>
-          </div> -->
+      <!-- HERO (redesigned) -->
+      <HeroRedesign />
 
-          <div class="hero-copy">
-            <h1 id="hero-title">Grava Nóis</h1>
-            <p class="hero-subtitle">Seu lance, sua história.</p>
-            <p>
-              No esporte amador, cada jogada é única. O <strong>Grava Nóis</strong> nasceu para garantir que seus
-              momentos mais incríveis nunca se percam.
-            </p>
-            <div class="flex flex-wrap gap-3 justify-center sm:justify-around">
-              <v-btn href="#how" variant="outlined" class="w-full sm:w-auto mr-2">Ver como funciona</v-btn>
-              <v-btn href="#mission" variant="outlined" class="w-full sm:w-auto">Nossa missão</v-btn>
-            </div>
-          </div>
-          <div class="hero-media" aria-hidden="true">
-            <div class="media-card">
-              <img
-                class="media-img"
-                :src="IMAGES.hero"
-                alt="Jogadores em quadra com gol ao fundo"
-                loading="eager"
-                fetchpriority="high"
-              />
-              <div class="media-label">Replays em ação</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div
+      <!-- <div
         class="relative overflow-hidden px-6 lg:px-12 mx-auto max-w-4xl [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
-      >
-        <!-- dica: o mask-image cria o fade nas bordas; pode usar pseudo-elemento se preferir -->
-      </div>
+      ></div> -->
 
       <v-divider :thickness="4" color="success"></v-divider>
       <!-- Patrocinadores -->
@@ -449,6 +407,10 @@ import {
   Target,
   Banknote,
 } from "lucide-vue-next";
+
+import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
+import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
+import HeroRedesign from '@/components/HeroRedesign.vue';
 
 import hero from "@/assets/images/hero-about.webp";
 import soccer from "@/assets/images/society-about.webp";
