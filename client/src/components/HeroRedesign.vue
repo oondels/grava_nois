@@ -1,5 +1,5 @@
 <template>
-  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ '--hero-bg-image': `url(${heroBg})` }">
+  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${BasketBall})` }">
     <div class="hero__container">
       <!-- Top-centered symbol-only logo -->
       <div class="hero__logo-wrap parallax parallax--logo">
@@ -38,7 +38,8 @@
 <script setup lang="ts">
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
-import HeroBG from "@/assets/images/HeroBG.webp";
+import HeroBG from "@/assets/hero_sec_imgs/basket_ball.jpg";
+import BasketBall from "@/assets/hero_sec_imgs/basket_ball.png";
 
 const logoSrc = LogoSymbol;
 const mockupSrc = Mockup;
@@ -108,7 +109,6 @@ onBeforeUnmount(() => {
 .hero {
   /* Background image and safe defaults */
   background-color: #0a0a0a;
-  background-image: var(--hero-bg-image);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -297,8 +297,8 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: -10%;
   pointer-events: none;
-  background: radial-gradient(320px 320px at var(--px, 50%) var(--py, 50%), rgba(255, 255, 255, 0.05), transparent 60%);
-  opacity: 0.7;
+  background: radial-gradient(460px 460px at var(--px, 50%) var(--py, 50%), rgba(255, 255, 255, 0.16), transparent 65%);
+  opacity: 0.85;
   transition: opacity 0.2s ease;
   z-index: 0;
 }
@@ -310,13 +310,12 @@ onBeforeUnmount(() => {
   inset: 0;
   pointer-events: none;
   background: radial-gradient(
-      380px 380px at var(--px, 50%) var(--py, 50%),
-      rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 0) 32%,
-      rgba(0, 0, 0, 0.55) 60%,
-      rgba(0, 0, 0, 0.72) 100%
-    ),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35));
+    520px 520px at var(--px, 50%) var(--py, 50%),
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0) 40%,
+    rgba(0, 0, 0, 0.55) 62%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
   z-index: 0;
 }
 
