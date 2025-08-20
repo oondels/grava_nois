@@ -4,7 +4,7 @@
 
 - **Arquivos principais**: `video_core.py` (núcleo) e `capture_service.py` (serviço + worker)
 - **Dependências**: Python 3.10+, FFmpeg/ffprobe, MoviePy v2
-- **Fluxo**: _Captura contínua_ → _Highlight on-demand_ → _Fila_ → _Watermark + Thumbnail_ → _(próximo estágio: upload)_
+- **Fluxo**: _Captura contínua_ → _Highlight on-demand_ → _Fila_ → _Watermark + Thumbnail_ → _Registro no backend (URL assinada)_
 
 ---
 
@@ -29,7 +29,8 @@ ENTER/GPIO → build_highlight() concatena os últimos (pré+pos) → recorded_c
              ▼                 │         ▼
        20_highlights_wm/  ◄────┴─────────┘
              │
-             └── (futuro) uploader → backend/storage
+             ├── POST /api/videos/metadados → URL assinada
+             └── (próx.) uploader usa URL → storage
 ```
 
 **Diretórios (por padrão):**
@@ -96,6 +97,7 @@ Observação: `stdout`/`stderr` do FFmpeg estão direcionados para `DEVNULL` par
    - Aplica watermark com MoviePy v2 para um `*.wm_tmp.mp4` e faz `replace()` atômico para `20_highlights_wm/highlight_*.mp4`.
    - Gera `20_highlights_wm/highlight_*.jpg` (thumbnail).
    - Atualiza o JSON na fila com `status="watermarked"`, caminhos de saída e `meta_wm` (ffprobe do arquivo final).
+   - Envia POST `GN_API_BASE/api/videos/metadados` com metadados do arquivo final; salva a resposta no sidecar em `remote_registration`.
    - Remove o `.mp4` original da fila (o `.json` permanece como registro de processamento).
 6. Em caso de erro, incrementa `attempts`; com `attempts >= max_attempts`, move `.mp4` e `.json` para `90_failed/` e grava `*.error.txt`; caso contrário, mantém na fila com `status="queued_retry"` e backoff linear.
 
@@ -296,3 +298,34 @@ Worker de varredura de diretório para aplicar watermark e gerar thumbnail.
 ## 10) Licença e créditos
 
 MVP interno do projeto **Grava Nóis**. Uso restrito ao time até formalização de licença.
+
+---
+
+## 11) Integração com Backend (registro de metadados)
+
+Após a geração de watermark e thumbnail, o worker executa uma requisição para registrar a intenção de criar o clipe (sem fazer upload do vídeo).
+
+- Endpoint: `POST {API_BASE}/api/videos/metadados`
+- Requisição: JSON com metadados principais do arquivo final (`file_name`, `size_bytes`, `sha256`, `mime_type`, `meta` com `{codec,width,height,fps,duration_sec}`, além de `pre_seconds`/`post_seconds`).
+- Resposta esperada:
+
+```
+{
+  "clip_id": "nanoid-clip-id",
+  "contract_type": "per_video",
+  "storage_path": "temp/uuid-client/uuid-venue/nanoid-clip-id.mp4",
+  "upload_url": "https://...signed-url...",
+  "expires_hint_hours": 12
+}
+```
+
+- Persistência: o retorno é salvo em `queue_raw/<stem>.json` sob `remote_registration.response`, com `status` e timestamps.
+
+### Configuração
+
+Defina variáveis de ambiente antes de rodar o serviço:
+
+- `GN_API_BASE` (ou `API_BASE_URL`): base do backend (ex.: `http://localhost:3000`).
+- `GN_API_TOKEN` (ou `API_TOKEN`): token JWT/Bearer se a rota exigir autenticação.
+
+Se `GN_API_BASE` não for definido, o passo de registro é ignorado e anotado como `remote_registration.status = "skipped"` no sidecar.
