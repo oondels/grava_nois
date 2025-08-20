@@ -43,6 +43,67 @@ AppDataSource.initialize()
       app.use(express.json())
       const upload = multer({ storage: multer.memoryStorage() });
 
+      // MVP upload endpoint receiving a video file and metadata
+      // Expects multipart/form-data with fields:
+      // - venue_id: string
+      // - client_id: string
+      // - meta: object (JSON string)
+      // - capturated_at: string (ISO date)
+      // - video: file (the uploaded video)
+      app.post('/video/mvp/', upload.single('video'), async (req: Request, res: Response) => {
+        try {
+          // Ensure a file was sent
+          const file = req.file;
+          if (!file) {
+            res.status(400).json({ error: "Missing video file. Send as field 'video'." });
+            return;
+          }
+
+          // Parse and validate body fields. `meta` may arrive as JSON string in multipart.
+          const raw = req.body || {};
+          let parsedMeta: unknown = raw.meta;
+          if (typeof parsedMeta === 'string') {
+            try { parsedMeta = JSON.parse(parsedMeta); } catch { /* keep as string to fail schema */ }
+          }
+
+          const bodySchema = z.object({
+            venue_id: z.string().min(1, 'venue_id is required'),
+            client_id: z.string().min(1, 'client_id is required'),
+            meta: z.record(z.string(), z.any()).default({}),
+            capturated_at: z.string().min(1, 'capturated_at is required'),
+          });
+
+          const parsed = bodySchema.safeParse({
+            venue_id: raw.venue_id,
+            client_id: raw.client_id,
+            meta: parsedMeta,
+            capturated_at: raw.capturated_at,
+          });
+
+          if (!parsed.success) {
+            res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
+            return;
+          }
+
+          const { venue_id, client_id, meta, capturated_at } = parsed.data;
+
+          // For MVP, we just acknowledge the upload and echo info back.
+          // Future: persist to storage and DB, publish to queue, etc.
+          res.status(201).json({
+            message: 'Video received',
+            file: {
+              originalname: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+            },
+            data: { venue_id, client_id, meta, capturated_at },
+          });
+        } catch (err) {
+          console.error('Error in /video/mvp/ upload:', err);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
+
       // Initialize Supabase client with service role key (secure, only on server)
       const supabase = createClient(
         config.supabaseUrl,
