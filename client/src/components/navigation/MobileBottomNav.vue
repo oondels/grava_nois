@@ -1,24 +1,28 @@
+<!-- TODO: Adicionar efeito de menu sumir ao scrollar para baixo -->
 <template>
   <nav
-    class="fixed bottom-0 left-0 right-0 z-40 border-t border-black/10 dark:border-white/10 backdrop-blur-md bg-white/80 dark:bg-neutral-900/70"
+    class="fixed bottom-3 left-3 right-3 z-40 border-t border-black/10 dark:border-white/10 backdrop-blur-md bg-white dark:bg-neutral-900/70 rounded-xl"
     role="navigation"
     aria-label="Navegação inferior"
   >
-  <div class="h-15 flex items-stretch justify-around align-center px-1 pb-[env(safe-area-inset-bottom)]">
-      <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="drop-shadow-sm w-auto h-8 sm:h-10 md:h-12 lg:h-14 xl:h-16" />
+    <div class="h-15 flex items-stretch justify-around align-center px-1 pb-[env(safe-area-inset-bottom)]">
+      <img
+        :src="LogoGravaNoisSimbol"
+        alt="Símbolo Logo Grava Nóis"
+        class="drop-shadow-sm w-auto h-8 sm:h-10 md:h-12 lg:h-14 xl:h-16"
+      />
+
       <router-link
-      v-for="item in visibleItems"
-      :key="item.to"
-      :to="item.disabled ? '#' : item.to"
-      class="relative flex-1 flex items-center justify-center group"
-      :aria-disabled="item.disabled || undefined"
-      :tabindex="item.disabled ? -1 : 0"
-      @click.prevent="item.disabled ? null : null"
+        v-for="item in visibleItems"
+        :key="item.to"
+        :to="item.disabled ? '#' : item.to"
+        class="relative flex-1 flex items-center justify-center group"
+        :aria-disabled="item.disabled || undefined"
+        :tabindex="item.disabled ? -1 : 0"
+        @click.prevent="item.disabled ? null : null"
       >
-      <div
-          class="inline-flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition
-                 hover:bg-black/5 dark:hover:bg-white/10 active:scale-[.98]
-                 aria-[current=page]:text-green-600 aria-[current=page]:dark:text-green-400"
+        <div
+          class="inline-flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition hover:bg-black/5 dark:hover:bg-white/10 active:scale-[.98] aria-[current=page]:text-green-600 aria-[current=page]:dark:text-green-700"
           :aria-current="isActive(item.to) ? 'page' : undefined"
         >
           <component :is="item.icon" class="w-5 h-5" aria-hidden="true" />
@@ -39,6 +43,8 @@
           breve
         </span>
       </router-link>
+
+      <MenuIcon color="black" class="drop-shadow-sm sm:h-10 md:h-12 lg:h-14 xl:h-16 mr-2" />
     </div>
   </nav>
 
@@ -49,7 +55,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { Home, Download, HelpCircle, LogInIcon } from "lucide-vue-next";
+import { Home, Download, HelpCircle, LogInIcon, MenuIcon, MenuSquare } from "lucide-vue-next";
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 
@@ -64,9 +70,9 @@ type NavItem = {
 
 const navigationItems: NavItem[] = [
   { label: "Home", to: "/", icon: Home, disabled: false },
-  { label: "Downloads", to: "/downloads", icon: Download, disabled: true },
-  { label: "Suporte", to: "/suporte", icon: HelpCircle, disabled: true },
-  { label: "Login", to: "/login", icon: LogInIcon, disabled: true },
+  // { label: "Downloads", to: "/downloads", icon: Download, disabled: true },
+  // { label: "Suporte", to: "/suporte", icon: HelpCircle, disabled: true },
+  // { label: "Login", to: "/login", icon: LogInIcon, disabled: true },
 ];
 
 const visibleItems = computed(() => navigationItems);
@@ -78,6 +84,8 @@ const isActive = (to: string) => {
 
 <style scoped>
 @media (min-width: 768px) {
-  nav { display: none; }
+  nav {
+    display: none;
+  }
 }
 </style>

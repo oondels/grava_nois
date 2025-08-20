@@ -43,4 +43,23 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
   --shadow-md: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
   --shadow-lg: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+
+  /* Typography tokens */
+  --font-heading: "Sora", "Poppins", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --font-body: "Inter", "Manrope", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+
+  /* Hero tokens */
+  --hero-max-w: 1200px;
+  --hero-padding: 24px;
+  --hero-title-size-desktop: 48px;
+  --hero-title-size-mobile: 32px;
+  --hero-body-size: 16px;
+  --btn-radius: 10px;
+
+  /* Backgrounds with AA/AAA-friendly contrast on dark */
+  --hero-bg: radial-gradient(1000px 580px at 20% -20%, rgba(16, 185, 129, 0.15), transparent 60%),
+              radial-gradient(900px 500px at 85% 10%, rgba(56, 189, 248, 0.12), transparent 60%),
+              linear-gradient(180deg, #0b0c0f 0%, #0a0a0a 100%);
+  --hero-ink: #ffffff;
+  --hero-muted: #cbd5e1;
 }
