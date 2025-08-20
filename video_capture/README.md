@@ -40,6 +40,19 @@ ENTER/GPIO → build_highlight() concatena os últimos (pré+pos) → recorded_c
 - `20_highlights_wm/` — saída final do worker (com watermark + thumbnail).
 - `90_failed/` — entrada que falhou após retentativas.
 
+### 1.1) Fonte de vídeo (RTSP x V4L2)
+
+O código atual está configurado para fonte **RTSP (câmera dedicada)** dentro de `start_ffmpeg()` em `video_core.py`.
+
+- Para RTSP, edite a URL dentro do array `ffmpeg_cmd` (já ativo no código):
+
+  - Linha com `-i` → `rtsp://<user>:<pass>@<host>:<port>/cam/realmonitor?channel=1&subtype=0`
+  - Ajuste credenciais/host/porta conforme sua câmera.
+
+- Para usar a câmera local (V4L2, ex.: `/dev/video0`), use o bloco comentado “Old -> Camera do notebook” no mesmo método, e comente o bloco RTSP. O campo `CaptureConfig.device` é respeitado nesse modo.
+
+Observação: `stdout`/`stderr` do FFmpeg estão direcionados para `DEVNULL` para reduzir ruído; habilite logs se necessário.
+
 ---
 
 ## 2) Como rodar
@@ -72,6 +85,19 @@ ENTER/GPIO → build_highlight() concatena os últimos (pré+pos) → recorded_c
 5. **Gerar highlight**: pressione **ENTER/GPIO**. O sistema concatena **40s antes** + **10s depois** (ajustável) e enfileira para o worker.
 
 > Dica: para produção via systemd, defina WorkingDirectory, direcione stdout/stderr para logs e garanta que o serviço finalize com SIGTERM (o worker e a thread indexadora fazem shutdown limpo).
+
+### 2.1) Fluxo concreto (passo a passo)
+
+1. Recorder (FFmpeg) grava segmentos `buffer%06d.mp4` em `buffer_dir` a cada `seg_time` segundo(s).
+2. `SegmentBuffer` (thread) indexa e mantém apenas os últimos `max_buffer_seconds / seg_time` segmentos, removendo excedentes do disco.
+3. Ao pressionar ENTER, `build_highlight()` aguarda `post_seconds`, seleciona `pre_seconds + post_seconds` de segmentos, cria `to_concat_*.txt` e concatena com `ffmpeg -f concat -c copy` para `clips_dir/highlight_*.mp4`.
+4. `enqueue_clip()` move o highlight para `queue_dir` e grava sidecar JSON com metadados de `ffprobe` e hash `sha256`.
+5. `ProcessingWorker` varre `queue_dir` periodicamente, faz lock com `.lock`, e para cada item:
+   - Aplica watermark com MoviePy v2 para um `*.wm_tmp.mp4` e faz `replace()` atômico para `20_highlights_wm/highlight_*.mp4`.
+   - Gera `20_highlights_wm/highlight_*.jpg` (thumbnail).
+   - Atualiza o JSON na fila com `status="watermarked"`, caminhos de saída e `meta_wm` (ffprobe do arquivo final).
+   - Remove o `.mp4` original da fila (o `.json` permanece como registro de processamento).
+6. Em caso de erro, incrementa `attempts`; com `attempts >= max_attempts`, move `.mp4` e `.json` para `90_failed/` e grava `*.error.txt`; caso contrário, mantém na fila com `status="queued_retry"` e backoff linear.
 
 ---
 
