@@ -269,7 +269,7 @@ import {
   Banknote,
 } from "lucide-vue-next";
 import HeroSection from '@/components/home-sections/HeroSection.vue';
-import HowItWorksSection from "@/components/home-sections/HowItWorksSection.vue";
+import HowItWorksSection from '@/components/home-sections/HowItWorksSection.vue';
 
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
