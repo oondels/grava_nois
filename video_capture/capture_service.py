@@ -14,6 +14,7 @@ from video_core import (
     generate_thumbnail,
     ffprobe_metadata,
     register_clip_metadados,
+    upload_file_to_signed_url,
 )
 from video_core import _sha256_file  # util interno
 
@@ -181,9 +182,11 @@ class ProcessingWorker:
                     "meta": meta.get("meta_wm") or {},
                     "sha256": sha256_wm,
                 }
+                print("[worker] Enviando registro de metadados ao backend…")
                 resp = register_clip_metadados(
                     api_base, payload, token=api_token, timeout=15.0
                 )
+                print(f"[worker] Resposta do backend: {json.dumps(resp)[:300]}")
                 meta.setdefault("remote_registration", {})
                 meta["remote_registration"].update(
                     {
@@ -195,6 +198,52 @@ class ProcessingWorker:
                 # status opcional: manter "watermarked" e anotar registro remoto
                 meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
                 print(f"[worker] registro remoto OK: clip_id={resp.get('clip_id')}")
+
+                # 3.2) upload para a URL assinada, se fornecida
+                upload_url = (resp or {}).get("upload_url")
+                if upload_url:
+                    print("[worker] Iniciando upload para URL assinada…")
+                    t0 = time.time()
+                    try:
+                        status_code, reason = upload_file_to_signed_url(
+                            upload_url, out_mp4, content_type="video/mp4", extra_headers=None, timeout=180.0
+                        )
+                        dt_ms = int((time.time() - t0) * 1000)
+                        meta.setdefault("remote_upload", {})
+                        meta["remote_upload"].update(
+                            {
+                                "status": "uploaded" if 200 <= status_code < 300 else "failed",
+                                "http_status": status_code,
+                                "reason": reason,
+                                "attempted_at": datetime.now(timezone.utc).isoformat(),
+                                "duration_ms": dt_ms,
+                                "file_size": size_wm,
+                            }
+                        )
+                        meta_path.write_text(
+                            json.dumps(meta, ensure_ascii=False, indent=2)
+                        )
+                        print(
+                            f"[worker] upload finalizado: HTTP {status_code} {reason} em {dt_ms} ms"
+                        )
+                    except Exception as e:
+                        dt_ms = int((time.time() - t0) * 1000)
+                        meta.setdefault("remote_upload", {})
+                        meta["remote_upload"].update(
+                            {
+                                "status": "failed",
+                                "error": str(e),
+                                "attempted_at": datetime.now(timezone.utc).isoformat(),
+                                "duration_ms": dt_ms,
+                                "file_size": size_wm,
+                            }
+                        )
+                        meta_path.write_text(
+                            json.dumps(meta, ensure_ascii=False, indent=2)
+                        )
+                        print(f"[worker] upload falhou: {e}")
+                else:
+                    print("[worker] Nenhuma upload_url na resposta; pulando upload.")
             except Exception as e:
                 meta.setdefault("remote_registration", {})
                 meta["remote_registration"].update(

@@ -8,6 +8,8 @@ from typing import Deque, List, Optional, Tuple, Dict, Any
 import urllib.request
 import urllib.error
 import ssl
+import http.client
+from urllib.parse import urlparse
 
 
 # ---- CONFIG & TYPES ---------------------------------------------------------
@@ -392,3 +394,72 @@ def register_clip_metadados(
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return _http_post_json(url, metadados, headers=headers, timeout=timeout)
+
+
+# ---- Signed URL upload ------------------------------------------------------
+def upload_file_to_signed_url(
+    upload_url: str,
+    file_path: Path,
+    content_type: str = "video/mp4",
+    extra_headers: Optional[Dict[str, str]] = None,
+    timeout: float = 120.0,
+) -> Tuple[int, str]:
+    """
+    Envia o arquivo via HTTP PUT para uma URL assinada (S3/GCS/etc).
+
+    Retorna (status_code, reason). Lança exceção em erros de conexão.
+    """
+    parsed = urlparse(upload_url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"URL inválida: {upload_url}")
+
+    # Prepara conexão
+    conn_cls = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
+    netloc = parsed.netloc
+    path_qs = parsed.path or "/"
+    if parsed.query:
+        path_qs += f"?{parsed.query}"
+
+    file_size = file_path.stat().st_size
+
+    # Debug básico
+    print(f"[upload] URL: {parsed.scheme}://{parsed.netloc}{parsed.path}...")
+    print(f"[upload] Tamanho: {file_size} bytes | Tipo: {content_type}")
+
+    headers = {
+        "Content-Type": content_type,
+        "Content-Length": str(file_size),
+    }
+    if extra_headers:
+        headers.update(extra_headers)
+
+    conn = conn_cls(netloc, timeout=timeout)
+    try:
+        conn.putrequest("PUT", path_qs)
+        for k, v in headers.items():
+            conn.putheader(k, v)
+        conn.endheaders()
+
+        with file_path.open("rb") as f:
+            # Envia em blocos para evitar alto uso de memória
+            while True:
+                chunk = f.read(1024 * 1024)
+                if not chunk:
+                    break
+                conn.send(chunk)
+
+        resp = conn.getresponse()
+        # Debug de resposta
+        print(f"[upload] HTTP {resp.status} {resp.reason}")
+        try:
+            body = resp.read(512)
+            if body:
+                print(f"[upload] Resumo corpo: {body[:200]!r}")
+        except Exception:
+            pass
+        return resp.status, resp.reason
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
