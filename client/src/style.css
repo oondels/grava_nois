@@ -100,3 +100,24 @@ h1 {
     background-color: #f9f9f9;
   }
 }
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  } /* move 50% pois duplicaremos os itens */
+}
+
+/* opcional: suaviza em telas de baixa taxa de atualização */
+.marquee-track {
+  will-change: transform;
+}
+
+/* acessibilidade: pare a animação para quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+  }
+}
