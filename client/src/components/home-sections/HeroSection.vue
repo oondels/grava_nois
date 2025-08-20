@@ -20,6 +20,12 @@
           <h1 id="hero-title" class="hero__title">Grave seus melhores lances esportivos com um clique</h1>
           <p class="hero__subtitle">Grava Nóis - Seu lance, nossa história.</p>
 
+          <span class="d-flex justify-center align-center">
+            <a href="#how">
+              <ChevronsDown role="button" class="my-2" :size="28" />
+            </a>
+          </span>
+
           <div class="hero__ctas">
             <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"> Veja como funciona </a>
             <a href="/pricing" class="btn btn--secondary" role="button" aria-label="View pricing"> Contrate </a>
@@ -48,7 +54,8 @@
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
 import HeroBG from "@/assets/images/soccer_bg.jpg";
-import BasketBall from "@/assets/hero_sec_imgs/basket_ball.png";
+import BasketBall from "@/assets/bak/basket_ball.png";
+import { ChevronsDown } from "lucide-vue-next";
 
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
 const heroModules = import.meta.glob("@/assets/hero_sec_imgs/*.{png,jpg,jpeg,webp}", { eager: true });
@@ -91,6 +98,51 @@ let targetX = 0.5;
 let targetY = 0.5;
 let vx = 0;
 let vy = 0;
+
+// --- Scroll damping contínuo (sem jump) na Hero ---
+// Ajuste os fatores para calibrar o "peso" da rolagem
+const DAMPING_FACTOR_WHEEL = 0.32;
+const DAMPING_FACTOR_TOUCH = 0.4;
+const DAMP_ZONE_EXTRA_PX = 60;
+const ALLOW_UPWARD_DAMP = true;
+let reduceMotionPref = false;
+let lastTouchYForDamp: number | null = null;
+let touchStartListenerDamp: ((e: TouchEvent) => void) | null = null;
+let touchMoveListenerDamp: ((e: TouchEvent) => void) | null = null;
+
+function inDampZone() {
+  const el = rootEl.value;
+  if (!el) return false;
+  const y = window.scrollY || window.pageYOffset;
+  return y >= el.offsetTop && y <= el.offsetTop + el.offsetHeight + DAMP_ZONE_EXTRA_PX;
+}
+
+function applyDampedScroll(dy: number, factor: number) {
+  window.scrollTo(0, (window.scrollY || 0) + dy * factor);
+}
+
+function wheelHandler(e: WheelEvent) {
+  if (reduceMotionPref || !inDampZone()) return;
+  e.preventDefault();
+  const d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * window.innerHeight : e.deltaY;
+  applyDampedScroll(d, DAMPING_FACTOR_WHEEL);
+}
+
+function onTouchStartDamp(t: Touch) {
+  lastTouchYForDamp = t.clientY;
+}
+function onTouchMoveDamp(t: Touch, e: TouchEvent) {
+  if (!inDampZone() || lastTouchYForDamp == null) return;
+  const dy = lastTouchYForDamp - t.clientY;
+  const up = dy < 0;
+  if (!ALLOW_UPWARD_DAMP && up) {
+    lastTouchYForDamp = t.clientY;
+    return;
+  }
+  e.preventDefault();
+  applyDampedScroll(dy, DAMPING_FACTOR_TOUCH);
+  lastTouchYForDamp = t.clientY;
+}
 
 function stepCarousel() {
   if (heroImages.length === 0) return;
@@ -276,6 +328,18 @@ onMounted(() => {
   el.addEventListener("touchstart", onTouchStart, { passive: false });
   el.addEventListener("touchmove", onTouchMove, { passive: false });
 
+  // Scroll damping (wheel/touch) — sem jump automático
+  reduceMotionPref = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.addEventListener("wheel", wheelHandler, { passive: false } as AddEventListenerOptions);
+  touchStartListenerDamp = (evt: TouchEvent) => {
+    if (evt.touches && evt.touches[0]) onTouchStartDamp(evt.touches[0]);
+  };
+  touchMoveListenerDamp = (evt: TouchEvent) => {
+    if (evt.touches && evt.touches[0]) onTouchMoveDamp(evt.touches[0], evt);
+  };
+  el.addEventListener("touchstart", touchStartListenerDamp, { passive: true });
+  el.addEventListener("touchmove", touchMoveListenerDamp, { passive: false });
+
   // Attempt enabling gyro if allowed without permission (Android/Chrome)
   try {
     // Some browsers fire orientation without explicit permission
@@ -312,6 +376,9 @@ onBeforeUnmount(() => {
   el.removeEventListener("pointermove", onPointerMove as any);
   el.removeEventListener("touchstart", onTouchStart as any);
   el.removeEventListener("touchmove", onTouchMove as any);
+  el.removeEventListener("wheel", wheelHandler as any);
+  if (touchStartListenerDamp) el.removeEventListener("touchstart", touchStartListenerDamp as any);
+  if (touchMoveListenerDamp) el.removeEventListener("touchmove", touchMoveListenerDamp as any);
   if (raf) cancelAnimationFrame(raf);
   if (carouselTimer) window.clearInterval(carouselTimer);
   if (animRaf) cancelAnimationFrame(animRaf);

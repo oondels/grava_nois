@@ -1,42 +1,14 @@
 <template>
   <div>
     <main>
-      <!-- HERO (redesigned) -->
-      <HeroRedesign />
-
-      <!-- <div
-        class="relative overflow-hidden px-6 lg:px-12 mx-auto max-w-4xl [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
-      ></div> -->
+      <!-- HERO -->
+      <HeroSection />
 
       <v-divider :thickness="4" color="success"></v-divider>
-      <!-- Patrocinadores -->
-      <div class="mt-4 flex gap-8 flex-nowrap marquee-track animate-[marquee_var(--dur,60s)_linear_infinite]">
-        <!-- Conjunto A -->
-        <ul class="flex gap-8 flex-nowrap">
-          <li class="h-12 w-max">
-            <img class="h-12 w-auto" :src="hero" alt="Mozilla" draggable="false" />
-          </li>
-          <li class="h-12 w-max">
-            <img class="h-12 w-auto" :src="soccer" alt="GitHub" draggable="false" />
-          </li>
-          <li class="h-12 w-max">
-            <img class="h-12 w-auto" :src="volleyball" alt="1Password" draggable="false" />
-          </li>
-        </ul>
+      
+      <HowItWorksSection />
 
-        <!-- Conjunto B -->
-        <ul class="flex gap-8 flex-nowrap" aria-hidden="true">
-          <li class="h-12 w-max">
-            <img class="h-12 w-auto" :src="hero" alt="Mozilla" draggable="false" />
-          </li>
-          <li class="h-12 w-max">
-            <img class="h-12 w-auto" :src="soccer" alt="GitHub" draggable="false" />
-          </li>
-          <li class="h-12 w-max">
-            <img class="h-12 w-auto" :src="volleyball" alt="1Password" draggable="false" />
-          </li>
-        </ul>
-      </div>
+      <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- MISSION -->
       <section id="mission" class="section" aria-labelledby="mission-title">
@@ -55,118 +27,7 @@
       </section>
 
       <v-divider :thickness="4" color="success"></v-divider>
-
-      <!-- Como Funciona -->
-      <section id="how" class="section alt" aria-labelledby="how-title">
-        <div class="container">
-          <div class="d-flex justify-center align-center">
-            <h2 id="how-title" class="section-title">Como funciona?</h2>
-          </div>
-          <ul class="steps">
-            <li class="step-card">
-              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-                <VideoIcon />
-                <div class="logo-dot ml-3" aria-hidden="true"></div>
-              </div>
-              <h3>Câmeras atentas</h3>
-              <p>Captura contínua em Full HD mantendo um buffer circular de alguns minutos.</p>
-            </li>
-
-            <li class="step-card">
-              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-                <span class="mdi mdi-gesture-tap-button fs-"></span>
-              </div>
-              <div class="step-icon" aria-hidden="true"></div>
-              <h3>Botão do lance</h3>
-              <p>No momento do lance você aperta o botão físico ou futuro atalho no app.</p>
-            </li>
-
-            <li class="step-card">
-              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-                <ClockPlus />
-              </div>
-              <h3>Recorte inteligente</h3>
-              <p>O sistema salva automaticamente segundos antes e depois, totalizando 40 segundos.</p>
-            </li>
-
-            <li class="step-card">
-              <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-                <CloudDownload />
-              </div>
-              <h3>Processo & plataforma</h3>
-              <p>Transcodifica, envia e disponibiliza para assistir, compartilhar e baixar.</p>
-            </li>
-          </ul>
-
-          <v-btn size="small" variant="text" color="primary" class="mt-2" @click="showHowDialog = true">
-            Mais Detalhes
-          </v-btn>
-        </div>
-      </section>
-
-      <!-- Dialog explicação detalhada -->
-      <v-dialog v-model="showHowDialog" max-width="680" :scrim="true" transition="dialog-bottom-transition">
-        <v-card
-          class="relative bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-2xl rounded-2xl overflow-hidden"
-        >
-          <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-sky-400 to-emerald-500"></div>
-          <v-card-title
-            class="flex items-center justify-between px-5 py-4 border-b border-zinc-200/70 dark:border-white/10"
-          >
-            <span class="text-base font-semibold tracking-tight text-zinc-800 dark:text-zinc-100"
-              >Como o fluxo funciona na prática</span
-            >
-          </v-card-title>
-          <v-card-text class="pt-5 pb-2 px-5">
-            <ol class="list-decimal pl-5 space-y-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-              <li>
-                <strong class="font-semibold text-zinc-900 dark:text-white">Captura contínua:</strong> as câmeras gravam
-                sem parar usando um buffer que é constantemente sobrescrito.
-              </li>
-              <li>
-                <strong class="font-semibold text-zinc-900 dark:text-white">Ação do Jogador:</strong> o botão físico
-                fica posicionado nas laterias do campo, o jogador aciona o sistema no momento do clique.
-              </li>
-              <li>
-                <strong class="font-semibold text-zinc-900 dark:text-white">Recorte:</strong> o serviço de captura
-                extrai a gravação no intervalo [30s pré] até [10s pós] (configurável).
-              </li>
-              <li>
-                <strong class="font-semibold text-zinc-900 dark:text-white">Processamento:</strong> normaliza, aplica
-                cortes, gera thumbnail e aplica marca d'água do campo (se desejável).
-              </li>
-              <li>
-                <strong class="font-semibold text-zinc-900 dark:text-white">Upload resiliente:</strong> envia em blocos
-                com retomada; gera URL segura para download.
-              </li>
-              <li>
-                <strong class="font-semibold text-zinc-900 dark:text-white">Plataforma:</strong> o clip aparece na sua
-                lista, podendo ser marcado como favorito, compartilhado ou baixado.
-              </li>
-              <li>
-                <strong class="font-semibold text-zinc-900 dark:text-white">Segurança:</strong> criptografia em
-                trânsito, hash de integridade e políticas de expiração configuráveis.
-              </li>
-            </ol>
-            <p class="mt-6 text-xs md:text-sm text-zinc-500 dark:text-zinc-400">
-              Tem outra dúvida? Veja também a seção de
-              <a
-                href="#faq"
-                @click.prevent="scrollToFaqFromDialog"
-                class="text-emerald-600 dark:text-emerald-400 underline decoration-dotted hover:decoration-solid focus:outline-none focus:ring-2 focus:ring-emerald-500/50 rounded-sm"
-              >
-                Perguntas Frequentes </a
-              >.
-            </p>
-          </v-card-text>
-          <v-card-actions
-            class="px-5 py-3 flex justify-end gap-2 bg-zinc-50/70 dark:bg-white/5 border-t border-zinc-200/70 dark:border-white/10"
-          >
-            <v-btn color="danger" variant="outlined" class="font-medium" @click="showHowDialog = false">Fechar</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
+      
       <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- DIFFERENTIALS -->
@@ -407,10 +268,11 @@ import {
   Target,
   Banknote,
 } from "lucide-vue-next";
+import HeroSection from '@/components/home-sections/HeroSection.vue';
+import HowItWorksSection from "@/components/home-sections/HowItWorksSection.vue";
 
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
-import HeroRedesign from '@/components/HeroRedesign.vue';
 
 import hero from "@/assets/images/hero-about.webp";
 import soccer from "@/assets/images/society-about.webp";
@@ -457,7 +319,7 @@ onMounted(() => window.addEventListener("scroll", onScroll));
 onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 </script>
 
-<style scoped>
+<style>
 .about {
   min-height: 100%;
   background: var(--bg);
