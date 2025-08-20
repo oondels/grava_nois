@@ -1,0 +1,13 @@
+{
+  "name": "Grava Nóis",
+  "short_name": "GravaNóis",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "description": "Replays esportivos instantâneos — capture, compartilhe e baixe seus melhores lances.",
+  "lang": "pt-BR",
+  "dir": "ltr"
+}
+
