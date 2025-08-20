@@ -111,7 +111,7 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {ref} from "vue"
 import { VideoIcon, ClockPlus, CloudDownload } from "lucide-vue-next";
 
