@@ -6,6 +6,13 @@ const routes = [
     path: "/",
     component: () => import("@/pages/HomePage.vue"),
   },
+  {
+    path: "/videos",
+    name: "Videos",
+    // Temporariamente público; futuramente use meta: { requiresAuth: true }
+    component: () => import("@/pages/VideosPage.vue"),
+    meta: { requiresAuth: false },
+  },
   // {
   //   path: "/login",
   //   name: "Login",
