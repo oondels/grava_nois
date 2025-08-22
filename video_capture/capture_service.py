@@ -15,6 +15,7 @@ from video_core import (
     ffprobe_metadata,
     register_clip_metadados,
     upload_file_to_signed_url,
+    finalize_clip_uploaded,
 )
 from video_core import _sha256_file  # util interno
 
@@ -226,6 +227,46 @@ class ProcessingWorker:
                         print(
                             f"[worker] upload finalizado: HTTP {status_code} {reason} em {dt_ms} ms"
                         )
+
+                        # 3.3) Finaliza upload no backend (validação de integridade)
+                        if 200 <= status_code < 300:
+                            clip_id = (resp or {}).get("clip_id")
+                            if clip_id and api_base:
+                                try:
+                                    print(f"[worker] Notificando backend upload concluído (clip_id={clip_id})…")
+                                    fin = finalize_clip_uploaded(
+                                        api_base,
+                                        clip_id=clip_id,
+                                        size_bytes=size_wm,
+                                        sha256=sha256_wm,
+                                        token=api_token,
+                                        timeout=20.0,
+                                    )
+                                    meta.setdefault("remote_finalize", {})
+                                    meta["remote_finalize"].update(
+                                        {
+                                            "status": "ok",
+                                            "finalized_at": datetime.now(timezone.utc).isoformat(),
+                                            "response": fin,
+                                        }
+                                    )
+                                    meta_path.write_text(
+                                        json.dumps(meta, ensure_ascii=False, indent=2)
+                                    )
+                                    print("[worker] Finalização confirmada pelo backend.")
+                                except Exception as e:
+                                    meta.setdefault("remote_finalize", {})
+                                    meta["remote_finalize"].update(
+                                        {
+                                            "status": "failed",
+                                            "error": str(e),
+                                            "attempted_at": datetime.now(timezone.utc).isoformat(),
+                                        }
+                                    )
+                                    meta_path.write_text(
+                                        json.dumps(meta, ensure_ascii=False, indent=2)
+                                    )
+                                    print(f"[worker] Falha ao finalizar upload no backend: {e}")
                     except Exception as e:
                         dt_ms = int((time.time() - t0) * 1000)
                         meta.setdefault("remote_upload", {})

@@ -463,3 +463,27 @@ def upload_file_to_signed_url(
             conn.close()
         except Exception:
             pass
+
+
+# ---- Finalize uploaded clip -------------------------------------------------
+def finalize_clip_uploaded(
+    api_base: str,
+    clip_id: str,
+    size_bytes: int,
+    sha256: str,
+    token: Optional[str] = None,
+    timeout: float = 10.0,
+) -> Dict[str, Any]:
+    """
+    Notifica o backend que o upload foi concluído e valida integridade.
+
+    POST {api_base}/api/videos/{clip_id}/uploaded
+    Body: { "size_bytes": number, "sha256": string }
+    """
+    base = api_base.rstrip("/")
+    url = f"{base}/api/videos/{clip_id}/uploaded"
+    headers: Dict[str, str] = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    payload = {"size_bytes": int(size_bytes), "sha256": str(sha256)}
+    return _http_post_json(url, payload, headers=headers, timeout=timeout)
