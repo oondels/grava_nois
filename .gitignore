@@ -10,3 +10,5 @@ venv/
 *.jpg
 __pycache__/
 dist/
+*.tsbuildinfo
+*.error.txt
