@@ -224,6 +224,7 @@ class ProcessingWorker:
                         meta_path.write_text(
                             json.dumps(meta, ensure_ascii=False, indent=2)
                         )
+                        # TODO: Verificar confirmação do backend
                         print(
                             f"[worker] upload finalizado: HTTP {status_code} {reason} em {dt_ms} ms"
                         )
