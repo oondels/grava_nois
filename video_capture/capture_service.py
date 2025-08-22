@@ -206,7 +206,7 @@ class ProcessingWorker:
                     print("[worker] Iniciando upload para URL assinada…")
                     t0 = time.time()
                     try:
-                        status_code, reason = upload_file_to_signed_url(
+                        status_code, reason, resp_headers = upload_file_to_signed_url(
                             upload_url, out_mp4, content_type="video/mp4", extra_headers=None, timeout=180.0
                         )
                         dt_ms = int((time.time() - t0) * 1000)
@@ -234,11 +234,17 @@ class ProcessingWorker:
                             if clip_id and api_base:
                                 try:
                                     print(f"[worker] Notificando backend upload concluído (clip_id={clip_id})…")
+                                    etag = None
+                                    try:
+                                        etag = (resp_headers or {}).get("etag")
+                                    except Exception:
+                                        etag = None
                                     fin = finalize_clip_uploaded(
                                         api_base,
                                         clip_id=clip_id,
                                         size_bytes=size_wm,
                                         sha256=sha256_wm,
+                                        etag=etag,
                                         token=api_token,
                                         timeout=20.0,
                                     )

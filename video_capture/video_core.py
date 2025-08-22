@@ -403,7 +403,7 @@ def upload_file_to_signed_url(
     content_type: str = "video/mp4",
     extra_headers: Optional[Dict[str, str]] = None,
     timeout: float = 120.0,
-) -> Tuple[int, str]:
+) -> Tuple[int, str, Dict[str, str]]:
     """
     Envia o arquivo via HTTP PUT para uma URL assinada (S3/GCS/etc).
 
@@ -457,7 +457,9 @@ def upload_file_to_signed_url(
                 print(f"[upload] Resumo corpo: {body[:200]!r}")
         except Exception:
             pass
-        return resp.status, resp.reason
+        # Normaliza headers em minúsculo para conveniência
+        resp_headers = {k.lower(): v for k, v in resp.getheaders()}
+        return resp.status, resp.reason, resp_headers
     finally:
         try:
             conn.close()
@@ -471,6 +473,8 @@ def finalize_clip_uploaded(
     clip_id: str,
     size_bytes: int,
     sha256: str,
+    *,
+    etag: Optional[str] = None,
     token: Optional[str] = None,
     timeout: float = 10.0,
 ) -> Dict[str, Any]:
@@ -485,5 +489,7 @@ def finalize_clip_uploaded(
     headers: Dict[str, str] = {}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    payload = {"size_bytes": int(size_bytes), "sha256": str(sha256)}
+    payload: Dict[str, Any] = {"size_bytes": int(size_bytes), "sha256": str(sha256)}
+    if etag:
+        payload["etag"] = etag
     return _http_post_json(url, payload, headers=headers, timeout=timeout)
