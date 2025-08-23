@@ -1,4 +1,3 @@
-<!-- TODO: Adicionar efeito de menu sumir ao scrollar para baixo -->
 <template>
   <!-- Bottom bar (trigger) -->
   <nav
@@ -21,7 +20,7 @@
         aria-controls="mobile-menu-overlay"
         @click="toggleMenu"
       >
-        <MenuIcon color="black" class="h-7 w-7 sm:h-9 sm:w-9 drop-shadow-sm" />
+        <MenuIcon color="white" class="h-7 w-7 sm:h-9 sm:w-9 drop-shadow-sm" />
         <span class="sr-only">Abrir menu</span>
       </button>
     </div>
@@ -36,15 +35,14 @@
     <!-- backdrop -->
     <div
       class="absolute inset-0 bg-black/30 transition-opacity duration-300"
-      :class="isOpen ? 'opacity-100' : 'opacity-0'
-      "
+      :class="isOpen ? 'opacity-100' : 'opacity-0'"
       @click="closeMenu"
       aria-hidden="true"
     />
 
     <!-- painel -->
     <div
-      class="absolute inset-0 bg-white dark:bg-neutral-900 border-t border-black/10 dark:border-white/10 rounded-t-2xl shadow-lg transform transition-transform duration-500 ease-out flex flex-col"
+      class="absolute inset-0 bg-black dark:bg-neutral-900 border-t border-black/10 dark:border-white/10 rounded-t-2xl shadow-lg transform transition-transform duration-500 ease-out flex flex-col"
       :class="isOpen ? 'translate-y-0' : 'translate-y-full'"
       role="dialog"
       aria-modal="true"
@@ -52,11 +50,7 @@
     >
       <!-- header do overlay -->
       <div class="flex items-center justify-between px-4 py-3">
-        <img
-          :src="LogoGravaNoisSimbol"
-          alt="Símbolo Logo Grava Nóis"
-          class="h-8 w-auto drop-shadow-sm"
-        />
+        <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="h-8 w-auto drop-shadow-sm" />
 
         <button
           type="button"
@@ -80,7 +74,14 @@
             :tabindex="item.disabled ? -1 : 0"
             @click.prevent="handleItemClick(item)"
           >
-            <div :class="['w-12 h-12 rounded-xl flex items-center justify-center', isActive(item.to) ? 'bg-green-100/70 dark:bg-green-900/20 text-green-600 dark:text-green-500' : 'bg-black/5 dark:bg-white/10']">
+            <div
+              :class="[
+                'w-12 h-12 rounded-xl flex items-center justify-center',
+                isActive(item.to)
+                  ? 'bg-green-100/70 dark:bg-green-900/20 text-green-600 dark:text-green-500'
+                  : 'bg-black/5 dark:bg-white/10',
+              ]"
+            >
               <component :is="item.icon" class="w-6 h-6" aria-hidden="true" />
             </div>
             <span class="text-[12px] font-semibold leading-none mt-1">{{ item.label }}</span>
