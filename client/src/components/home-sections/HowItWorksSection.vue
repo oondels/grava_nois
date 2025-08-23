@@ -137,3 +137,84 @@ function scrollToFaqFromDialog() {
 </script>
 
 <style scoped></style>
+<style scoped>
+/* Liquid glass inspirado na Apple para os cards de etapa */
+.steps {
+  /* espaço levemente maior entre os cards para valorizar o efeito */
+  gap: 1.1rem;
+}
+
+.step-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate; /* garante camadas corretas */
+  border-radius: 1rem;
+  /* base translucida com bom contraste em light/dark */
+  background: color-mix(in srgb, var(--card) 52%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  /* borda interna suave e profundidade */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 16px 48px rgba(255, 255, 255, 0.06),
+    0 10px 24px -16px rgba(0, 0, 0, 0.28);
+}
+
+/* Camada de brilho/sheen fluido */
+.step-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    /* brilho superior esquerdo */
+    radial-gradient(120% 80% at -10% -20%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 60%),
+    /* brilho inferior */
+    radial-gradient(60% 40% at 50% 120%, rgba(255, 255, 255, 0.08), transparent 70%),
+    /* leve tinta da marca para dar vida */
+    radial-gradient(120% 80% at 110% -20%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%);
+  transition: transform 320ms ease, opacity 240ms ease;
+  opacity: 0.9;
+}
+
+/* Película suave para reforçar o efeito vítreo */
+.step-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+}
+
+/* Conteúdo acima das camadas */
+.step-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Interações sutis */
+@media (hover: hover) {
+  .step-card:hover::before,
+  .step-card:focus-within::before {
+    transform: translate3d(2px, -2px, 0) scale(1.02);
+    opacity: 1;
+  }
+}
+
+/* Blur com fallback amplo: se suportado, aplica blur/saturate; senão, mantém a base translúcida */
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .step-card {
+    background: color-mix(in srgb, var(--bg-alt) 24%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+  }
+}
+
+/* Acessibilidade de movimento */
+@media (prefers-reduced-motion: reduce) {
+  .step-card::before {
+    transition: none;
+  }
+}
+</style>

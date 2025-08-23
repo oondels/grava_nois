@@ -5,6 +5,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from collections import deque
 from typing import Deque, List, Optional, Tuple, Dict, Any
+import urllib.request
+import urllib.error
+import ssl
+import http.client
+from urllib.parse import urlparse
 
 
 # ---- CONFIG & TYPES ---------------------------------------------------------
@@ -48,39 +53,13 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
     # Old -> Camera do notebook
-    # ffmpeg_cmd = [
-    #     "ffmpeg",
-    #     "-nostdin",
-    #     "-f",
-    #     "v4l2",
-    #     "-i",
-    #     cfg.device,
-    #     "-c:v",
-    #     "libx264",
-    #     "-preset",
-    #     "ultrafast",
-    #     "-tune",
-    #     "zerolatency",
-    #     "-force_key_frames",
-    #     f"expr:gte(t,n_forced*{cfg.seg_time})",
-    #     "-f",
-    #     "segment",
-    #     "-segment_time",
-    #     str(cfg.seg_time),
-    #     "-segment_start_number",
-    #     str(start_num),
-    #     "-reset_timestamps",
-    #     "1",
-    #     out_pattern,
-    # ]
-
-    # Camera Dedicada
     ffmpeg_cmd = [
         "ffmpeg",
-        "-rtsp_transport",
-        "tcp",
+        "-nostdin",
+        "-f",
+        "v4l2",
         "-i",
-        "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
+        cfg.device,
         "-c:v",
         "libx264",
         "-preset",
@@ -88,11 +67,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "-tune",
         "zerolatency",
         "-force_key_frames",
-        "expr:gte(t,n_forced*1)",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "96k",  # audio
+        f"expr:gte(t,n_forced*{cfg.seg_time})",
         "-f",
         "segment",
         "-segment_time",
@@ -103,6 +78,36 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "1",
         out_pattern,
     ]
+
+    # Camera Dedicada
+    # ffmpeg_cmd = [
+    #     "ffmpeg",
+    #     "-rtsp_transport",
+    #     "tcp",
+    #     "-i",
+    #     "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
+    #     "-c:v",
+    #     "libx264",
+    #     "-preset",
+    #     "ultrafast",
+    #     "-tune",
+    #     "zerolatency",
+    #     "-force_key_frames",
+    #     "expr:gte(t,n_forced*1)",
+    #     "-c:a",
+    #     "aac",
+    #     "-b:a",
+    #     "96k",  # audio
+    #     "-f",
+    #     "segment",
+    #     "-segment_time",
+    #     str(cfg.seg_time),
+    #     "-segment_start_number",
+    #     str(start_num),
+    #     "-reset_timestamps",
+    #     "1",
+    #     out_pattern,
+    # ]
 
     return subprocess.Popen(
         ffmpeg_cmd,
@@ -336,3 +341,155 @@ def generate_thumbnail(
     t = at_sec if at_sec is not None else max(0.0, clip.duration * 0.5)
     # save_frame aceita extensão pelo caminho
     clip.save_frame(str(output_path), t=t)
+
+
+# ---- HTTP helper & registration --------------------------------------------
+def _http_post_json(
+    url: str,
+    payload: Dict[str, Any],
+    headers: Optional[Dict[str, str]] = None,
+    timeout: float = 10.0,
+) -> Dict[str, Any]:
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="POST")
+    req.add_header("Content-Type", "application/json")
+    if headers:
+        for k, v in headers.items():
+            req.add_header(k, v)
+    # permissivo para ambientes com certificados locais
+    ctx = ssl.create_default_context()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            charset = resp.headers.get_content_charset() or "utf-8"
+            body = resp.read().decode(charset)
+            return json.loads(body) if body else {}
+    except urllib.error.HTTPError as e:
+        try:
+            body = e.read().decode("utf-8")
+        except Exception:
+            body = ""
+        raise RuntimeError(f"HTTP {e.code} ao POST {url}: {body}")
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Erro de rede ao POST {url}: {e}")
+
+
+def register_clip_metadados(
+    api_base: str,
+    metadados: Dict[str, Any],
+    token: Optional[str] = None,
+    timeout: float = 10.0,
+) -> Dict[str, Any]:
+    """
+    Envia metadados do clipe para o backend e retorna o payload de resposta.
+
+    Espera que o backend exponha POST {api_base}/api/videos/metadados.
+    Se `token` for fornecido, envia como `Authorization: Bearer <token>`.
+    """
+    client_id = os.getenv("GN_CLIENT_ID") or os.getenv("CLIENT_ID")
+    venue_id = os.getenv("GN_VENUE_ID") or os.getenv("VENUE_ID")
+    base = api_base.rstrip("/")
+
+    url = f"{base}/api/videos/metadados/client/{client_id}/venue/{venue_id}"
+    headers: Dict[str, str] = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return _http_post_json(url, metadados, headers=headers, timeout=timeout)
+
+
+# ---- Signed URL upload ------------------------------------------------------
+def upload_file_to_signed_url(
+    upload_url: str,
+    file_path: Path,
+    content_type: str = "video/mp4",
+    extra_headers: Optional[Dict[str, str]] = None,
+    timeout: float = 120.0,
+) -> Tuple[int, str, Dict[str, str]]:
+    """
+    Envia o arquivo via HTTP PUT para uma URL assinada (S3/GCS/etc).
+
+    Retorna (status_code, reason). Lança exceção em erros de conexão.
+    """
+    parsed = urlparse(upload_url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"URL inválida: {upload_url}")
+
+    # Prepara conexão
+    conn_cls = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
+    netloc = parsed.netloc
+    path_qs = parsed.path or "/"
+    if parsed.query:
+        path_qs += f"?{parsed.query}"
+
+    file_size = file_path.stat().st_size
+
+    # Debug básico
+    print(f"[upload] URL: {parsed.scheme}://{parsed.netloc}{parsed.path}...")
+    print(f"[upload] Tamanho: {file_size} bytes | Tipo: {content_type}")
+
+    headers = {
+        "Content-Type": content_type,
+        "Content-Length": str(file_size),
+    }
+    if extra_headers:
+        headers.update(extra_headers)
+
+    conn = conn_cls(netloc, timeout=timeout)
+    try:
+        conn.putrequest("PUT", path_qs)
+        for k, v in headers.items():
+            conn.putheader(k, v)
+        conn.endheaders()
+
+        with file_path.open("rb") as f:
+            # Envia em blocos para evitar alto uso de memória
+            while True:
+                chunk = f.read(1024 * 1024)
+                if not chunk:
+                    break
+                conn.send(chunk)
+
+        resp = conn.getresponse()
+        # Debug de resposta
+        print(f"[upload] HTTP {resp.status} {resp.reason}")
+        try:
+            body = resp.read(512)
+            if body:
+                print(f"[upload] Resumo corpo: {body[:200]!r}")
+        except Exception:
+            pass
+        # Normaliza headers em minúsculo para conveniência
+        resp_headers = {k.lower(): v for k, v in resp.getheaders()}
+        return resp.status, resp.reason, resp_headers
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+# ---- Finalize uploaded clip -------------------------------------------------
+def finalize_clip_uploaded(
+    api_base: str,
+    clip_id: str,
+    size_bytes: int,
+    sha256: str,
+    *,
+    etag: Optional[str] = None,
+    token: Optional[str] = None,
+    timeout: float = 10.0,
+) -> Dict[str, Any]:
+    """
+    Notifica o backend que o upload foi concluído e valida integridade.
+
+    POST {api_base}/api/videos/{clip_id}/uploaded
+    Body: { "size_bytes": number, "sha256": string }
+    """
+    base = api_base.rstrip("/")
+    url = f"{base}/api/videos/{clip_id}/uploaded"
+    headers: Dict[str, str] = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    payload: Dict[str, Any] = {"size_bytes": int(size_bytes), "sha256": str(sha256)}
+    if etag:
+        payload["etag"] = etag
+    return _http_post_json(url, payload, headers=headers, timeout=timeout)

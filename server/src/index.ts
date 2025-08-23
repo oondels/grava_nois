@@ -4,8 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 import { AppDataSource } from './config/database';
 import { VideoStatus } from './models/Videos';
 import { z } from 'zod';
-import { randomUUID, createHash } from 'crypto';
+import { randomUUID } from 'crypto';
 import cors from "cors"
+import { publishClipEvent } from './rabbitmq/publisher';
 import nodeMailer from "nodemailer"
 import { config } from './config/dotenv';
 
@@ -42,6 +43,67 @@ AppDataSource.initialize()
       app.use(cors({ origin: "*" })) // TODO: Fix CORS for production
       app.use(express.json())
       const upload = multer({ storage: multer.memoryStorage() });
+
+      // MVP upload endpoint receiving a video file and metadata
+      // Expects multipart/form-data with fields:
+      // - venue_id: string
+      // - client_id: string
+      // - meta: object (JSON string)
+      // - capturated_at: string (ISO date)
+      // - video: file (the uploaded video)
+      app.post('/video/mvp/', upload.single('video'), async (req: Request, res: Response) => {
+        try {
+          // Ensure a file was sent
+          const file = req.file;
+          if (!file) {
+            res.status(400).json({ error: "Missing video file. Send as field 'video'." });
+            return;
+          }
+
+          // Parse and validate body fields. `meta` may arrive as JSON string in multipart.
+          const raw = req.body || {};
+          let parsedMeta: unknown = raw.meta;
+          if (typeof parsedMeta === 'string') {
+            try { parsedMeta = JSON.parse(parsedMeta); } catch { /* keep as string to fail schema */ }
+          }
+
+          const bodySchema = z.object({
+            venue_id: z.string().min(1, 'venue_id is required'),
+            client_id: z.string().min(1, 'client_id is required'),
+            meta: z.record(z.string(), z.any()).default({}),
+            capturated_at: z.string().min(1, 'capturated_at is required'),
+          });
+
+          const parsed = bodySchema.safeParse({
+            venue_id: raw.venue_id,
+            client_id: raw.client_id,
+            meta: parsedMeta,
+            capturated_at: raw.capturated_at,
+          });
+
+          if (!parsed.success) {
+            res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
+            return;
+          }
+
+          const { venue_id, client_id, meta, capturated_at } = parsed.data;
+
+          // For MVP, we just acknowledge the upload and echo info back.
+          // Future: persist to storage and DB, publish to queue, etc.
+          res.status(201).json({
+            message: 'Video received',
+            file: {
+              originalname: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+            },
+            data: { venue_id, client_id, meta, capturated_at },
+          });
+        } catch (err) {
+          console.error('Error in /video/mvp/ upload:', err);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
 
       // Initialize Supabase client with service role key (secure, only on server)
       const supabase = createClient(
@@ -362,13 +424,14 @@ AppDataSource.initialize()
           const bodySchema = z.object({
             size_bytes: z.number().int().nonnegative(),
             sha256: z.string().regex(/^[a-f0-9]{64}$/i),
+            etag: z.string().min(1).optional(), // opcional
           });
           const parsed = bodySchema.safeParse(req.body);
           if (!parsed.success) {
             res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
             return;
           }
-          const { size_bytes, sha256 } = parsed.data;
+          const { size_bytes, sha256, etag: clientEtag } = parsed.data;
 
           // 2) Fetch video by clipId
           const videoRepository = AppDataSource.getRepository('Video');
@@ -383,37 +446,39 @@ AppDataSource.initialize()
             return;
           }
 
-          // 3) Check file existence in Supabase and compare metadata
-          // Note: Upload was created using bucket "temp" earlier in the flow
-          // so we verify against the same bucket.
-          const { data: downloaded, error: downloadError } = await supabase
-            .storage
-            .from('temp')
-            .download(video.storagePath);
+          // 3) Verifica existência e tamanho via HEAD (evita baixar o blob inteiro)
+          const storagePath = video.storagePath as string;
+          const bucket = storagePath.startsWith('main/') ? 'main' : 'temp';
 
-          if (downloadError || !downloaded) {
-            res.status(422).json({ error: 'Uploaded object not found in storage_path' });
+          const { data: signedGet, error: signErr } = await supabase
+            .storage
+            .from(bucket)
+            .createSignedUrl(storagePath, 60);
+          if (signErr || !signedGet?.signedUrl) {
+            res.status(502).json({ error: 'Failed to create signed GET URL to verify upload' });
             return;
           }
 
-          // Compute sha256 of the downloaded blob
-          const ab = await downloaded.arrayBuffer();
-          const buf = Buffer.from(ab);
-          const computedSha256 = createHash('sha256').update(buf).digest('hex');
-          const computedSize = downloaded.size; // bytes
+          const headResp = await fetch(signedGet.signedUrl, { method: 'HEAD' });
+          if (!headResp.ok) {
+            res.status(422).json({ error: 'Uploaded object not accessible for verification (HEAD failed)' });
+            return;
+          }
 
-          const hashMatches = computedSha256.toLowerCase() === sha256.toLowerCase();
-          const sizeMatches = computedSize === size_bytes;
-          if (!hashMatches || !sizeMatches) {
+          const contentLength = Number(headResp.headers.get('content-length') || '0');
+          const objectEtagRaw = headResp.headers.get('etag') || headResp.headers.get('x-etag') || undefined;
+          const objectEtag = objectEtagRaw ? objectEtagRaw.replace(/\"/g, '') : undefined;
+
+          if (contentLength !== size_bytes) {
             res.status(422).json({
-              error: 'Uploaded object metadata mismatch',
-              details: {
-                size_matches: sizeMatches,
-                sha256_matches: hashMatches,
-                expected: { sha256, size_bytes },
-                got: { sha256: computedSha256, size_bytes: computedSize },
-              },
+              error: 'Uploaded object size mismatch',
+              details: { expected: { size_bytes }, got: { size_bytes: contentLength } },
             });
+            return;
+          }
+
+          if (clientEtag && objectEtag && clientEtag.replace(/\"/g, '') !== objectEtag) {
+            res.status(422).json({ error: 'ETag mismatch', details: { expected: clientEtag, got: objectEtag } });
             return;
           }
 
@@ -427,7 +492,26 @@ AppDataSource.initialize()
           video.sizeBytes = String(size_bytes);
           await videoRepository.save(video);
 
-          // 5) Return JSON
+          // 5) Publica evento no RabbitMQ (clip.created)
+          try {
+            await publishClipEvent('clip.created', {
+              event: 'clip.created',
+              clip_id: video.clipId,
+              client_id: video.clientId,
+              venue_id: video.venueId,
+              contract_type: video.contract,
+              storage_path: video.storagePath,
+              duration_sec: video.durationSec,
+              captured_at: video.capturedAt?.toISOString?.() ?? new Date().toISOString(),
+              sha256,
+              size_bytes,
+              meta: video.meta ?? {},
+            });
+          } catch (e) {
+            console.warn('[rabbitmq] Failed to publish clip.created:', e);
+          }
+
+          // 6) Return JSON
           res.json({
             clip_id: video.clipId,
             contract_type: video.contract,
