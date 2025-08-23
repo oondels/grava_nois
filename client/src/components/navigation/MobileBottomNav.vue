@@ -6,11 +6,13 @@
     aria-label="Navegação inferior"
   >
     <div class="h-15 flex items-center justify-between px-3 py-2 gap-2 pb-[env(safe-area-inset-bottom)]">
-      <img
-        :src="LogoGravaNoisSimbol"
-        alt="Símbolo Logo Grava Nóis"
-        class="drop-shadow-sm w-auto h-8 sm:h-10 md:h-12 lg:h-14 xl:h-16"
-      />
+      <RouterLink to="/" class="flex items-center">
+        <img
+          :src="LogoGravaNoisSimbol"
+          alt="Símbolo Logo Grava Nóis"
+          class="drop-shadow-sm w-auto h-8 sm:h-10 md:h-12 lg:h-14 xl:h-16"
+        />
+      </RouterLink>
 
       <!-- Trigger abre menu -->
       <button

@@ -5,7 +5,7 @@
       <HeroSection />
 
       <v-divider :thickness="4" color="success"></v-divider>
-      
+
       <HowItWorksSection />
 
       <v-divider :thickness="4" color="success"></v-divider>
@@ -26,8 +26,6 @@
         </div>
       </section>
 
-      <v-divider :thickness="4" color="success"></v-divider>
-      
       <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- DIFFERENTIALS -->
@@ -106,13 +104,13 @@
             </div>
 
             <div class="">
-              <img
+              <!-- <img
                 class="media-img"
                 :src="IMAGES.feed"
                 alt="Preview do feed vertical de lances"
                 loading="lazy"
                 decoding="async"
-              />
+              /> -->
             </div>
           </div>
         </div>
@@ -120,36 +118,8 @@
 
       <v-divider :thickness="4" color="success"></v-divider>
 
-      <!-- SHOWCASE (visual-heavy block, Netflix-style) -->
-      <section class="section alt" aria-labelledby="showcase-title">
-        <div class="container">
-          <h2 id="showcase-title" class="section-title">Feito para qualquer quadra, qualquer time</h2>
-          <div class="showcase-grid">
-            <div class="media-card tall">
-              <img class="media-img" :src="IMAGES.soccer" alt="Partida de Futebol" loading="lazy" decoding="async" />
-              <div class="media-label">Futebol</div>
-            </div>
-            <div class="media-card">
-              <img class="media-img" :src="IMAGES.volleyball" alt="Quadra de vôlei" loading="lazy" decoding="async" />
-              <div class="media-label">Vôlei</div>
-            </div>
-            <div class="media-card">
-              <img
-                class="media-img"
-                :src="IMAGES.basketball"
-                alt="Quadra de basquete"
-                loading="lazy"
-                decoding="async"
-              />
-              <div class="media-label">Basquete</div>
-            </div>
-            <div class="media-card wide">
-              <img class="media-img" :src="IMAGES.outdoor" alt="Quadra externa/areia" loading="lazy" decoding="async" />
-              <div class="media-label">Areia & quadras externas</div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <!-- SHOWCASE (visual-heavy block) -->
+      <ShowCaseSection />
 
       <v-divider :thickness="4" color="success"></v-divider>
 
@@ -268,26 +238,12 @@ import {
   Target,
   Banknote,
 } from "lucide-vue-next";
-import HeroSection from '@/components/home-sections/HeroSection.vue';
-import HowItWorksSection from '@/components/home-sections/HowItWorksSection.vue';
+import HeroSection from "@/components/home-sections/HeroSection.vue";
+import HowItWorksSection from "@/components/home-sections/HowItWorksSection.vue";
+import ShowCaseSection from "@/components/home-sections/ShowCaseSection.vue";
 
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
-
-import hero from "@/assets/images/hero-about.webp";
-import soccer from "@/assets/images/society-about.webp";
-import volleyball from "@/assets/images/volleyball-about.webp";
-import basketball from "@/assets/images/basketball-about.webp";
-import outdoor from "@/assets/images/futbolley-about.webp";
-import feed from "@/assets/images/feed-preview.webp";
-const IMAGES = {
-  hero: hero,
-  soccer: soccer,
-  volleyball: volleyball,
-  basketball: basketball,
-  outdoor: outdoor,
-  feed: feed,
-};
 
 const showTop = ref(false);
 const showHowDialog = ref(false);
