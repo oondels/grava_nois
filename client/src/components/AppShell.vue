@@ -22,6 +22,35 @@
         <div class="brand-col">
           <h3 class="logo-text">Grava Nóis</h3>
           <p class="tagline">Seu lance, sua história.</p>
+          <div class="footer-compact-links" aria-label="Links rápidos (mobile)">
+            <v-btn
+              size="small"
+              variant="tonal"
+              color="primary"
+              :prepend-icon="customIcons.home"
+              to="/"
+            >
+              Início
+            </v-btn>
+            <v-btn
+              size="small"
+              variant="tonal"
+              color="primary"
+              :prepend-icon="customIcons.help"
+              to="/suporte"
+            >
+              Ajuda
+            </v-btn>
+            <v-btn
+              size="small"
+              variant="tonal"
+              color="primary"
+              :prepend-icon="customIcons.account"
+              to="/contato"
+            >
+              Contato
+            </v-btn>
+          </div>
           <p class="copyright">© {{ new Date().getFullYear() }} Grava Nóis. Todos os direitos reservados.</p>
         </div>
 
@@ -70,6 +99,7 @@ import { useRoute } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
 import { useClipsStore } from "@/store/clips";
+import { customIcons } from "@/utils/icons";
 
 // Importando os novos componentes de navegação
 import Header from "@/components/navigation/Header.vue";
@@ -122,6 +152,9 @@ onMounted(() => {
   color: var(--muted);
   font-weight: 500;
 }
+.footer-compact-links {
+  display: none;
+}
 .links-col h4,
 .social-col h4 {
   margin: 0 0 0.75rem;
@@ -171,8 +204,26 @@ onMounted(() => {
   margin: 0 0.35rem;
 }
 @media (max-width: 640px) {
-  .app-footer {
-    padding: 2.5rem 0 1.5rem;
+  .app-footer { padding: 1rem 0; margin-top: 2rem; }
+  .footer-inner { gap: 0.75rem; }
+  .links-col, .social-col { display: none; }
+  .brand-col { text-align: center; }
+  .logo-text { font-size: 1.05rem; margin: 0; }
+  .tagline { display: none; }
+  .footer-compact-links { 
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
   }
+  .footer-compact-links :deep(.v-btn) {
+    min-height: 30px;
+    padding-inline: 10px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .copyright { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
+  .legal { margin-top: 0.75rem; font-size: 0.75rem; }
 }
 </style>
