@@ -24,7 +24,7 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import hero from "@/assets/images/hero-about.webp";
 import soccer from "@/assets/images/society-about.webp";
 import volleyball from "@/assets/images/volleyball-about.webp";
@@ -102,9 +102,6 @@ const IMAGES = {
 }
 .media-card.tall {
   aspect-ratio: 3 / 4;
-}
-.media-card.wide {
-  /* sem span em mobile */
 }
 @media (min-width: 960px) {
   .media-card.wide {
