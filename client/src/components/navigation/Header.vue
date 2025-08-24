@@ -1,6 +1,6 @@
 <template>
   <header
-    class="sticky top-0 z-30 backdrop-blur-md bg-white/75 dark:bg-neutral-900/60 border-b border-black/5 dark:border-white/10"
+    class="sticky top-0 z-30 backdrop-blur-md bg-white/70 dark:bg-neutral-950/80 border-b border-black/5 dark:border-white/10"
     role="navigation"
     aria-label="Navegação principal"
   >
@@ -35,7 +35,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { defineComponent, h, resolveComponent } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import LogoGravaNois from "@/assets/icons/grava-nois.webp";
+import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 
 const baseLink =
   "nav-link relative inline-flex items-center px-3 py-2 rounded-lg font-semibold transition hover:bg-black/5 dark:hover:bg-white/10";

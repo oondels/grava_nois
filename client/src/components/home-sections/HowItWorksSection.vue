@@ -47,9 +47,17 @@
     </div>
 
     <!-- Dialog explicação detalhada -->
-    <v-dialog v-model="showHowDialog" max-width="680" :scrim="true" transition="dialog-bottom-transition">
+    <v-dialog
+      v-model="showHowDialog"
+      :fullscreen="display.smAndDown ? true : false"
+      :max-width="display.smAndDown ? undefined : 680"
+      :scrim="true"
+      :scrollable="true"
+      :transition="display.smAndDown ? 'dialog-bottom-transition' : 'dialog-transition'"
+    >
       <v-card
-        class="relative bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-2xl rounded-2xl overflow-hidden"
+        class="dialog-card relative bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-2xl rounded-2xl overflow-auto"
+        :class="{ 'rounded-none': display.smAndDown }"
       >
         <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-sky-400 to-emerald-500"></div>
         <v-card-title
@@ -102,7 +110,7 @@
           </p>
         </v-card-text>
         <v-card-actions
-          class="px-5 py-3 flex justify-end gap-2 bg-zinc-50/70 dark:bg-white/5 border-t border-zinc-200/70 dark:border-white/10"
+          class="px-5 py-3 flex justify-end gap-2 bg-zinc-50/70 dark:bg-white/5 border-t border-zinc-200/70 dark:border-white/10 sticky bottom-0 z-10"
         >
           <v-btn color="danger" variant="outlined" class="font-medium" @click="showHowDialog = false">Fechar</v-btn>
         </v-card-actions>
@@ -112,10 +120,12 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue"
+import { ref } from "vue";
+import { useDisplay } from "vuetify";
 import { VideoIcon, ClockPlus, CloudDownload } from "lucide-vue-next";
 
 const showHowDialog = ref(false);
+const display = useDisplay();
 function scrollToFaqFromDialog() {
   showHowDialog.value = false;
   const HEADER_OFFSET = 80;
@@ -138,6 +148,16 @@ function scrollToFaqFromDialog() {
 
 <style scoped></style>
 <style scoped>
+/* Responsividade do dialog */
+.dialog-card {
+  max-height: min(90vh, 100dvh - 32px);
+}
+@media (max-width: 600px) {
+  .dialog-card {
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}
 /* Liquid glass inspirado na Apple para os cards de etapa */
 .steps {
   /* espaço levemente maior entre os cards para valorizar o efeito */
@@ -153,9 +173,7 @@ function scrollToFaqFromDialog() {
   background: color-mix(in srgb, var(--card) 52%, transparent);
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   /* borda interna suave e profundidade */
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 16px 48px rgba(255, 255, 255, 0.06),
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 16px 48px rgba(255, 255, 255, 0.06),
     0 10px 24px -16px rgba(0, 0, 0, 0.28);
 }
 
@@ -167,12 +185,14 @@ function scrollToFaqFromDialog() {
   z-index: 0;
   pointer-events: none;
   background:
-    /* brilho superior esquerdo */
-    radial-gradient(120% 80% at -10% -20%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 60%),
-    /* brilho inferior */
-    radial-gradient(60% 40% at 50% 120%, rgba(255, 255, 255, 0.08), transparent 70%),
+    /* brilho superior esquerdo */ radial-gradient(
+      120% 80% at -10% -20%,
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0) 60%
+    ),
+    /* brilho inferior */ radial-gradient(60% 40% at 50% 120%, rgba(255, 255, 255, 0.08), transparent 70%),
     /* leve tinta da marca para dar vida */
-    radial-gradient(120% 80% at 110% -20%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%);
+      radial-gradient(120% 80% at 110% -20%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%);
   transition: transform 320ms ease, opacity 240ms ease;
   opacity: 0.9;
 }
