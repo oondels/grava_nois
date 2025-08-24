@@ -60,7 +60,7 @@ import { ChevronsDown } from "lucide-vue-next";
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
 const heroModules = import.meta.glob("@/assets/hero_sec_imgs/*.{png,jpg,jpeg,webp}", { eager: true });
 const heroImages = Object.values(heroModules)
-  .map((m: any) => (m && m.default) || m)
+  .map((m: any) => (m && (m as any).default) || m)
   .filter(Boolean) as string[];
 
 const logoSrc = LogoSymbol;
