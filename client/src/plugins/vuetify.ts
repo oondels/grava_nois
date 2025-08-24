@@ -75,8 +75,8 @@ const vuetify = createVuetify({
           warning: "#F57F17",
           error: "#C62828",
           info: "#1976D2",
-          surface: "#121212",
-          background: "#0A0A0A",
+          surface: "#0F0F10",
+          background: "#050506",
         },
       },
       light: {

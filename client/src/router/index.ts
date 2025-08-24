@@ -13,12 +13,12 @@ const routes = [
     component: () => import("@/pages/VideosPage.vue"),
     meta: { requiresAuth: false },
   },
-  // {
-  //   path: "/login",
-  //   name: "Login",
-  //   component: () => import("@/pages/LoginPage.vue"),
-  //   meta: { requiresGuest: false },
-  // },
+  {
+    path: "/login",
+    name: "Login",
+    component: () => import("@/pages/LoginPage.vue"),
+    meta: { requiresGuest: false },
+  },
   // {
   //   path: "/meus-lances",
   //   name: "MeusLances",
@@ -44,10 +44,10 @@ const routes = [
   //   meta: { requiresAuth: false },
   // },
   {
-    path: '/contato',
-    name: 'Contato',
-    component: () => import('@/pages/ContactPage.vue'),
-    meta: { requiresAuth: false }
+    path: "/contato",
+    name: "Contato",
+    component: () => import("@/pages/ContactPage.vue"),
+    meta: { requiresAuth: false },
   },
   {
     path: "/:pathMatch(.*)*",
