@@ -49,7 +49,7 @@
     <!-- Dialog explicação detalhada -->
     <v-dialog
       v-model="showHowDialog"
-      :fullscreen="display.smAndDown"
+      :fullscreen="display.smAndDown ? true : false"
       :max-width="display.smAndDown ? undefined : 680"
       :scrim="true"
       :scrollable="true"
