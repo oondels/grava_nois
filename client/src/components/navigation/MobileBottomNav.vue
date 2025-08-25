@@ -131,7 +131,7 @@ const navigationItems: NavItem[] = [
   { label: "Home", to: "/", icon: Home, disabled: false },
   { label: "Downloads", to: "/downloads", icon: Download, disabled: true },
   { label: "Suporte", to: "/suporte", icon: HelpCircle, disabled: true },
-  { label: "Login", to: "/login", icon: LogInIcon, disabled: true },
+  { label: "Login", to: "/login", icon: LogInIcon, disabled: false },
 ];
 
 const visibleItems = computed(() => navigationItems);

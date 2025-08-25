@@ -1,101 +1,109 @@
 <template>
-  <div class="login-page d-flex align-center justify-center min-height-screen">
-    <v-container class="py-8">
-      <v-row justify="center">
-        <v-col cols="12" sm="10" md="6" lg="4">
-          <transition name="fade-slide">
-            <v-card elevation="10" class="login-card rounded-xl overflow-hidden">
-              <!-- Header -->
-              <v-card-title class="text-center pa-6 pb-2">
-                <div class="d-flex flex-column align-center justify-center mb-1">
-                  <img :src="LogoGravaNoisBranco" alt="Grava Nóis" class="brand-logo mb-2" />
-                  <p class="text-body-2 text-medium-emphasis mb-0">Seus melhores lances em alta qualidade!</p>
-                </div>
-              </v-card-title>
+  <!-- <div class="login-page d-flex align-center justify-center min-height-screen">
 
-              <!-- Form -->
-              <v-card-text class="pa-6 pt-3">
-                <v-form validate-on="submit lazy">
-                  <v-text-field
-                    v-model.trim="loginData.email"
-                    label="Email"
-                    type="email"
-                    variant="outlined"
-                    :rules="[rules.required, rules.email]"
-                    class="mb-4"
-                    autocomplete="email"
-                    autofocus
-                  >
-                    <template #prepend-inner>
-                      <Mail :size="18" class="text-medium-emphasis" />
-                    </template>
-                  </v-text-field>
+  </div> -->
+  <v-container class="py-8">
+    <v-row justify="center">
+      <v-col cols="12" sm="10" md="6" lg="4">
+        <transition name="fade-slide">
+          <v-card elevation="10" class="login-card rounded-xl overflow-hidden">
+            <!-- Header -->
+            <v-card-title class="text-center pa-6 pb-2">
+              <div class="d-flex flex-column align-center justify-center mb-1">
+                <img :src="LogoGravaNoisBranco" alt="Grava Nóis" class="brand-logo mb-2" />
+                <p class="text-body-2 text-medium-emphasis mb-0">Seus melhores lances em alta qualidade!</p>
+              </div>
+            </v-card-title>
 
-                  <v-text-field
-                    v-model.trim="loginData.password"
-                    :type="showPassword ? 'text' : 'password'"
-                    label="Senha"
-                    variant="outlined"
-                    :rules="[rules.required]"
-                    class="mb-2"
-                    autocomplete="current-password"
-                  >
-                    <template #prepend-inner>
-                      <Lock :size="18" class="text-medium-emphasis" />
-                    </template>
-                    <template #append-inner>
-                      <v-btn
-                        size="small"
-                        variant="text"
-                        :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
-                        @click="showPassword = !showPassword"
-                      >
-                        <Eye v-if="!showPassword" :size="18" />
-                        <EyeOff v-else :size="18" />
-                      </v-btn>
-                    </template>
-                  </v-text-field>
+            <!-- Form -->
+            <v-card-text class="pa-6 pt-3">
+              <v-form validate-on="submit lazy">
+                <v-text-field
+                  v-model.trim="loginData.email"
+                  label="Email"
+                  type="email"
+                  variant="outlined"
+                  :rules="[rules.required, rules.email]"
+                  class="mb-4"
+                  autocomplete="email"
+                  autofocus
+                >
+                  <template #prepend-inner>
+                    <Mail :size="18" class="text-medium-emphasis" />
+                  </template>
+                </v-text-field>
 
-                  <div class="d-flex align-center justify-space-between mb-4">
+                <v-text-field
+                  v-model.trim="loginData.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  label="Senha"
+                  variant="outlined"
+                  :rules="[rules.required]"
+                  class="mb-2"
+                  autocomplete="current-password"
+                >
+                  <template #prepend-inner>
+                    <Lock :size="18" class="text-medium-emphasis" />
+                  </template>
+                  <template #append-inner>
+                    <v-btn
+                      size="small"
+                      variant="text"
+                      :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                      @click="showPassword = !showPassword"
+                    >
+                      <Eye v-if="!showPassword" :size="18" />
+                      <EyeOff v-else :size="18" />
+                    </v-btn>
+                  </template>
+                </v-text-field>
+
+                <div class="d-flex align-center justify-space-between my-5">
+                  <v-btn variant="text" size="small" class="text-primary" @click="handleForgotPassword">
+                    Esqueci minha senha
+                  </v-btn>
+
+                  <div>
+                    <!-- <span> Não possui uma conta? </span> -->
                     <v-btn variant="text" size="small" class="text-primary" @click="handleForgotPassword">
-                      Esqueci minha senha
+                      Cadastre-se
                     </v-btn>
                   </div>
+                </div>
 
-                  <v-btn
-                    type="submit"
-                    color="primary"
-                    variant="flat"
-                    size="large"
-                    block
-                    :loading="authStore.loading"
-                    class="mb-4 login-action"
-                  >
-                    <template #prepend>
-                      <LogIn :size="18" class="me-1" />
-                    </template>
-                    Entrar
-                  </v-btn>
+                <v-btn
+                  type="submit"
+                  color="primary"
+                  variant="flat"
+                  size="large"
+                  block
+                  :loading="authStore.loading"
+                  class="mb-4 login-action"
+                >
+                  <template #prepend>
+                    <LogIn :size="18" class="me-1" />
+                  </template>
+                  Entrar
+                </v-btn>
 
-                  <v-btn
-                    color="red"
-                    variant="outlined"
-                    size="large"
-                    block
-                    :loading="authStore.loading"
-                    class="mb-4 d-flex align-center justify-center"
-                  >
-                    <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
-                    Entrar com Google
-                  </v-btn>
-                </v-form>
-              </v-card-text>
-            </v-card>
-          </transition>
-        </v-col>
-      </v-row>
-    </v-container>
-  </div>
+                <v-btn
+                  color="red"
+                  variant="outlined"
+                  size="large"
+                  block
+                  :loading="authStore.loading"
+                  class="mb-4 d-flex align-center justify-center"
+                >
+                  <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
+                  Entrar com Google
+                </v-btn>
+              </v-form>
+            </v-card-text>
+          </v-card>
+        </transition>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -203,7 +211,7 @@ const handleDemoLogin = async () => {
 }
 
 .brand-logo {
-  height: 44px;
+  height: 80px;
   width: auto;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
