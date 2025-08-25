@@ -120,20 +120,20 @@
 
       <v-divider :thickness="4" color="success"></v-divider>
 
-      <!-- SHOWCASE (padronizado, sem glassmorphism) -->
+      <!-- SHOWCASE (visual-heavy block, Netflix-style) -->
       <section class="section alt" aria-labelledby="showcase-title">
         <div class="container">
           <h2 id="showcase-title" class="section-title">Feito para qualquer quadra, qualquer time</h2>
           <div class="showcase-grid">
-            <div class="media-card">
+            <div class="media-card mirror tall">
               <img class="media-img" :src="IMAGES.soccer" alt="Partida de Futebol" loading="lazy" decoding="async" />
               <div class="media-label">Futebol</div>
             </div>
-            <div class="media-card">
+            <div class="media-card mirror">
               <img class="media-img" :src="IMAGES.volleyball" alt="Quadra de vôlei" loading="lazy" decoding="async" />
               <div class="media-label">Vôlei</div>
             </div>
-            <div class="media-card">
+            <div class="media-card mirror">
               <img
                 class="media-img"
                 :src="IMAGES.basketball"
@@ -143,7 +143,7 @@
               />
               <div class="media-label">Basquete</div>
             </div>
-            <div class="media-card">
+            <div class="media-card mirror wide">
               <img class="media-img" :src="IMAGES.outdoor" alt="Quadra externa/areia" loading="lazy" decoding="async" />
               <div class="media-label">Areia & quadras externas</div>
             </div>
@@ -400,8 +400,13 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   background: var(--card);
   box-shadow: 0 20px 60px -24px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  aspect-ratio: 16 / 9;   /* padroniza todas as imagens */
-  min-height: auto;
+  min-height: 220px;
+}
+.media-card.tall {
+  min-height: 360px;
+}
+.media-card.wide {
+  grid-column: span 2;
 }
 .media-img {
   width: 100%;
@@ -477,24 +482,45 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   color: var(--muted);
 }
 
-/* Mirror glossy reflection — desativado */
+/* Mirror glossy reflection */
 .mirror {
   position: relative;
   overflow: hidden;
 }
 .mirror::before {
-  content: none !important; /* remove glassmorphism */
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -30%;
+  width: 60%;
+  height: 200%;
+  transform: rotate(25deg);
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.18) 22%,
+    rgba(255, 255, 255, 0.06) 55%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transition: transform 0.6s ease, opacity 0.6s ease;
+  opacity: 0.7;
+}
+.mirror:hover::before {
+  transform: rotate(25deg) translateX(10%);
+  opacity: 0.9;
 }
 
 /* Showcase */
 .showcase-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2x2 no desktop */
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
-/* neutraliza variações antigas */
-.media-card.tall,
-.media-card.wide { min-height: auto; grid-column: auto; }
+.showcase-grid .wide {
+  grid-column: span 2;
+}
 
 /* Stats strip */
 .stats {
@@ -640,7 +666,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
     grid-template-columns: repeat(2, 1fr);
   }
   .showcase-grid {
-    grid-template-columns: 1fr 1fr; /* mantém 2 colunas no tablet */
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -653,13 +679,13 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   }
   .card-grid,
   .showcase-grid {
-    grid-template-columns: 1fr; /* mobile 1x1 */
+    grid-template-columns: 1fr;
   }
   .stats-inner {
     grid-template-columns: 1fr 1fr;
   }
   .showcase-grid .media-card.wide {
-    grid-column: auto; /* legado */
+    grid-column: auto; /* remove span 2 que escondia o restante */
   }
 }
 
