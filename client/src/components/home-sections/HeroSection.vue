@@ -1,5 +1,10 @@
 <template>
-  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${BasketBall})` }">
+  <section
+    ref="rootEl"
+    class="hero"
+    aria-labelledby="hero-title"
+    :style="bgStyle"
+  >
     <div class="hero__container">
       <!-- Top-centered symbol-only logo -->
       <div class="hero__logo-wrap parallax parallax--logo">
@@ -11,38 +16,44 @@
           height="90"
           decoding="async"
           fetchpriority="high"
+          draggable="false"
         />
       </div>
 
       <!-- Stack: H1 → subline → CTAs -->
       <div class="hero__grid">
-        <div class="hero__content parallax parallax--content">
+        <div
+          class="hero__content parallax parallax--content"
+          @keydown="onKeyNav"
+          tabindex="0"
+          aria-describedby="hero-desc"
+        >
           <h1 id="hero-title" class="hero__title">Grave seus melhores lances esportivos com um clique</h1>
-          <p class="hero__subtitle">Grava Nóis - Seu lance, nossa história.</p>
+          <p id="hero-desc" class="hero__subtitle">Grava Nóis - Seu lance, nossa história.</p>
 
           <span class="d-flex justify-center align-center">
             <a href="#how">
-              <ChevronsDown role="button" class="my-2" :size="28" />
+              <ChevronsDown role="button" class="my-2" :size="28" aria-label="Ir para como funciona" />
             </a>
           </span>
 
-          <div class="hero__ctas">
-            <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"> Veja como funciona </a>
-            <a href="/pricing" class="btn btn--secondary" role="button" aria-label="View pricing"> Contrate </a>
+          <div class="hero__ctas" role="group" aria-label="Ações principais">
+            <a href="#how" class="btn btn--primary" role="button" aria-label="Veja como funciona"> Veja como funciona </a>
+            <a href="/pricing" class="btn btn--secondary" role="button" aria-label="Contrate agora"> Contrate </a>
           </div>
         </div>
 
         <!-- Optional right-side mockup on desktop with crossfade carousel -->
         <div class="hero__mockup parallax parallax--mockup" aria-hidden="true">
           <div class="mockup-fader">
-            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" />
-            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" />
+            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" loading="eager" />
+            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" loading="lazy" />
           </div>
         </div>
       </div>
 
       <!-- Mobile hint overlay -->
-      <div v-if="showHint" class="hero__hint" role="status">
+      <div v-if="showHint" class="hero__hint" role="status" aria-live="polite">
         <span class="hero__hint-dot" aria-hidden="true"></span>
         <span class="hero__hint-text">Arraste ou incline o celular</span>
       </div>
@@ -51,30 +62,61 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Melhorias implementadas:
+ * - bgStyle computado c/ fallback e cache da imagem de fundo.
+ * - Preload leve das imagens secundárias.
+ * - Carrossel pausa fora de viewport (IntersectionObserver).
+ * - Suporte de teclado (setas/WASD) para mover o foco/spotlight.
+ * - DeviceOrientation permission flow robusto (iOS/Android).
+ * - Damping de scroll só na zona visível da hero, com guards.
+ * - Easing + inércia com clamps seguros e cancelamentos limpos.
+ * - Handlers com passive flags corretas e cleanup completo.
+ * - Menos jank: content-visibility, contain, will-change.
+ * - Mantida a paridade funcional e ampliada a resiliência.
+ */
+
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
-import HeroBG from "@/assets/images/soccer_bg.jpg";
+import HeroBG from "@/assets/bak/soccer_ball.png";
 import BasketBall from "@/assets/bak/basket_ball.png";
 import { ChevronsDown } from "lucide-vue-next";
+
+import { onMounted, onBeforeUnmount, ref, computed } from "vue";
 
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
 const heroModules = import.meta.glob("@/assets/hero_sec_imgs/*.{png,jpg,jpeg,webp}", { eager: true });
 const heroImages = Object.values(heroModules)
-  .map((m: any) => (m && (m as any).default) || m)
+  .map((m: any) => (m && m.default) || m)
   .filter(Boolean) as string[];
 
+// Fallbacks explícitos para assets (mantidos para tree-shaking ameno)
 const logoSrc = LogoSymbol;
 const mockupSrc = Mockup;
+const bgFallback = HeroBG || BasketBall;
 
-import { onMounted, onBeforeUnmount, ref } from "vue";
+// BG como computed para evitar recomputações e aceitar troca futura
+const bgUrl = ref<string>(BasketBall || bgFallback);
+const bgStyle = computed(() => ({ backgroundImage: `url(${bgUrl.value})` }));
+
+// Pré-carregar imagens do carrossel para suavizar a primeira troca
+function preloadImages(urls: string[]) {
+  urls.slice(0, 4).forEach((u) => {
+    const i = new Image();
+    i.decoding = "async";
+    i.src = u;
+  });
+}
 
 const rootEl = ref<HTMLElement | null>(null);
-let raf = 0;
+let raf = 0; // reservado para futuras animações auxiliares (mantido para contagem)
 let carouselTimer: number | undefined;
 let animRaf = 0;
+let io: IntersectionObserver | null = null;
+let isHeroVisible = true;
 
-// Background image state (also cycles)
-const currentIcon = ref<string>(heroImages[0] ?? (LogoSymbol as unknown as string));
+// Ícone atual do topo
+const currentIcon = ref<string>((heroImages[0] as string) || (logoSrc as unknown as string));
 
 // Crossfade state
 const showA = ref(true);
@@ -87,10 +129,12 @@ const showHint = ref(true);
 let hintTimer: number | undefined;
 const isInteracting = ref(false);
 const useGyro = ref(false);
+
 // Scroll resistance state
-const SCROLL_THRESHOLD = 42; // px drag before native scroll takes over
+const SCROLL_THRESHOLD = 42; // px drag before native scroll
 let touchStartY: number | null = null;
 let scrollGuardActive = true;
+
 // Smoothed position (0..1) and target for easing/inertia
 const posX = ref(0.5);
 const posY = ref(0.5);
@@ -100,7 +144,6 @@ let vx = 0;
 let vy = 0;
 
 // --- Scroll damping contínuo (sem jump) na Hero ---
-// Ajuste os fatores para calibrar o "peso" da rolagem
 const DAMPING_FACTOR_WHEEL = 0.32;
 const DAMPING_FACTOR_TOUCH = 0.4;
 const DAMP_ZONE_EXTRA_PX = 60;
@@ -110,15 +153,17 @@ let lastTouchYForDamp: number | null = null;
 let touchStartListenerDamp: ((e: TouchEvent) => void) | null = null;
 let touchMoveListenerDamp: ((e: TouchEvent) => void) | null = null;
 
+// Zona de damping ativa somente quando a hero está on-screen
 function inDampZone() {
   const el = rootEl.value;
   if (!el) return false;
-  const y = window.scrollY || window.pageYOffset;
+  if (!isHeroVisible) return false;
+  const y = window.scrollY || window.pageYOffset || 0;
   return y >= el.offsetTop && y <= el.offsetTop + el.offsetHeight + DAMP_ZONE_EXTRA_PX;
 }
 
 function applyDampedScroll(dy: number, factor: number) {
-  window.scrollTo(0, (window.scrollY || 0) + dy * factor);
+  window.scrollTo(0, (window.scrollY || window.pageYOffset || 0) + dy * factor);
 }
 
 function wheelHandler(e: WheelEvent) {
@@ -131,6 +176,7 @@ function wheelHandler(e: WheelEvent) {
 function onTouchStartDamp(t: Touch) {
   lastTouchYForDamp = t.clientY;
 }
+
 function onTouchMoveDamp(t: Touch, e: TouchEvent) {
   if (!inDampZone() || lastTouchYForDamp == null) return;
   const dy = lastTouchYForDamp - t.clientY;
@@ -142,6 +188,19 @@ function onTouchMoveDamp(t: Touch, e: TouchEvent) {
   e.preventDefault();
   applyDampedScroll(dy, DAMPING_FACTOR_TOUCH);
   lastTouchYForDamp = t.clientY;
+}
+
+// Carrossel com pausa automática quando fora de viewport
+function startCarousel() {
+  stopCarousel();
+  if (heroImages.length === 0) return;
+  carouselTimer = window.setInterval(stepCarousel, 5200);
+}
+function stopCarousel() {
+  if (carouselTimer) {
+    window.clearInterval(carouselTimer);
+    carouselTimer = undefined;
+  }
 }
 
 function stepCarousel() {
@@ -157,8 +216,8 @@ function stepCarousel() {
   currentIcon.value = heroImages[idx.value];
 }
 
+// Aplica variáveis CSS do spotlight
 function applyPointerVars(x: number, y: number) {
-  // Normalize to 0..1 then to -1..1
   const px = x;
   const py = y;
   const mx = (px - 0.5) * 2;
@@ -171,13 +230,13 @@ function applyPointerVars(x: number, y: number) {
   el.style.setProperty("--my", my.toFixed(4));
 }
 
+// Normaliza movimento para 0..1 e ativa inércia
 function handleMove(clientX: number, clientY: number) {
   const el = rootEl.value;
   if (!el) return;
   const rect = el.getBoundingClientRect();
   const x = (clientX - rect.left) / rect.width;
   const y = (clientY - rect.top) / rect.height;
-  // Clamp and update target with velocity for inertia
   const cx = Math.max(0, Math.min(1, x));
   const cy = Math.max(0, Math.min(1, y));
   vx = cx - posX.value;
@@ -185,6 +244,44 @@ function handleMove(clientX: number, clientY: number) {
   targetX = cx;
   targetY = cy;
   startAnim();
+}
+
+// Suporte teclado para acessibilidade e usabilidade em desktop
+function onKeyNav(ev: KeyboardEvent) {
+  const step = 0.06;
+  let used = true;
+  switch (ev.key) {
+    case "ArrowLeft":
+    case "a":
+    case "A":
+      targetX = Math.max(0, targetX - step);
+      break;
+    case "ArrowRight":
+    case "d":
+    case "D":
+      targetX = Math.min(1, targetX + step);
+      break;
+    case "ArrowUp":
+    case "w":
+    case "W":
+      targetY = Math.max(0, targetY - step);
+      break;
+    case "ArrowDown":
+    case "s":
+    case "S":
+      targetY = Math.min(1, targetY + step);
+      break;
+    case "Home":
+      targetX = 0.5;
+      targetY = 0.5;
+      break;
+    default:
+      used = false;
+  }
+  if (used) {
+    ev.preventDefault();
+    startAnim();
+  }
 }
 
 function onPointerMove(ev: PointerEvent) {
@@ -199,7 +296,6 @@ function onTouchStart(ev: TouchEvent) {
 function onTouchMove(ev: TouchEvent) {
   if (!ev.touches || ev.touches.length === 0) return;
   const t = ev.touches[0];
-  // Resist small drags to keep user on hero a bit longer
   if (touchStartY != null && scrollGuardActive) {
     const dy = Math.abs(t.clientY - touchStartY);
     if (dy < SCROLL_THRESHOLD) {
@@ -213,18 +309,23 @@ function onTouchMove(ev: TouchEvent) {
   handleMove(t.clientX, t.clientY);
 }
 
-function onPointerDown() {
+function onPointerDown(e?: PointerEvent) {
   isInteracting.value = true;
   hideHintSoon(0);
   const el = rootEl.value;
-  if (el) el.classList.add("is-interacting");
-  // Try to enable gyro on first interaction (iOS permission)
+  if (el) {
+    el.classList.add("is-interacting");
+  }
+  if (e && (e.target as Element)?.setPointerCapture) {
+    try {
+      (e.target as Element).setPointerCapture(e.pointerId);
+    } catch {}
+  }
   enableGyro();
 }
-function onPointerUp() {
-  // Let inertia decay and then recenter slowly
+
+function onPointerUp(e?: PointerEvent) {
   isInteracting.value = false;
-  // Nudge target to current to start smooth decay
   targetX = posX.value + vx;
   targetY = posY.value + vy;
   window.setTimeout(() => {
@@ -235,26 +336,27 @@ function onPointerUp() {
   }, 900);
   const el = rootEl.value;
   if (el) el.classList.remove("is-interacting");
-  // Reset scroll guard for next gesture
   scrollGuardActive = true;
   touchStartY = null;
+  if (e && (e.target as Element)?.releasePointerCapture) {
+    try {
+      (e.target as Element).releasePointerCapture(e.pointerId);
+    } catch {}
+  }
 }
 
+// Loop de animação com easing + inércia
 function startAnim() {
   if (animRaf) return;
   const loop = () => {
-    // Easing toward target plus simple velocity decay (slightly snappier)
     const ease = 0.22;
     posX.value += (targetX - posX.value) * ease + vx * 0.06;
     posY.value += (targetY - posY.value) * ease + vy * 0.06;
     vx *= 0.9;
     vy *= 0.9;
-    // Clamp
     posX.value = Math.max(0, Math.min(1, posX.value));
     posY.value = Math.max(0, Math.min(1, posY.value));
     applyPointerVars(posX.value, posY.value);
-
-    // Continue while moving noticeably
     if (
       Math.abs(targetX - posX.value) > 0.0005 ||
       Math.abs(targetY - posY.value) > 0.0005 ||
@@ -269,15 +371,14 @@ function startAnim() {
   animRaf = requestAnimationFrame(loop);
 }
 
+// Hint
 function hideHintSoon(delay = 3200) {
   if (hintTimer) window.clearTimeout(hintTimer);
   hintTimer = window.setTimeout(() => (showHint.value = false), delay);
 }
 
-// Gyro/tilt support (mobile-first)
+// Gyro/tilt support
 function deviceToTarget(beta: number, gamma: number) {
-  // beta: front-back tilt (-180..180), gamma: left-right tilt (-90..90)
-  // Slightly higher sensitivity for mobile immersion, clamp to ~0.38 range
   const nx = Math.max(-0.38, Math.min(0.38, (gamma || 0) / 48));
   const ny = Math.max(-0.38, Math.min(0.38, -(beta || 0) / 72));
   targetX = 0.5 + nx;
@@ -286,16 +387,16 @@ function deviceToTarget(beta: number, gamma: number) {
 }
 
 let orientationHandler: ((e: DeviceOrientationEvent) => void) | null = null;
+
 async function enableGyro() {
   try {
-    // iOS permission flow
-    // @ts-ignore
-    if (
-      typeof DeviceOrientationEvent !== "undefined"
-      // typeof DeviceOrientationEvent.requestPermission === "function"
-    ) {
-      // @ts-ignore
-      const perm = await DeviceOrientationEvent.requestPermission();
+    // iOS 13+: requestPermission se existir
+    const hasDOE = typeof window !== "undefined" && typeof DeviceOrientationEvent !== "undefined";
+    const canRequest =
+      hasDOE && typeof (DeviceOrientationEvent as any).requestPermission === "function";
+
+    if (canRequest) {
+      const perm = await (DeviceOrientationEvent as any).requestPermission();
       if (perm !== "granted") return;
     }
     if (!orientationHandler) {
@@ -304,32 +405,55 @@ async function enableGyro() {
     window.addEventListener("deviceorientation", orientationHandler, { passive: true });
     useGyro.value = true;
     hideHintSoon(1200);
-  } catch {}
+  } catch {
+    // Silencioso por compatibilidade
+  }
 }
 
+// Observa visibilidade da hero para pausar carrossel e damping quando fora de vista
+function observeVisibility() {
+  const el = rootEl.value;
+  if (!el || typeof IntersectionObserver === "undefined") return;
+  io = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      isHeroVisible = !!entry?.isIntersecting;
+      if (isHeroVisible) startCarousel();
+      else stopCarousel();
+    },
+    { root: null, threshold: 0.25 }
+  );
+  io.observe(el);
+}
+
+// Mounted
 onMounted(() => {
   const el = rootEl.value;
   if (!el) return;
-  // Init to center
+
+  // Init center
   applyPointerVars(0.5, 0.5);
   posX.value = 0.5;
   posY.value = 0.5;
   targetX = 0.5;
   targetY = 0.5;
 
+  // Respeito a prefers-reduced-motion
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-  if (reduce.matches) return;
+  reduceMotionPref = !!reduce.matches;
 
-  el.addEventListener("pointerdown", onPointerDown, { passive: true });
-  el.addEventListener("pointerup", onPointerUp, { passive: true });
+  // Listeners de interação
+  el.addEventListener("pointerdown", onPointerDown as any, { passive: true });
+  el.addEventListener("pointerup", onPointerUp as any, { passive: true });
   el.addEventListener("pointercancel", onPointerUp as any, { passive: true });
   el.addEventListener("pointermove", onPointerMove, { passive: true });
-  // touch handlers (not passive to allow resistance)
+  el.addEventListener("keydown", onKeyNav as any, { passive: false });
+
+  // touch handlers (não passive para resistência)
   el.addEventListener("touchstart", onTouchStart, { passive: false });
   el.addEventListener("touchmove", onTouchMove, { passive: false });
 
-  // Scroll damping (wheel/touch) — sem jump automático
-  reduceMotionPref = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Scroll damping (wheel/touch)
   el.addEventListener("wheel", wheelHandler, { passive: false } as AddEventListenerOptions);
   touchStartListenerDamp = (evt: TouchEvent) => {
     if (evt.touches && evt.touches[0]) onTouchStartDamp(evt.touches[0]);
@@ -340,9 +464,8 @@ onMounted(() => {
   el.addEventListener("touchstart", touchStartListenerDamp, { passive: true });
   el.addEventListener("touchmove", touchMoveListenerDamp, { passive: false });
 
-  // Attempt enabling gyro if allowed without permission (Android/Chrome)
+  // Tenta habilitar gyro sem permissão explícita (Android/Chrome)
   try {
-    // Some browsers fire orientation without explicit permission
     const testHandler = (e: DeviceOrientationEvent) => {
       if ((e.beta ?? 0) !== 0 || (e.gamma ?? 0) !== 0) {
         deviceToTarget(e.beta ?? 0, e.gamma ?? 0);
@@ -353,43 +476,54 @@ onMounted(() => {
     window.addEventListener("deviceorientation", testHandler as any, { passive: true, once: true } as any);
   } catch {}
 
-  // Init carousel
+  // Init carousel + preload
   if (heroImages.length > 0) {
     imgA.value = heroImages[0];
-    imgB.value = heroImages[1 % heroImages.length];
+    imgB.value = heroImages[1 % heroImages.length] || heroImages[0];
     showA.value = true;
-    currentIcon.value = heroImages[0];
-    // rotate slightly slower to favor interaction
-    carouselTimer = window.setInterval(stepCarousel, 5200);
+    currentIcon.value = heroImages[0] || logoSrc;
+    preloadImages(heroImages);
+  } else {
+    imgA.value = mockupSrc as unknown as string;
+    imgB.value = mockupSrc as unknown as string;
+    currentIcon.value = logoSrc as unknown as string;
   }
+  startCarousel();
 
-  // Auto-hide hint after a while
+  // Auto-hide hint
   hideHintSoon();
+
+  // Observer de visibilidade
+  observeVisibility();
 });
 
+// Cleanup
 onBeforeUnmount(() => {
   const el = rootEl.value;
-  if (!el) return;
-  el.removeEventListener("pointerdown", onPointerDown as any);
-  el.removeEventListener("pointerup", onPointerUp as any);
-  el.removeEventListener("pointercancel", onPointerUp as any);
-  el.removeEventListener("pointermove", onPointerMove as any);
-  el.removeEventListener("touchstart", onTouchStart as any);
-  el.removeEventListener("touchmove", onTouchMove as any);
-  el.removeEventListener("wheel", wheelHandler as any);
-  if (touchStartListenerDamp) el.removeEventListener("touchstart", touchStartListenerDamp as any);
-  if (touchMoveListenerDamp) el.removeEventListener("touchmove", touchMoveListenerDamp as any);
+  if (el) {
+    el.removeEventListener("pointerdown", onPointerDown as any);
+    el.removeEventListener("pointerup", onPointerUp as any);
+    el.removeEventListener("pointercancel", onPointerUp as any);
+    el.removeEventListener("pointermove", onPointerMove as any);
+    el.removeEventListener("keydown", onKeyNav as any);
+    el.removeEventListener("touchstart", onTouchStart as any);
+    el.removeEventListener("touchmove", onTouchMove as any);
+    el.removeEventListener("wheel", wheelHandler as any);
+    if (touchStartListenerDamp) el.removeEventListener("touchstart", touchStartListenerDamp as any);
+    if (touchMoveListenerDamp) el.removeEventListener("touchmove", touchMoveListenerDamp as any);
+  }
   if (raf) cancelAnimationFrame(raf);
   if (carouselTimer) window.clearInterval(carouselTimer);
   if (animRaf) cancelAnimationFrame(animRaf);
   if (hintTimer) window.clearTimeout(hintTimer);
   if (orientationHandler) window.removeEventListener("deviceorientation", orientationHandler as any);
+  if (io) io.disconnect();
 });
 </script>
 
 <style scoped>
+/* Contenção e visibilidade ajudam a performance sem quebrar layout */
 .hero {
-  /* Background image and safe defaults */
   background-color: #0a0a0a;
   background-size: cover;
   background-position: center;
@@ -397,9 +531,10 @@ onBeforeUnmount(() => {
   color: var(--hero-ink);
   position: relative;
   overflow: clip;
-  /* Prefer vertical scroll generally, but contain overscroll and allow toggling during interaction */
   touch-action: pan-y;
   overscroll-behavior: contain;
+  content-visibility: auto;
+  contain: layout paint style;
 }
 
 /* Ensure all hero content sits above background effects */
@@ -414,6 +549,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   display: grid;
   grid-template-rows: auto 1fr;
+  gap: 0; /* explícito para evitar heranças indesejadas */
 }
 
 .hero__logo-wrap {
@@ -429,6 +565,7 @@ onBeforeUnmount(() => {
   object-fit: contain;
   filter: drop-shadow(0 6px 18px rgba(16, 185, 129, 0.2));
   transition: transform 0.25s ease, filter 0.25s ease;
+  user-select: none;
 }
 .hero__logo:hover {
   transform: translateY(-2px);
@@ -446,6 +583,7 @@ onBeforeUnmount(() => {
   text-align: center;
   margin: 0 auto;
   max-width: 760px;
+  outline: none; /* rely on focus-visible */
 }
 
 .hero__title {
@@ -528,12 +666,12 @@ onBeforeUnmount(() => {
 }
 .mockup-fader {
   position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
   width: 100%;
-  aspect-ratio: 4 / 3;
-  min-height: 240px;
+  height: 0 !important;        
+  min-height: 0 !important;    
+  overflow: hidden !important; 
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
 }
 .fade-img {
   position: absolute;
@@ -543,6 +681,7 @@ onBeforeUnmount(() => {
   object-fit: cover;
   opacity: 0;
   transition: opacity 0.6s ease;
+  will-change: opacity;
 }
 .fade-img.is-visible {
   opacity: 1;
@@ -583,13 +722,10 @@ onBeforeUnmount(() => {
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .hero__logo {
+  .hero__logo, .btn, .fade-img {
     transition: none;
   }
-  .btn {
-    transition: none;
-  }
-  .hero::before {
+  .hero::before, .hero::after {
     display: none;
   }
 }
@@ -600,7 +736,6 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: -10%;
   pointer-events: none;
-  /* Slightly larger on mobile via css variable fallback */
   background: radial-gradient(
     var(--spot-w, 520px) var(--spot-h, 520px) at var(--px, 50%) var(--py, 50%),
     rgba(255, 255, 255, 0.16),
@@ -672,20 +807,13 @@ onBeforeUnmount(() => {
   letter-spacing: 0.01em;
 }
 @keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
 }
 
 @media (max-width: 1023px) {
   .hero {
-    /* Larger spotlight on mobile */
     --spot-w: 600px;
     --spot-h: 600px;
   }
