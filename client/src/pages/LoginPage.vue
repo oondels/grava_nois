@@ -102,15 +102,12 @@
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
-import { useClipsStore } from "@/store/clips";
 import { useSnackbar } from "@/composables/useSnackbar";
-import { authServiceInstance } from "@/services/auth";
-import { Mail, Lock, LogIn, PlayCircle, DownloadCloud, Filter, ShieldCheck, Eye, EyeOff } from "lucide-vue-next";
+import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 
 const router = useRouter();
 const authStore = useAuthStore();
-const clipsStore = useClipsStore();
 const { showSnackbar } = useSnackbar();
 
 const loginData = reactive({

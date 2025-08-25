@@ -98,7 +98,6 @@ import { onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
-import { useClipsStore } from "@/store/clips";
 import { customIcons } from "@/utils/icons";
 
 // Importando os novos componentes de navegação
@@ -106,17 +105,6 @@ import Header from "@/components/navigation/Header.vue";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav.vue";
 
 const isMobile = computed(() => window.matchMedia("(max-width: 660px)").matches);
-
-// Store instances
-const route = useRoute();
-const authStore = useAuthStore();
-const themeStore = useThemeStore();
-const clipsStore = useClipsStore();
-
-// Handler para filtros de busca
-const handleSearch = (value: string | null) => {
-  clipsStore.updateFilters({ search: value || "" });
-};
 
 onMounted(() => {
 });
