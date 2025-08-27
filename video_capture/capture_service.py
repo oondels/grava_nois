@@ -19,6 +19,9 @@ from video_core import (
     finalize_clip_uploaded,
 )
 from video_core import _sha256_file  # util interno
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class ProcessingWorker:
@@ -179,7 +182,7 @@ class ProcessingWorker:
                 sha256_wm = _sha256_file(out_mp4)
                 payload = {
                     "venue_id": venue_id,
-                    "duration_sec": 15, # TODO: Fix this, put the real duration seconds
+                    "duration_sec": 15,  # TODO: Fix this, put the real duration seconds
                     "captured_at": meta.get("created_at"),
                     "meta": meta.get("meta_wm") or {},
                     "sha256": sha256_wm,
@@ -208,13 +211,19 @@ class ProcessingWorker:
                     t0 = time.time()
                     try:
                         status_code, reason, resp_headers = upload_file_to_signed_url(
-                            upload_url, out_mp4, content_type="video/mp4", extra_headers=None, timeout=180.0
+                            upload_url,
+                            out_mp4,
+                            content_type="video/mp4",
+                            extra_headers=None,
+                            timeout=180.0,
                         )
                         dt_ms = int((time.time() - t0) * 1000)
                         meta.setdefault("remote_upload", {})
                         meta["remote_upload"].update(
                             {
-                                "status": "uploaded" if 200 <= status_code < 300 else "failed",
+                                "status": (
+                                    "uploaded" if 200 <= status_code < 300 else "failed"
+                                ),
                                 "http_status": status_code,
                                 "reason": reason,
                                 "attempted_at": datetime.now(timezone.utc).isoformat(),
@@ -235,7 +244,9 @@ class ProcessingWorker:
                             clip_id = (resp or {}).get("clip_id")
                             if clip_id and api_base:
                                 try:
-                                    print(f"[worker] Notificando backend upload concluído (clip_id={clip_id})…")
+                                    print(
+                                        f"[worker] Notificando backend upload concluído (clip_id={clip_id})…"
+                                    )
                                     etag = None
                                     try:
                                         etag = (resp_headers or {}).get("etag")
@@ -254,27 +265,35 @@ class ProcessingWorker:
                                     meta["remote_finalize"].update(
                                         {
                                             "status": "ok",
-                                            "finalized_at": datetime.now(timezone.utc).isoformat(),
+                                            "finalized_at": datetime.now(
+                                                timezone.utc
+                                            ).isoformat(),
                                             "response": fin,
                                         }
                                     )
                                     meta_path.write_text(
                                         json.dumps(meta, ensure_ascii=False, indent=2)
                                     )
-                                    print("[worker] Finalização confirmada pelo backend.")
+                                    print(
+                                        "[worker] Finalização confirmada pelo backend."
+                                    )
                                 except Exception as e:
                                     meta.setdefault("remote_finalize", {})
                                     meta["remote_finalize"].update(
                                         {
                                             "status": "failed",
                                             "error": str(e),
-                                            "attempted_at": datetime.now(timezone.utc).isoformat(),
+                                            "attempted_at": datetime.now(
+                                                timezone.utc
+                                            ).isoformat(),
                                         }
                                     )
                                     meta_path.write_text(
                                         json.dumps(meta, ensure_ascii=False, indent=2)
                                     )
-                                    print(f"[worker] Falha ao finalizar upload no backend: {e}")
+                                    print(
+                                        f"[worker] Falha ao finalizar upload no backend: {e}"
+                                    )
                     except Exception as e:
                         dt_ms = int((time.time() - t0) * 1000)
                         meta.setdefault("remote_upload", {})
@@ -442,6 +461,7 @@ def main() -> int:
             gpio_pin = None
 
         if gpio_pin is not None:
+            print(f"[gpio] habilitado no pino BCM {gpio_pin}")
             try:
                 import RPi.GPIO as GPIO  # type: ignore
 
@@ -461,7 +481,12 @@ def main() -> int:
                     trigger_q.put("gpio")
 
                 # Detecta borda de descida (pressionado)
-                GPIO.add_event_detect(gpio_pin, GPIO.FALLING, callback=_on_edge, bouncetime=int(debounce_ms))
+                GPIO.add_event_detect(
+                    gpio_pin,
+                    GPIO.FALLING,
+                    callback=_on_edge,
+                    bouncetime=int(debounce_ms),
+                )
 
                 def _cleanup():
                     try:
@@ -474,7 +499,9 @@ def main() -> int:
                         pass
 
                 gpio_cleanup = _cleanup
-                print(f"[gpio] habilitado no pino BCM {gpio_pin} (debounce {int(debounce_ms)}ms)")
+                print(
+                    f"[gpio] habilitado no pino BCM {gpio_pin} (debounce {int(debounce_ms)}ms)"
+                )
             except ImportError:
                 print("[gpio] RPi.GPIO não encontrado; seguindo apenas com ENTER.")
             except Exception as e:

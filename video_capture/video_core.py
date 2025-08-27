@@ -10,6 +10,9 @@ import urllib.error
 import ssl
 import http.client
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # ---- CONFIG & TYPES ---------------------------------------------------------
@@ -414,7 +417,11 @@ def upload_file_to_signed_url(
         raise ValueError(f"URL inválida: {upload_url}")
 
     # Prepara conexão
-    conn_cls = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
+    conn_cls = (
+        http.client.HTTPSConnection
+        if parsed.scheme == "https"
+        else http.client.HTTPConnection
+    )
     netloc = parsed.netloc
     path_qs = parsed.path or "/"
     if parsed.query:
