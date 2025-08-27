@@ -463,6 +463,13 @@ def main() -> int:
         if gpio_pin is not None:
             print(f"[gpio] habilitado no pino BCM {gpio_pin}")
             try:
+                import pigpio, time
+
+                PIN = 17
+                pi = pigpio.pi()
+                pi.set_mode(PIN, pigpio.INPUT)
+                pi.set_pull_up_down(PIN, pigpio.PUD_UP)
+
                 import RPi.GPIO as GPIO  # type: ignore
 
                 GPIO.setmode(GPIO.BCM)
@@ -471,6 +478,12 @@ def main() -> int:
 
                 last_ts = 0.0
                 debounce_ms = float(os.getenv("GN_GPIO_DEBOUNCE_MS", "300"))
+
+                def on_edge(gpio, level, tick):
+                    if level == 0:
+                        trigger_q.put("gpio")
+
+                cb = pi.callback(PIN, pigpio.EITHER_EDGE, on_edge)
 
                 def _on_edge(channel: int):
                     nonlocal last_ts
@@ -527,6 +540,8 @@ def main() -> int:
         print("\nEncerrando…")
     finally:
         stop_evt.set()
+        cb.cancel()
+        pi.stop()
         if gpio_cleanup:
             gpio_cleanup()
         segbuf.stop(join_timeout=2)
