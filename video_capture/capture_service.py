@@ -4,6 +4,7 @@ from pathlib import Path
 import os, json, time, traceback
 from datetime import datetime, timezone
 import threading
+import queue
 from video_core import (
     CaptureConfig,
     SegmentBuffer,
@@ -402,18 +403,105 @@ def main() -> int:
     )
     worker.start()
 
-    print(
-        f"Gravando… pressione ENTER para capturar {cfg.pre_seconds}s + {cfg.post_seconds}s (Ctrl+C sai)"
+    # --- Disparo por ENTER ou GPIO (Raspberry Pi) ---
+    # Implementa dois mecanismos de disparo concorrentes que empurram eventos
+    # para uma fila: 1) ENTER (stdin) e 2) botão físico via GPIO (opcional).
+
+    trigger_q: queue.Queue[str] = queue.Queue()
+    stop_evt = threading.Event()
+
+    def _stdin_listener():
+        # Bloqueia em input(); cada ENTER gera um trigger.
+        try:
+            while not stop_evt.is_set():
+                try:
+                    input()
+                except EOFError:
+                    # Sem stdin disponível; encerra listener.
+                    break
+                except KeyboardInterrupt:
+                    # Propaga interrupção para o laço principal via stop_evt.
+                    stop_evt.set()
+                    break
+                trigger_q.put("enter")
+        except Exception:
+            # Loga e encerra o listener sem derrubar o serviço.
+            print("[stdin] erro no listener:\n", traceback.format_exc())
+
+    stdin_t = threading.Thread(target=_stdin_listener, daemon=True)
+    stdin_t.start()
+
+    # GPIO opcional: habilita se GN_GPIO_PIN ou GPIO_PIN estiver definido.
+    gpio_cleanup = None
+    gpio_pin_env = os.getenv("GN_GPIO_PIN") or os.getenv("GPIO_PIN")
+    if gpio_pin_env is not None:
+        try:
+            gpio_pin = int(gpio_pin_env)
+        except ValueError:
+            print(f"[gpio] pino inválido em GN_GPIO_PIN/GPIO_PIN: {gpio_pin_env!r}")
+            gpio_pin = None
+
+        if gpio_pin is not None:
+            try:
+                import RPi.GPIO as GPIO  # type: ignore
+
+                GPIO.setmode(GPIO.BCM)
+                # Usa pull-up interno; botão liga o pino ao GND.
+                GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+                last_ts = 0.0
+                debounce_ms = float(os.getenv("GN_GPIO_DEBOUNCE_MS", "300"))
+
+                def _on_edge(channel: int):
+                    nonlocal last_ts
+                    now = time.time()
+                    if (now - last_ts) * 1000.0 < debounce_ms:
+                        return
+                    last_ts = now
+                    trigger_q.put("gpio")
+
+                # Detecta borda de descida (pressionado)
+                GPIO.add_event_detect(gpio_pin, GPIO.FALLING, callback=_on_edge, bouncetime=int(debounce_ms))
+
+                def _cleanup():
+                    try:
+                        GPIO.remove_event_detect(gpio_pin)
+                    except Exception:
+                        pass
+                    try:
+                        GPIO.cleanup()
+                    except Exception:
+                        pass
+
+                gpio_cleanup = _cleanup
+                print(f"[gpio] habilitado no pino BCM {gpio_pin} (debounce {int(debounce_ms)}ms)")
+            except ImportError:
+                print("[gpio] RPi.GPIO não encontrado; seguindo apenas com ENTER.")
+            except Exception as e:
+                print(f"[gpio] falha ao configurar GPIO: {e}")
+
+    prompt = (
+        f"Gravando… pressione ENTER"
+        + (f" ou botão GPIO (BCM {gpio_pin_env})" if gpio_pin_env else "")
+        + f" para capturar {cfg.pre_seconds}s + {cfg.post_seconds}s (Ctrl+C sai)"
     )
+    print(prompt)
+
     try:
-        while True:
-            input()  # stdin apenas aqui
+        while not stop_evt.is_set():
+            try:
+                _ = trigger_q.get(timeout=0.2)
+            except queue.Empty:
+                continue
             out = build_highlight(cfg, segbuf)
             if out:
                 enqueue_clip(cfg, out)  # move p/ queue_raw + salva metadados
     except KeyboardInterrupt:
         print("\nEncerrando…")
     finally:
+        stop_evt.set()
+        if gpio_cleanup:
+            gpio_cleanup()
         segbuf.stop(join_timeout=2)
         try:
             proc.terminate()
