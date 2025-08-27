@@ -8,6 +8,30 @@
 
 ---
 
+## GPIO usado + Execução rápida
+
+- GPIO (BCM): 17 — conforme `.env` (`GN_GPIO_PIN=17`).
+- Fiação: botão entre `BCM 17` e `GND` (pull-up interno habilitado).
+- Daemon: `pigpiod` deve estar ativo para o disparo físico.
+
+Como rodar no Raspberry Pi (TL;DR):
+
+```
+sudo apt update && sudo apt install -y ffmpeg pigpio
+sudo systemctl enable --now pigpiod   # ou rode apenas: pigpiod
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install "moviepy>=2.0.0"          # necessário para watermark/thumbnail
+
+export GN_GPIO_PIN=17                 # ou mantenha no .env
+python3 capture_service.py            # ENTER ou botão no BCM 17 dispara
+```
+
+Detalhes completos estão nas seções “Como rodar” e “GPIO (botão físico)” abaixo.
+
 ## 1) Visão Geral do Fluxo
 
 ```
