@@ -277,21 +277,23 @@ Worker de varredura de diretório para aplicar watermark e gerar thumbnail.
 
 ### 7.1) GPIO (botão físico)
 
-O disparo por botão físico no Raspberry Pi está disponível de forma opcional. Para habilitar:
+O disparo por botão físico no Raspberry Pi está disponível e usa exclusivamente a biblioteca `pigpio` e o daemon `pigpiod` (sem `RPi.GPIO`).
 
 - Defina o pino BCM via variável de ambiente: `GN_GPIO_PIN` (ou `GPIO_PIN`).
-- O código usa `RPi.GPIO` com `PUD_UP` (pull-up interno); conecte o botão entre o pino e GND.
+- Conexão: habilite pull-up interno; conecte o botão entre o pino e GND.
 - Borda considerada: FALLING (pressionado). Debounce padrão de 300 ms.
+- Requisito: daemon `pigpiod` em execução. Se não estiver ativo, rode `pigpiod` em outro terminal/serviço antes de iniciar o script.
 
 Exemplo (bash):
 
 ```
+pigpiod                        # inicia o daemon (sem sudo)
 export GN_GPIO_PIN=17          # pino BCM
 export GN_GPIO_DEBOUNCE_MS=300 # opcional
 python3 capture_service.py
 ```
 
-Se `RPi.GPIO` não estiver instalado/disponível, o serviço continua funcionando apenas com ENTER.
+Se `pigpio`/`pigpiod` não estiver disponível, o serviço continua funcionando apenas com ENTER.
 
 ---
 

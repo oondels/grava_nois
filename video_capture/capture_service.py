@@ -451,8 +451,9 @@ def main() -> int:
     stdin_t.start()
 
     # GPIO opcional: habilita se GN_GPIO_PIN ou GPIO_PIN estiver definido.
-    gpio_cleanup = None
     gpio_pin_env = os.getenv("GN_GPIO_PIN") or os.getenv("GPIO_PIN")
+    pi = None
+    cb = None
     if gpio_pin_env is not None:
         try:
             gpio_pin = int(gpio_pin_env)
@@ -461,64 +462,52 @@ def main() -> int:
             gpio_pin = None
 
         if gpio_pin is not None:
-            print(f"[gpio] habilitado no pino BCM {gpio_pin}")
             try:
-                import pigpio, time
+                import pigpio, time, subprocess
 
-                PIN = 17
-                pi = pigpio.pi()
-                pi.set_mode(PIN, pigpio.INPUT)
-                pi.set_pull_up_down(PIN, pigpio.PUD_UP)
-
-                import RPi.GPIO as GPIO  # type: ignore
-
-                GPIO.setmode(GPIO.BCM)
-                # Usa pull-up interno; botão liga o pino ao GND.
-                GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-                last_ts = 0.0
                 debounce_ms = float(os.getenv("GN_GPIO_DEBOUNCE_MS", "300"))
 
-                def on_edge(gpio, level, tick):
-                    if level == 0:
-                        trigger_q.put("gpio")
+                def _connect_pi():
+                    p = pigpio.pi()
+                    if not p.connected:
+                        try:
+                            # Tenta iniciar o daemon sem sudo, então reconecta
+                            subprocess.Popen(["pigpiod"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            time.sleep(0.2)
+                            p = pigpio.pi()
+                        except Exception:
+                            pass
+                    return p
 
-                cb = pi.callback(PIN, pigpio.EITHER_EDGE, on_edge)
+                pi = _connect_pi()
+                if not pi or not pi.connected:
+                    print("[gpio] pigpiod não está acessível. Rode 'pigpiod' e tente novamente.")
+                else:
+                    # Configura pino como entrada com pull-up; botão ao GND.
+                    pi.set_mode(gpio_pin, pigpio.INPUT)
+                    pi.set_pull_up_down(gpio_pin, pigpio.PUD_UP)
 
-                def _on_edge(channel: int):
-                    nonlocal last_ts
-                    now = time.time()
-                    if (now - last_ts) * 1000.0 < debounce_ms:
-                        return
-                    last_ts = now
-                    trigger_q.put("gpio")
+                    last_ts = 0.0
 
-                # Detecta borda de descida (pressionado)
-                GPIO.add_event_detect(
-                    gpio_pin,
-                    GPIO.FALLING,
-                    callback=_on_edge,
-                    bouncetime=int(debounce_ms),
-                )
+                    def on_edge(gpio, level, tick):
+                        nonlocal last_ts
+                        # Considera borda de descida (pressionado)
+                        if level == 0:
+                            now = time.time()
+                            if (now - last_ts) * 1000.0 < debounce_ms:
+                                return
+                            last_ts = now
+                            trigger_q.put("gpio")
 
-                def _cleanup():
-                    try:
-                        GPIO.remove_event_detect(gpio_pin)
-                    except Exception:
-                        pass
-                    try:
-                        GPIO.cleanup()
-                    except Exception:
-                        pass
-
-                gpio_cleanup = _cleanup
-                print(
-                    f"[gpio] habilitado no pino BCM {gpio_pin} (debounce {int(debounce_ms)}ms)"
-                )
+                    # Use FALLING_EDGE para já filtrar nível
+                    cb = pi.callback(gpio_pin, pigpio.FALLING_EDGE, on_edge)
+                    print(
+                        f"[gpio] pigpio habilitado no pino BCM {gpio_pin} (debounce {int(debounce_ms)}ms)"
+                    )
             except ImportError:
-                print("[gpio] RPi.GPIO não encontrado; seguindo apenas com ENTER.")
+                print("[gpio] pigpio não encontrado; seguindo apenas com ENTER.")
             except Exception as e:
-                print(f"[gpio] falha ao configurar GPIO: {e}")
+                print(f"[gpio] falha ao configurar GPIO (pigpio): {e}")
 
     prompt = (
         f"Gravando… pressione ENTER"
@@ -540,10 +529,16 @@ def main() -> int:
         print("\nEncerrando…")
     finally:
         stop_evt.set()
-        cb.cancel()
-        pi.stop()
-        if gpio_cleanup:
-            gpio_cleanup()
+        try:
+            if cb is not None:
+                cb.cancel()
+        except Exception:
+            pass
+        try:
+            if pi is not None:
+                pi.stop()
+        except Exception:
+            pass
         segbuf.stop(join_timeout=2)
         try:
             proc.terminate()
