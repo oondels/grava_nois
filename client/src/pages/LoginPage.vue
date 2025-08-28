@@ -79,7 +79,7 @@
                   block
                   :loading="loadingAuth"
                   class="mb-4 login-action"
-                  @click="signUpEmail"
+                  @click="auth.signUpEmail(loadingAuth)"
                 >
                   <template #prepend>
                     <LogIn :size="18" class="me-1" />
@@ -114,7 +114,7 @@
                   block
                   :loading="loadingAuth"
                   class="mb-4 d-flex align-center justify-center"
-                  @click="signInWithGoogleRedirect"
+                  @click="auth.signInWithGoogleRedirect(loadingAuth)"
                 >
                   <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
                   Entrar com Google
@@ -137,10 +137,14 @@ import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
 
-import { supabaseClient } from "@/lib/supabaseAuth";
+const auth = useAuthStore();
+console.log(auth.isAuthenticated);
 
 const router = useRouter();
 const loadingAuth = ref(false);
+
+const remember = ref(false);
+const showPassword = ref(false);
 const loginData = reactive({
   email: "",
   password: "",
@@ -153,50 +157,6 @@ const rules = {
     return pattern.test(value) || "Email inválido";
   },
 };
-
-const remember = ref(false);
-const showPassword = ref(false);
-
-const signInWithGoogleRedirect = async () => {
-  try {
-    loadingAuth.value = true;
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/lances-gravanois`,
-        queryParams: { access_type: "offline", prompt: "consent" },
-      },
-    });
-
-    if (error) throw error;
-  } catch (e) {
-    console.error(e);
-    alert(e instanceof Error ? e.message : "Falha no login");
-  } finally {
-    loadingAuth.value = false;
-  }
-};
-
-async function signUpEmail() {
-  try {
-    loadingAuth.value = true;
-
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: loginData.email,
-      password: loginData.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/lances-gravanois`,
-      },
-    });
-
-    if (error) throw error;
-  } catch (e) {
-    console.error("Deu erro: ", e);
-    alert(e instanceof Error ? e.message : "Falha no login");
-  } finally {
-    loadingAuth.value = false;
-  }
-}
 
 const handleForgotPassword = () => {
   showSnackbar("Recuperação de senha indisponível na demonstração.", "info");

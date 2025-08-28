@@ -5,25 +5,44 @@
     role="navigation"
     aria-label="Navegação inferior"
   >
-    <div class="h-15 flex items-center justify-between px-3 py-2 gap-2 pb-[env(safe-area-inset-bottom)]">
-      <RouterLink to="/" class="flex items-center">
-        <img
-          :src="LogoGravaNoisSimbol"
-          alt="Símbolo Logo Grava Nóis"
-          class="drop-shadow-sm w-auto h-8 sm:h-10 md:h-12 lg:h-14 xl:h-16"
-        />
+    <div class="h-15 flex items-center justify-center px-3 py-2 gap-2 pb-[env(safe-area-inset-bottom)]">
+      <!-- Botão dinâmico: Logo para ir para user-page, X para sair -->
+      <button
+      v-if="isUserPage"
+      @click="goBack"
+      class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
+      aria-label="Voltar"
+      >
+      <XIcon class="w-6 h-6 text-white drop-shadow-sm" />
+      </button>
+
+      <RouterLink
+      v-if="!isUserPage"
+      to="/user-page"
+      class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
+      aria-label="Ir para página do usuário"
+      >
+      <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="drop-shadow-sm w-6 h-6" />
+      </RouterLink>
+
+      <RouterLink
+      to="/"
+      class="home-icon flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98] mx-auto"
+      aria-label="iS PARA hOME"
+      >
+      <Home />
       </RouterLink>
 
       <!-- Trigger abre menu -->
       <button
-        type="button"
-        class="ml-auto inline-flex items-center justify-center rounded-lg px-3 py-2 active:scale-[.98] hover:bg-black/5 dark:hover:bg-white/10 transition"
-        :aria-expanded="isOpen ? 'true' : 'false'"
-        aria-controls="mobile-menu-overlay"
-        @click="toggleMenu"
+      type="button"
+      class="ml-auto inline-flex items-center justify-center rounded-lg px-3 py-2 active:scale-[.98] hover:bg-black/5 dark:hover:bg-white/10 transition"
+      :aria-expanded="isOpen ? 'true' : 'false'"
+      aria-controls="mobile-menu-overlay"
+      @click="toggleMenu"
       >
-        <MenuIcon color="white" class="h-7 w-7 sm:h-9 sm:w-9 drop-shadow-sm" />
-        <span class="sr-only">Abrir menu</span>
+      <MenuIcon color="white" class="h-7 w-7 sm:h-9 sm:w-9 drop-shadow-sm" />
+      <span class="sr-only">Abrir menu</span>
       </button>
     </div>
   </nav>
@@ -40,7 +59,7 @@
       :class="isOpen ? 'opacity-100' : 'opacity-0'"
       @click="closeMenu"
       aria-hidden="true"
-    />
+    ></div>
 
     <!-- painel -->
     <div
@@ -92,14 +111,14 @@
             <span
               v-if="isActive(item.to)"
               class="absolute -bottom-1 h-1.5 w-8 rounded-full bg-green-500/70 blur-[1px] transition"
-            />
+            ></span>
 
             <!-- Badge de breve -->
             <span
               v-if="item.disabled"
               class="absolute top-1.5 right-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
             >
-              breve
+              em breve
             </span>
           </router-link>
         </div>
@@ -113,12 +132,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useRoute } from "vue-router";
-import { Home, Download, HelpCircle, LogInIcon, MenuIcon, MenuSquare } from "lucide-vue-next";
-import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
+import { useRoute, useRouter } from "vue-router";
+import { Home, HelpCircle, LogInIcon, MenuIcon, ClapperboardIcon, XIcon } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 
 const route = useRoute();
+const router = useRouter();
+
+const user = localStorage.getItem;
 
 type NavItem = {
   label: string;
@@ -129,9 +150,9 @@ type NavItem = {
 
 const navigationItems: NavItem[] = [
   { label: "Home", to: "/", icon: Home, disabled: false },
-  { label: "Downloads", to: "/downloads", icon: Download, disabled: true },
-  { label: "Suporte", to: "/suporte", icon: HelpCircle, disabled: true },
   { label: "Login", to: "/login", icon: LogInIcon, disabled: false },
+  { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false },
+  { label: "Suporte", to: "/suporte", icon: HelpCircle, disabled: true },
 ];
 
 const visibleItems = computed(() => navigationItems);
@@ -151,6 +172,12 @@ function handleItemClick(item: NavItem) {
   if (item.disabled) return;
   // Fecha o menu ao navegar
   closeMenu();
+}
+
+const isUserPage = computed(() => route.path === "/user-page");
+
+function goBack() {
+  router.back();
 }
 </script>
 
