@@ -77,7 +77,7 @@
                   variant="flat"
                   size="large"
                   block
-                  :loading="authStore.loading"
+                  :loading="loadingAuth"
                   class="mb-4 login-action"
                 >
                   <template #prepend>
@@ -86,13 +86,34 @@
                   Entrar
                 </v-btn>
 
+                <!-- <div
+                  id="g_id_onload"
+                  data-client_id="grava-nois-470322"
+                  data-context="signin"
+                  data-ux_mode="popup"
+                  data-callback="signInWithOAuth"
+                  data-nonce=""
+                  data-auto_select="true"
+                  data-itp_support="true"
+                  data-use_fedcm_for_prompt="true"
+                ></div>
+                <div
+                  class="g_id_signin"
+                  data-type="standard"
+                  data-shape="pill"
+                  data-theme="outline"
+                  data-text="signin_with"
+                  data-size="large"
+                  data-logo_alignment="left"
+                ></div> -->
                 <v-btn
                   color="red"
                   variant="outlined"
                   size="large"
                   block
-                  :loading="authStore.loading"
+                  :loading="loadingAuth"
                   class="mb-4 d-flex align-center justify-center"
+                  @click="signInWithGoogleRedirect"
                 >
                   <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
                   Entrar com Google
@@ -112,22 +133,19 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useClipsStore } from "@/store/clips";
 import { useSnackbar } from "@/composables/useSnackbar";
-import { authServiceInstance } from "@/services/auth";
 import { Mail, Lock, LogIn, PlayCircle, DownloadCloud, Filter, ShieldCheck, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
-
-const router = useRouter();
-const authStore = useAuthStore();
-const clipsStore = useClipsStore();
 const { showSnackbar } = useSnackbar();
 
+import { supabaseClient } from "@/lib/supabaseAuth";
+import { mdiGoogle } from "@mdi/js";
+
+const router = useRouter();
+const loadingAuth = ref(false);
 const loginData = reactive({
   email: "",
   password: "",
 });
-
-const remember = ref(false);
-const showPassword = ref(false);
 
 const rules = {
   required: (value: string) => !!value || "Campo obrigatório",
@@ -137,40 +155,60 @@ const rules = {
   },
 };
 
+const remember = ref(false);
+const showPassword = ref(false);
+
 // const handleLogin = async () => {
-//   if (!loginData.email || !loginData.password) {
-//     showSnackbar("Por favor, preencha todos os campos.", "error");
-//     return;
-//   }
-
-//   const success = await authStore.login(loginData.email, loginData.password);
-//   if (success) {
-//     showSnackbar("Login realizado com sucesso!", "success");
-//     router.push("/meus-lances");
-//   } else {
-//     showSnackbar("Erro ao fazer login. Tente novamente.", "error");
-//   }
-// };
-
-// const handleGoogleLogin = async () => {
 //   try {
-//     await authServiceInstance.signInGoogle();
-//     showSnackbar("Login realizado com sucesso!", "success");
-//     router.push("/meus-lances");
+//     loading.value = true;
+//     const { error } = await supabaseClient.auth.signInWithOtp({
+//       email: email.value,
+//     });
+
+//     if (error) throw error;
+
+//     alert("Check your email for the login link!");
 //   } catch (error) {
-//     console.error("Erro ao fazer login com Google:", error);
-//     showSnackbar("Erro ao fazer login com Google. Tente novamente.", "error");
+//     if (error instanceof Error) {
+//       alert(error.message);
+//     }
+//       email: email.value,
+//     });
+
+//     if (error) throw error;
+
+//     alert("Check your email for the login link!");
+//   } catch (error) {
+//     if (error instanceof Error) {
+//       alert(error.message);
+//     }
+//   } finally {
+//     loading.value = false;
 //   }
 // };
 
-const handleForgotPassword = () => {
-  showSnackbar("Recuperação de senha indisponível na demo.", "info");
+const signInWithGoogleRedirect = async () => {
+  try {
+    loadingAuth.value = true;
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/lances-gravanois`,
+        queryParams: { access_type: "offline", prompt: "consent" },
+      },
+    });
+    if (error) throw error;
+    // no more code here; browser will redirect
+  } catch (e) {
+    console.error(e);
+    alert(e instanceof Error ? e.message : "Falha no login");
+  } finally {
+    loadingAuth.value = false;
+  }
 };
 
-const handleDemoLogin = async () => {
-  await authStore.loginDemo();
-  showSnackbar("Bem-vindo ao modo demonstração!", "info");
-  router.push("/meus-lances");
+const handleForgotPassword = () => {
+  showSnackbar("Recuperação de senha indisponível na demonstração.", "info");
 };
 </script>
 

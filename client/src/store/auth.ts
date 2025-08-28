@@ -8,6 +8,7 @@ export interface User {
   isDemoMode: boolean
 }
 
+//TODO: Trazer configurações de login do supabase para aqui
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const loading = ref(false)
@@ -39,23 +40,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const loginDemo = async (): Promise<void> => {
-    loading.value = true
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
-      user.value = {
-        id: 'demo',
-        email: 'demo@sportclips.com',
-        name: 'Usuário Demonstração',
-        isDemoMode: true
-      }
-    } finally {
-      loading.value = false
-    }
-  }
-
   const logout = (): void => {
     user.value = null
   }
@@ -66,7 +50,6 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isDemoMode,
     login,
-    loginDemo,
     logout
   }
 })

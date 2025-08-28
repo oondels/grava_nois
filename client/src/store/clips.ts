@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 export interface SportClip {
   id: string
@@ -119,6 +119,11 @@ export const useClipsStore = defineStore('clips', () => {
     sports: [],
     dateRange: null,
     status: []
+  })
+
+  onMounted(() => {
+    console.log("Montado");
+    
   })
 
   const filteredClips = computed(() => {

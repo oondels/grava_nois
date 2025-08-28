@@ -7,9 +7,8 @@ const routes = [
     component: () => import("@/pages/HomePage.vue"),
   },
   {
-    path: "/videos",
-    name: "Videos",
-    // Temporariamente público; futuramente use meta: { requiresAuth: true }
+    path: "/lances-gravanois",
+    name: "Lances GravaNois",
     component: () => import("@/pages/VideosPage.vue"),
     meta: { requiresAuth: false },
   },
@@ -19,30 +18,12 @@ const routes = [
     component: () => import("@/pages/LoginPage.vue"),
     meta: { requiresGuest: false },
   },
-  // {
-  //   path: "/meus-lances",
-  //   name: "MeusLances",
-  //   component: () => import("@/pages/MeusLancesPage.vue"),
-  //   meta: { requiresAuth: false },
-  // },
-  // {
-  //   path: "/lance/:id",
-  //   name: "LanceDetails",
-  //   component: () => import("@/pages/LanceDetailsPage.vue"),
-  //   meta: { requiresAuth: false },
-  // },
-  // {
-  //   path: "/downloads",
-  //   name: "Downloads",
-  //   component: () => import("@/pages/DownloadsPage.vue"),
-  //   meta: { requiresAuth: false },
-  // },
-  // {
-  //   path: "/suporte",
-  //   name: "Suporte",
-  //   component: () => import("@/pages/SuportePage.vue"),
-  //   meta: { requiresAuth: false },
-  // },
+  {
+    path: "/user-page",
+    name: "Usuário",
+    component: () => import("@/pages/UserPage.vue"),
+    meta: { requiresAuth: false },
+  },
   {
     path: "/contato",
     name: "Contato",
@@ -68,7 +49,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next("/login");
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next("/meus-lances");
+    next("/videos");
   } else {
     next();
   }
