@@ -43,7 +43,11 @@ AppDataSource.initialize()
         },
       });
 
-      app.use(cors({ origin: "*" })) // TODO: Fix CORS for production
+      app.use(cors({
+        origin: ["http://localhost:5174", "https://www.gravanois.com.br"],
+        credentials: true,
+      }));
+    
       app.use(express.json())
 
       // Initialize Supabase client with service role key (secure, only on server)
@@ -52,6 +56,77 @@ AppDataSource.initialize()
         config.supabaseServiceKey
       );
 
+      function makeSupabase(req: Request, res: Response) {
+        return createServerClient(
+          config.supabaseUrl!,
+          config.supabasePublishableKey!,
+          {
+            cookies: {
+              getAll() {
+                const parsed = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
+                const arr = Object.entries(parsed).map(([name, value]) => ({ name, value: String(value ?? "") }));
+                return arr.length ? arr : null;
+              },
+              setAll(cookies) {
+                cookies.forEach(({ name, value, options }) => {
+                  const final = {
+                    path: "/",
+                    sameSite: "lax" as const,
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    ...options,
+                  };
+                  res.append("Set-Cookie", serializeCookie(name, value, final));
+                });
+              },
+            },
+          }
+        );
+      };
+
+      // email login
+      app.post("/sign-in", async (req, res) => {
+        const { email, password } = req.body ?? {};
+        if (!email || !password) return res.status(400).json({ error: "missing_credentials" });
+
+        const supabase = makeSupabase(req, res);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) return res.status(401).json({ error: error.message });
+
+        // Cookies HttpOnly já foram setados pelo @supabase/ssr via setAll()
+        return res.status(204).end();
+      });
+
+      app.post("/sign-up", async (req, res) => {
+        const { email, password } = req.body ?? {};
+        if (!email || !password) return res.status(400).json({ error: "missing_credentials" });
+
+        const supabase = makeSupabase(req, res);
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) return res.status(400).json({ error: error.message });
+
+        // Se “Email confirmations” estiver ON, o usuário só loga após confirmar por e-mail
+        return res.status(200).json({ status: "check_email" });
+      });
+
+      app.post("/sign-out", async (req, res) => {
+        const supabase = makeSupabase(req, res);
+        await supabase.auth.signOut(); // limpa os cookies
+        return res.status(204).end();
+      });
+
+      app.get("/me", async (req, res) => {
+        const supabase = makeSupabase(req, res);
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) return res.status(401).json({ error: "unauthorized" });
+
+        // Ex.: buscar perfil
+        const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+        return res.json({ user: { id: user.id, email: user.email, app_metadata: user.app_metadata }, profile });
+      });
+
+
+      // google login
       app.get("/auth/callback", async (req: Request, res: Response) => {
         const code = req.query.code;
         const nextRaw = req.query.next ?? "/";

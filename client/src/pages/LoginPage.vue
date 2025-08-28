@@ -79,6 +79,7 @@
                   block
                   :loading="loadingAuth"
                   class="mb-4 login-action"
+                  @click="signUpEmail"
                 >
                   <template #prepend>
                     <LogIn :size="18" class="me-1" />
@@ -131,14 +132,12 @@
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
-import { useClipsStore } from "@/store/clips";
 import { useSnackbar } from "@/composables/useSnackbar";
-import { Mail, Lock, LogIn, PlayCircle, DownloadCloud, Filter, ShieldCheck, Eye, EyeOff } from "lucide-vue-next";
+import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
 
 import { supabaseClient } from "@/lib/supabaseAuth";
-import { mdiGoogle } from "@mdi/js";
 
 const router = useRouter();
 const loadingAuth = ref(false);
@@ -158,35 +157,6 @@ const rules = {
 const remember = ref(false);
 const showPassword = ref(false);
 
-// const handleLogin = async () => {
-//   try {
-//     loading.value = true;
-//     const { error } = await supabaseClient.auth.signInWithOtp({
-//       email: email.value,
-//     });
-
-//     if (error) throw error;
-
-//     alert("Check your email for the login link!");
-//   } catch (error) {
-//     if (error instanceof Error) {
-//       alert(error.message);
-//     }
-//       email: email.value,
-//     });
-
-//     if (error) throw error;
-
-//     alert("Check your email for the login link!");
-//   } catch (error) {
-//     if (error instanceof Error) {
-//       alert(error.message);
-//     }
-//   } finally {
-//     loading.value = false;
-//   }
-// };
-
 const signInWithGoogleRedirect = async () => {
   try {
     loadingAuth.value = true;
@@ -197,8 +167,8 @@ const signInWithGoogleRedirect = async () => {
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });
+
     if (error) throw error;
-    // no more code here; browser will redirect
   } catch (e) {
     console.error(e);
     alert(e instanceof Error ? e.message : "Falha no login");
@@ -206,6 +176,27 @@ const signInWithGoogleRedirect = async () => {
     loadingAuth.value = false;
   }
 };
+
+async function signUpEmail() {
+  try {
+    loadingAuth.value = true;
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: loginData.email,
+      password: loginData.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/lances-gravanois`,
+      },
+    });
+
+    if (error) throw error;
+  } catch (e) {
+    console.error("Deu erro: ", e);
+    alert(e instanceof Error ? e.message : "Falha no login");
+  } finally {
+    loadingAuth.value = false;
+  }
+}
 
 const handleForgotPassword = () => {
   showSnackbar("Recuperação de senha indisponível na demonstração.", "info");
