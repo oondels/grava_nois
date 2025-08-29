@@ -98,7 +98,15 @@
                 </RouterLink>
               </div>
 
-              <v-btn @click="onRegister" color="primary" variant="flat" size="large" block class="mb-4 auth-action">
+              <v-btn 
+                @click="onRegister" 
+                color="primary" 
+                variant="flat" 
+                size="large" 
+                block 
+                class="mb-4 auth-action"
+                :disabled="!registerData.name || !registerData.email || !registerData.password || !registerData.confirmPassword"
+              >
                 <template #prepend>
                   <UserPlus :size="18" class="me-1" />
                 </template>

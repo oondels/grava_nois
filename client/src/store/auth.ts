@@ -37,7 +37,14 @@ export const useAuthStore = defineStore('auth', () => {
       }
     })
 
-    if (error) throw error
+     if (error) {
+       
+       const msg = error.message?.toLowerCase() ?? ''
+      if (msg.includes('anonymous sign-ins')) {
+        throw new Error('Preencha todos os campos!.')
+      }
+    }
+    
     return data
   }
 
@@ -65,7 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       if (msg.includes('invalid login credentials')) {
         // Could be wrong creds OR a Google-only account without a password set
-        throw new Error('Credenciais inválidas. Se sua conta foi criada com Google, defina uma senha via “Esqueci minha senha”.')
+        throw new Error('Credenciais inválidas.')
       }
     }
 
