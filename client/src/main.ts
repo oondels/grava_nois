@@ -20,14 +20,13 @@ const vuetify = createVuetify({
   },
 });
 
+const auth = useAuthStore()
 const app = createApp(App);
-
 
 app.use(createPinia());
 app.use(router);
 app.use(vuetify);
 
-const auth = useAuthStore()
-await auth.init()
-
-app.mount("#app");
+auth.init().finally(() => {
+  app.mount('#app')
+})
