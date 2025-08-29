@@ -10,7 +10,7 @@ const routes = [
     path: "/lances-gravanois",
     name: "Lances GravaNois",
     component: () => import("@/pages/VideosPage.vue"),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
   {
     path: "/login",
@@ -34,7 +34,7 @@ const routes = [
     path: "/user-page",
     name: "Usuário",
     component: () => import("@/pages/UserPage.vue"),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
   // {
   //   path: "/contato",

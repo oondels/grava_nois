@@ -26,6 +26,21 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
+  // Register New User
+  async function signUpNewUser(email: string, pass: string, metadata?: Record<string, any>) {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email,
+      password: pass,
+      options: {
+        data: metadata,
+        emailRedirectTo: `${window.location.origin}/login`
+      }
+    })
+
+    if (error) throw error
+    return data
+  }
+
   async function signInWithGoogle() {
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
@@ -37,8 +52,11 @@ export const useAuthStore = defineStore('auth', () => {
     if (error) throw error
   }
 
+  //! Verificar redirecionamento apos login
   async function signInWithEmail(email: string, password: string) {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email, password,
+    })
 
     if (error) {
       const msg = error.message?.toLowerCase() ?? ''
@@ -49,7 +67,6 @@ export const useAuthStore = defineStore('auth', () => {
         // Could be wrong creds OR a Google-only account without a password set
         throw new Error('Credenciais inválidas. Se sua conta foi criada com Google, defina uma senha via “Esqueci minha senha”.')
       }
-      throw error
     }
 
     // Ensure the UI is immediately in sync even if onAuthStateChange hasn't fired yet
@@ -57,17 +74,16 @@ export const useAuthStore = defineStore('auth', () => {
     return data.user
   }
 
+  //! TODO: em manutencao
   // Rquest para torca de senha
   async function sendReset(email: string) {
-    console.log('a trocar senha');
-    console.log(email);
-
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/update-password`,
     })
     if (error) throw error
   }
 
+  //! TODO: em manutencao
   // Troca de senha
   async function updatePassword(newPassword: string) {
     const { error } = await supabaseClient.auth.updateUser({ password: newPassword })
@@ -89,6 +105,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     session, user, isAuthenticated, loading, init,
-    signInWithGoogle, signInWithEmail, signOut, sendReset, updatePassword
+    signInWithGoogle, signInWithEmail, signOut, sendReset, updatePassword, signUpNewUser
   }
 })

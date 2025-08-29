@@ -114,6 +114,7 @@ import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
+import { useRouter } from 'vue-router'
 
 const rules = {
   required: (value: string) => !!value || "Campo obrigatório",
@@ -123,6 +124,7 @@ const rules = {
   },
 };
 
+const router = useRouter()
 const auth = useAuthStore();
 
 const loadingAuth = ref(false);
@@ -142,6 +144,7 @@ const submitLogin = async () => {
     console.error("signIn error:", error);
   } finally {
     loadingAuth.value = false;
+    router.push(`/lances-gravanois`)
   }
 };
 
