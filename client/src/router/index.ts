@@ -10,7 +10,7 @@ const routes = [
     path: "/lances-gravanois",
     name: "Lances GravaNois",
     component: () => import("@/pages/VideosPage.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: false },
   },
   {
     path: "/login",
