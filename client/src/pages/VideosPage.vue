@@ -1,69 +1,155 @@
 <template>
   <v-container class="py-6" fluid>
-    <!-- Top bar: logo + actions -->
-    <div class="d-flex flex-row align-center justify-space-between mb-3 ga-3">
-      <!-- <div class="d-flex align-center ga-2">
-        <v-btn class="d-none d-sm-flex" variant="text" color="secondary" :prepend-icon="customIcons.filter" @click="filtersOpen = true">Filtros</v-btn>
+    <!-- Header -->
+    <div class="d-flex justify-center align-center mb-4">
+      <img class="gravanois-logo" :src="LogoGravaNois" alt="Logo Grava Nóis" />
+    </div>
+
+    <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">
+      <div>
+        <h1 class="text-h4 font-weight-bold mb-1">Replays e Lances</h1>
+        <p class="text-medium-emphasis mb-0">
+          "Resgates seus mehlores laces"
+        </p>
+      </div>
+
+      <!-- <div v-if="filteredByLocation.length" class="text-right">
+        <div class="text-h5 font-weight-medium">{{ filteredByLocation.length }}</div>
+        <div class="text-caption text-medium-emphasis">
+          {{ filteredByLocation.length === 1 ? "resultado" : "resultados" }}
+        </div>
       </div> -->
     </div>
-    
-    <!-- Title + result count -->
-    <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-2">
-      <img :src="LogoGravaNois" class="grava-nois-logo" alt="Logo Grava Nóis" height="32" />
-      <div>
-        <h1 class="text-h5 text-sm-h4 font-weight-bold mb-1">Replays e Lances</h1>
-        <p class="text-medium-emphasis mb-0">Descubra clipes por localização e horário.</p>
-      </div>
-    </div>
 
-    <!-- Sticky filter bar -->
-    <FilterChipsBar
-      class="mb-4"
-      :sports="sportChips"
-      :estado="selectedEstado"
-      :cidade="selectedCidade"
-      :quadra="selectedQuadra"
-      v-model:sort="sort"
-      :sort-options="sortOptions"
-      :filter-icon="customIcons.filter"
-      @open-filters="filtersOpen = true"
-      @toggle-sport="toggleSport"
-      @clear-estado="selectedEstado = null"
-      @clear-cidade="selectedCidade = null"
-      @clear-quadra="selectedQuadra = null"
-    />
+    <!-- Filtros (moderno/compacto) -->
+    <v-sheet class="mb-6" color="surface" rounded="lg" border>
+      <v-expansion-panels variant="accordion" class="filters-panel" :multiple="false" elevation="0">
+        <v-expansion-panel>
+          <v-expansion-panel-title :expand-icon="customIcons.chevronDown" :collapse-icon="customIcons.chevronDown">
+            <div class="d-flex align-center ga-2">
+              <v-icon :icon="customIcons.filter" size="20" class="text-medium-emphasis" />
+              <span class="text-subtitle-1">Filtros</span>
+              <div class="d-none d-sm-flex ga-2 ms-3 active-filters">
+                <v-chip v-if="selectedEstado" size="small" variant="tonal" color="primary">{{ selectedEstado }}</v-chip>
+                <v-chip v-if="selectedCidade" size="small" variant="tonal" color="primary">{{ selectedCidade }}</v-chip>
+                <v-chip v-if="selectedQuadra" size="small" variant="tonal" color="primary">{{ selectedQuadra }}</v-chip>
+              </div>
+            </div>
+          </v-expansion-panel-title>
+          
+          <v-expansion-panel-text>
+            <div class="d-flex flex-wrap ga-3 align-center">
+              <v-select
+                v-model="selectedEstado"
+                :items="estadoOptions"
+                label="Estado"
+                density="comfortable"
+                clearable
+                variant="outlined"
+                class="filter-item"
+                hide-details="auto"
+              />
 
-    <!-- Bottom sheet filters (mobile trigger + desktop too) -->
-    <FiltersSheet
-      v-model="filtersOpen"
-      :sport-options="sportChips"
-      :estado-options="estadoOptions"
-      :cidade-options="cidadeOptions"
-      :quadra-options="quadraOptions"
-      :selected-sports="clipsStore.filters.sports"
-      :estado="selectedEstado"
-      :cidade="selectedCidade"
-      :quadra="selectedQuadra"
-      @apply="applySheetFilters"
-      @clear="clearAllFilters"
-    />
+              <v-select
+                v-model="selectedCidade"
+                :items="cidadeOptions"
+                label="Cidade"
+                density="comfortable"
+                clearable
+                :disabled="!selectedEstado"
+                variant="outlined"
+                class="filter-item"
+                hide-details="auto"
+              />
 
-    <!-- Skeleton while loading -->
-    <LoadingSkeleton v-if="loadingUI" :count="6" variant="grid" class="mt-4" />
+              <v-select
+                v-model="selectedQuadra"
+                :items="quadraOptions"
+                label="Quadra"
+                density="comfortable"
+                clearable
+                :disabled="!selectedCidade"
+                variant="outlined"
+                class="filter-item"
+                hide-details="auto"
+              />
 
-    <!-- Results -->
-    <div v-else>
-      <v-row>
-        <!-- 1 col mobile, 2 col tablet (md ≥ 960px por default Vuetify), 3 col desktop -->
-        <v-col v-for="clip in visibleClips" :key="clip.id" cols="12" md="6" lg="4">
-          <VideoCard
-            :clip="clip"
-            :location="getLocation(clip.id)"
-            @play="openClip"
-            @share="shareClip"
-            @download="downloadClip"
-            @unlock="unlockClip"
-          />
+              <v-spacer />
+
+              <v-btn variant="text" color="secondary" :prepend-icon="customIcons.refresh" @click="clearLocalFilters">
+                Limpar
+              </v-btn>
+            </div>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </v-sheet>
+
+    <!-- Resultados -->
+    <div v-if="filteredByLocation.length > 0">
+      <v-row v-if="viewMode === 'grid'">
+        <v-col v-for="clip in filteredByLocation" :key="clip.id" cols="12" sm="6" md="4" lg="3">
+          <v-card class="result-card" rounded="xl" elevation="3">
+            <div class="thumb-wrapper">
+              <v-img :src="clip.thumbUrl" :aspect-ratio="16 / 9" cover class="thumb-img">
+                <template #placeholder>
+                  <div class="d-flex align-center justify-center h-100">
+                    <v-progress-circular indeterminate color="primary" />
+                  </div>
+                </template>
+              </v-img>
+
+              <!-- Overlay + Play -->
+              <div class="thumb-overlay"></div>
+              <div class="play-badge">
+                <v-icon :icon="customIcons.play" size="40" />
+              </div>
+
+              <!-- Duração -->
+              <div class="duration-badge">{{ formatDuration(clip.durationSec) }}</div>
+            </div>
+
+            <v-card-text class="pt-3">
+              <div class="d-flex align-center justify-space-between mb-1">
+                <div class="text-subtitle-2 font-weight-medium text-truncate">{{ clip.venue }}</div>
+                <v-chip size="x-small" color="primary" variant="tonal">
+                  <v-icon :icon="getSportIcon(clip.sport)" size="16" class="me-1" />
+                  {{ getSportLabel(clip.sport) }}
+                </v-chip>
+              </div>
+
+              <div class="d-flex align-center ga-3 text-medium-emphasis text-caption">
+                <span class="d-inline-flex align-center ga-1">{{ clip.camera }}</span>
+                <span class="d-inline-flex align-center ga-1">• {{ formatDateTime(clip.recordedAt) }}</span>
+              </div>
+
+              <div class="d-flex flex-wrap ga-2 mt-3">
+                <v-chip size="x-small" variant="tonal" color="secondary">{{ getLocation(clip.id)?.estado }}</v-chip>
+                <v-chip size="x-small" variant="tonal" color="secondary">{{ getLocation(clip.id)?.cidade }}</v-chip>
+                <v-chip size="x-small" variant="tonal" color="secondary" class="text-truncate max-w-100">
+                  {{ getLocation(clip.id)?.quadra }}
+                </v-chip>
+              </div>
+            </v-card-text>
+
+            <v-card-actions class="pt-0">
+              <v-btn size="small" variant="text" :prepend-icon="customIcons.play" @click.stop="openClip(clip)"
+                >Abrir</v-btn
+              >
+              <v-btn size="small" variant="text" :prepend-icon="customIcons.share" @click.stop="shareClip(clip)"
+                >Compartilhar</v-btn
+              >
+              <v-spacer />
+              <v-btn
+                size="small"
+                color="primary"
+                variant="tonal"
+                :prepend-icon="customIcons.download"
+                @click.stop="downloadClip(clip)"
+                >Baixar</v-btn
+              >
+            </v-card-actions>
+          </v-card>
         </v-col>
       </v-row>
 
@@ -243,7 +329,19 @@ function clearAllFilters() {
 </script>
 
 <style scoped>
-:root { --gn-sticky-top: 56px; }
+/* header reverted to simple layout */
+/* logo header */
+.gravanois-logo {
+  width: 90px;
+}
+
+.filter-item {
+  min-width: 220px;
+}
+
+.filters-panel :deep(.v-expansion-panel-title) {
+  padding: 12px 16px;
+}
 
 .grava-nois-logo {
   max-height: 70px;

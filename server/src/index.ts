@@ -10,6 +10,9 @@ import { publishClipEvent } from './rabbitmq/publisher';
 import nodeMailer from "nodemailer"
 import { config } from './config/dotenv';
 
+import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr"
+import { serialize as serializeCookie, parse as parseCookie } from "cookie";
+
 type ContactFormPayload = {
   estabelecimento: string;
   cnpjCpf: string;
@@ -40,76 +43,176 @@ AppDataSource.initialize()
         },
       });
 
-      app.use(cors({ origin: "*" })) // TODO: Fix CORS for production
+      app.use(cors({
+        origin: ["http://localhost:5174", "https://www.gravanois.com.br", 'http://localhost:5173'],
+        credentials: true,
+      }));
+    
       app.use(express.json())
-      const upload = multer({ storage: multer.memoryStorage() });
-
-      // MVP upload endpoint receiving a video file and metadata
-      // Expects multipart/form-data with fields:
-      // - venue_id: string
-      // - client_id: string
-      // - meta: object (JSON string)
-      // - capturated_at: string (ISO date)
-      // - video: file (the uploaded video)
-      app.post('/video/mvp/', upload.single('video'), async (req: Request, res: Response) => {
-        try {
-          // Ensure a file was sent
-          const file = req.file;
-          if (!file) {
-            res.status(400).json({ error: "Missing video file. Send as field 'video'." });
-            return;
-          }
-
-          // Parse and validate body fields. `meta` may arrive as JSON string in multipart.
-          const raw = req.body || {};
-          let parsedMeta: unknown = raw.meta;
-          if (typeof parsedMeta === 'string') {
-            try { parsedMeta = JSON.parse(parsedMeta); } catch { /* keep as string to fail schema */ }
-          }
-
-          const bodySchema = z.object({
-            venue_id: z.string().min(1, 'venue_id is required'),
-            client_id: z.string().min(1, 'client_id is required'),
-            meta: z.record(z.string(), z.any()).default({}),
-            capturated_at: z.string().min(1, 'capturated_at is required'),
-          });
-
-          const parsed = bodySchema.safeParse({
-            venue_id: raw.venue_id,
-            client_id: raw.client_id,
-            meta: parsedMeta,
-            capturated_at: raw.capturated_at,
-          });
-
-          if (!parsed.success) {
-            res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
-            return;
-          }
-
-          const { venue_id, client_id, meta, capturated_at } = parsed.data;
-
-          // For MVP, we just acknowledge the upload and echo info back.
-          // Future: persist to storage and DB, publish to queue, etc.
-          res.status(201).json({
-            message: 'Video received',
-            file: {
-              originalname: file.originalname,
-              mimetype: file.mimetype,
-              size: file.size,
-            },
-            data: { venue_id, client_id, meta, capturated_at },
-          });
-        } catch (err) {
-          console.error('Error in /video/mvp/ upload:', err);
-          res.status(500).json({ error: 'Internal server error' });
-        }
-      });
 
       // Initialize Supabase client with service role key (secure, only on server)
       const supabase = createClient(
         config.supabaseUrl,
         config.supabaseServiceKey
       );
+
+      function makeSupabase(req: Request, res: Response) {
+        return createServerClient(
+          config.supabaseUrl!,
+          config.supabasePublishableKey!,
+          {
+            cookies: {
+              getAll() {
+                const parsed = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
+                const arr = Object.entries(parsed).map(([name, value]) => ({ name, value: String(value ?? "") }));
+                return arr.length ? arr : null;
+              },
+              setAll(cookies) {
+                cookies.forEach(({ name, value, options }) => {
+                  const final = {
+                    path: "/",
+                    sameSite: "lax" as const,
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    ...options,
+                  };
+                  res.append("Set-Cookie", serializeCookie(name, value, final));
+                });
+              },
+            },
+          }
+        );
+      };
+
+      // email login
+      app.post("/sign-in", async (req, res) => {
+        const { email, password } = req.body ?? {};
+        if (!email || !password) return res.status(400).json({ error: "missing_credentials" });
+
+        const supabase = makeSupabase(req, res);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) return res.status(401).json({ error: error.message });
+
+        // Cookies HttpOnly já foram setados pelo @supabase/ssr via setAll()
+        return res.status(204).end();
+      });
+
+      app.post("/sign-up", async (req, res) => {
+        const { email, password } = req.body ?? {};
+        if (!email || !password) return res.status(400).json({ error: "missing_credentials" });
+
+        const supabase = makeSupabase(req, res);
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) return res.status(400).json({ error: error.message });
+
+        // Se “Email confirmations” estiver ON, o usuário só loga após confirmar por e-mail
+        return res.status(200).json({ status: "check_email" });
+      });
+
+      app.post("/sign-out", async (req, res) => {
+        const supabase = makeSupabase(req, res);
+        await supabase.auth.signOut(); // limpa os cookies
+        return res.status(204).end();
+      });
+
+      app.get("/auth/me", async (req, res) => {
+        const supabase = makeSupabase(req, res);
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) return res.status(401).json({ error: "unauthorized" });
+
+        // Ex.: buscar perfil
+        const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+        return res.json({ user: { id: user.id, email: user.email, app_metadata: user.app_metadata }, profile });
+      });
+
+
+      // google login
+      app.get("/auth/callback", async (req: Request, res: Response) => {
+        const code = req.query.code;
+        const nextRaw = req.query.next ?? "/";
+
+        if (code) {
+          const supabase = createServerClient(config.supabaseUrl, config.supabasePublishableKey,
+            {
+              cookies: {
+                getAll() {
+                  const parsed = req.headers.cookie
+                    ? parseCookie(req.headers.cookie)
+                    : {};
+                  const entries = Object.entries(parsed).map(([name, value]) => ({
+                    name,
+                    value: String(value ?? ""), // ensure non-optional string
+                  }));
+                  return entries.length ? entries : null;
+                },
+                setAll(cookies) {
+                  cookies.forEach(({ name, value, options }) => {
+                    // You can tweak defaults if you want:
+                    // const final = { path: "/", sameSite: "lax", ...options };
+                    const final = options ?? { path: "/" };
+                    res.append(
+                      "Set-Cookie",
+                      serializeCookie(name, value, final)
+                    );
+                  });
+                },
+              },
+            });
+
+          await supabase.auth.exchangeCodeForSession(code as string)
+        }
+
+        // Prevent open-redirects & normalize path
+        let safeNext = nextRaw as string;
+        // reject absolute URLs and protocol-relative URLs
+        if (/^https?:\/\//i.test(safeNext) || /^\/\//.test(safeNext)) {
+          safeNext = "/";
+        }
+        // ensure single leading slash, strip query/fragment if you want only paths
+        safeNext = "/" + safeNext.replace(/^\/+/, "");
+        // optional: keep querystring if you expect it; otherwise strip:
+        // safeNext = safeNext.split("?")[0].split("#")[0];
+
+        return res.redirect(303, safeNext);
+      });
+
+      app.get("/videos-clips", async (req: Request, res: Response) => {
+        try {
+          const { venueId } = req.query;
+
+          const videoRepository = AppDataSource.getRepository('Video');
+
+          const clips = await videoRepository.find({
+            where: { venueId },
+            order: { capturedAt: 'DESC' },
+          });
+
+          const paths = clips.map(c => c.storage_path);
+          const { data: signedBatch, error: signErr } = await supabase
+            .storage
+            .from('temp')
+            .createSignedUrls(paths, 600);
+
+          if (signErr) return res.status(400).json({ error: signErr });
+
+          const items = clips.map((c, i) => ({
+            clip_id: c.clip_id,
+            url: signedBatch[i]?.signedUrl,
+            captured_at: c.captured_at,
+            duration_sec: c.duration_sec,
+            meta: c.meta,
+            contract_type: c.contract_type
+          }));
+
+          res.json({ items });
+        } catch (error) {
+          console.error("Erro ao buscar clipes gerados: ", error);
+          res.status(500).json({
+            message: "Erro ao buscar clipes gerados"
+          })
+          return;
+        }
+      })
 
       // Send email function
       app.post("/send-email", async (req: Request, res: Response) => {
@@ -329,7 +432,6 @@ AppDataSource.initialize()
           const capturedAtDate = new Date(captured_at);
 
           // 3. Cria registro `clips`
-          // TODO: Adicionar informações no banco de dados
           const clip = {
             clipId: clip_id,
             clientId: clientId,

@@ -17,7 +17,9 @@ export const config = {
   mail_user: process.env.EMAIL_USER || '',
   mail_pass: process.env.EMAIL_PASS || '',
   mail_host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  rabbitmqUrl: process.env.RABBITMQ_URL || '',
+
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
-  rabbitmqUrl: process.env.RABBITMQ_URL || '',
+  supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || ''
 }

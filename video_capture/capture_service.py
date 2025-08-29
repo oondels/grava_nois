@@ -365,7 +365,7 @@ def main() -> int:
     cfg = CaptureConfig(
         buffer_dir=Path("/tmp/recorded_videos"),
         clips_dir=base / "recorded_clips",
-        queue_dir=base / "queue_raw",  # fila simples para o worker posterior
+        queue_dir=base / "queue_raw",
         device="/dev/video0",
         seg_time=1,
         pre_seconds=40,
@@ -381,7 +381,6 @@ def main() -> int:
     out_wm_dir.mkdir(parents=True, exist_ok=True)
     failed_dir.mkdir(parents=True, exist_ok=True)
 
-    # caminho da sua logo
     watermark_path = base / "files" / "grava-nois.png"
 
     proc = start_ffmpeg(cfg)
