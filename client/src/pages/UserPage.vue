@@ -29,17 +29,9 @@
         </div>
         
         <div class="user-info">
-            <h1 class="user-name">{{ user?.name || 'Usuário' }}</h1>
+            <!-- <h1 class="user-name">{{ user?.name || 'Usuário' }}</h1> -->
             <p class="user-email">{{ user?.email || 'email@exemplo.com' }}</p>
             <div class="user-status">
-            <v-chip 
-                :color="user?.isDemoMode ? 'warning' : 'success'" 
-                size="small"
-                variant="flat"
-            >
-                <v-icon :icon="user?.isDemoMode ? 'mdi-demo' : 'mdi-check-circle'" size="16" class="me-1" />
-                {{ user?.isDemoMode ? 'Modo Demonstração' : 'Conta Ativa' }}
-            </v-chip>
             </div>
         </div>
         </div>

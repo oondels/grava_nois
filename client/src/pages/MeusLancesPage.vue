@@ -8,9 +8,6 @@
         </h1>
         <p class="text-body-1 text-medium-emphasis mb-0">
           Encontre e baixe seus melhores momentos esportivos
-          <v-chip v-if="authStore.isDemoMode" color="secondary" size="small" class="ms-2">
-            DEMO
-          </v-chip>
         </p>
       </div>
       
