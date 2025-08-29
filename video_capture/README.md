@@ -8,6 +8,30 @@
 
 ---
 
+## GPIO usado + Execução rápida
+
+- GPIO (BCM): 17 — conforme `.env` (`GN_GPIO_PIN=17`).
+- Fiação: botão entre `BCM 17` e `GND` (pull-up interno habilitado).
+- Daemon: `pigpiod` deve estar ativo para o disparo físico.
+
+Como rodar no Raspberry Pi (TL;DR):
+
+```
+sudo apt update && sudo apt install -y ffmpeg pigpio
+sudo systemctl enable --now pigpiod   # ou rode apenas: pigpiod
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install "moviepy>=2.0.0"          # necessário para watermark/thumbnail
+
+export GN_GPIO_PIN=17                 # ou mantenha no .env
+python3 capture_service.py            # ENTER ou botão no BCM 17 dispara
+```
+
+Detalhes completos estão nas seções “Como rodar” e “GPIO (botão físico)” abaixo.
+
 ## 1) Visão Geral do Fluxo
 
 ```
@@ -274,6 +298,26 @@ Worker de varredura de diretório para aplicar watermark e gerar thumbnail.
 - `max_buffer_seconds`: retenção no disco para evitar encher `/tmp`.
 - Watermark: ajuste `rel_width` e `margin` conforme resolução do vídeo.
 - MoviePy preset: use `ultrafast` no Raspberry Pi; `crf 20–23` costuma equilibrar qualidade/tamanho.
+
+### 7.1) GPIO (botão físico)
+
+O disparo por botão físico no Raspberry Pi está disponível e usa exclusivamente a biblioteca `pigpio` e o daemon `pigpiod` (sem `RPi.GPIO`).
+
+- Defina o pino BCM via variável de ambiente: `GN_GPIO_PIN` (ou `GPIO_PIN`).
+- Conexão: habilite pull-up interno; conecte o botão entre o pino e GND.
+- Borda considerada: FALLING (pressionado). Debounce padrão de 300 ms.
+- Requisito: daemon `pigpiod` em execução. Se não estiver ativo, rode `pigpiod` em outro terminal/serviço antes de iniciar o script.
+
+Exemplo (bash):
+
+```
+pigpiod                        # inicia o daemon (sem sudo)
+export GN_GPIO_PIN=17          # pino BCM
+export GN_GPIO_DEBOUNCE_MS=300 # opcional
+python3 capture_service.py
+```
+
+Se `pigpio`/`pigpiod` não estiver disponível, o serviço continua funcionando apenas com ENTER.
 
 ---
 

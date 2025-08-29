@@ -10,6 +10,9 @@ import urllib.error
 import ssl
 import http.client
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # ---- CONFIG & TYPES ---------------------------------------------------------
@@ -53,39 +56,13 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
     # Old -> Camera do notebook
-    ffmpeg_cmd = [
-        "ffmpeg",
-        "-nostdin",
-        "-f",
-        "v4l2",
-        "-i",
-        cfg.device,
-        "-c:v",
-        "libx264",
-        "-preset",
-        "ultrafast",
-        "-tune",
-        "zerolatency",
-        "-force_key_frames",
-        f"expr:gte(t,n_forced*{cfg.seg_time})",
-        "-f",
-        "segment",
-        "-segment_time",
-        str(cfg.seg_time),
-        "-segment_start_number",
-        str(start_num),
-        "-reset_timestamps",
-        "1",
-        out_pattern,
-    ]
-
-    # Camera Dedicada
     # ffmpeg_cmd = [
     #     "ffmpeg",
-    #     "-rtsp_transport",
-    #     "tcp",
+    #     "-nostdin",
+    #     "-f",
+    #     "v4l2",
     #     "-i",
-    #     "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
+    #     cfg.device,
     #     "-c:v",
     #     "libx264",
     #     "-preset",
@@ -93,11 +70,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     #     "-tune",
     #     "zerolatency",
     #     "-force_key_frames",
-    #     "expr:gte(t,n_forced*1)",
-    #     "-c:a",
-    #     "aac",
-    #     "-b:a",
-    #     "96k",  # audio
+    #     f"expr:gte(t,n_forced*{cfg.seg_time})",
     #     "-f",
     #     "segment",
     #     "-segment_time",
@@ -108,6 +81,36 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     #     "1",
     #     out_pattern,
     # ]
+
+    # Camera Dedicada
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-rtsp_transport",
+        "tcp",
+        "-i",
+        "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-tune",
+        "zerolatency",
+        "-force_key_frames",
+        "expr:gte(t,n_forced*1)",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "96k",  # audio
+        "-f",
+        "segment",
+        "-segment_time",
+        str(cfg.seg_time),
+        "-segment_start_number",
+        str(start_num),
+        "-reset_timestamps",
+        "1",
+        out_pattern,
+    ]
 
     return subprocess.Popen(
         ffmpeg_cmd,
@@ -414,7 +417,11 @@ def upload_file_to_signed_url(
         raise ValueError(f"URL inválida: {upload_url}")
 
     # Prepara conexão
-    conn_cls = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
+    conn_cls = (
+        http.client.HTTPSConnection
+        if parsed.scheme == "https"
+        else http.client.HTTPConnection
+    )
     netloc = parsed.netloc
     path_qs = parsed.path or "/"
     if parsed.query:

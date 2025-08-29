@@ -4,6 +4,7 @@ from pathlib import Path
 import os, json, time, traceback
 from datetime import datetime, timezone
 import threading
+import queue
 from video_core import (
     CaptureConfig,
     SegmentBuffer,
@@ -18,6 +19,9 @@ from video_core import (
     finalize_clip_uploaded,
 )
 from video_core import _sha256_file  # util interno
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class ProcessingWorker:
@@ -178,7 +182,7 @@ class ProcessingWorker:
                 sha256_wm = _sha256_file(out_mp4)
                 payload = {
                     "venue_id": venue_id,
-                    "duration_sec": 15, # TODO: Fix this, put the real duration seconds
+                    "duration_sec": 15,  # TODO: Fix this, put the real duration seconds
                     "captured_at": meta.get("created_at"),
                     "meta": meta.get("meta_wm") or {},
                     "sha256": sha256_wm,
@@ -207,13 +211,19 @@ class ProcessingWorker:
                     t0 = time.time()
                     try:
                         status_code, reason, resp_headers = upload_file_to_signed_url(
-                            upload_url, out_mp4, content_type="video/mp4", extra_headers=None, timeout=180.0
+                            upload_url,
+                            out_mp4,
+                            content_type="video/mp4",
+                            extra_headers=None,
+                            timeout=180.0,
                         )
                         dt_ms = int((time.time() - t0) * 1000)
                         meta.setdefault("remote_upload", {})
                         meta["remote_upload"].update(
                             {
-                                "status": "uploaded" if 200 <= status_code < 300 else "failed",
+                                "status": (
+                                    "uploaded" if 200 <= status_code < 300 else "failed"
+                                ),
                                 "http_status": status_code,
                                 "reason": reason,
                                 "attempted_at": datetime.now(timezone.utc).isoformat(),
@@ -234,7 +244,9 @@ class ProcessingWorker:
                             clip_id = (resp or {}).get("clip_id")
                             if clip_id and api_base:
                                 try:
-                                    print(f"[worker] Notificando backend upload concluído (clip_id={clip_id})…")
+                                    print(
+                                        f"[worker] Notificando backend upload concluído (clip_id={clip_id})…"
+                                    )
                                     etag = None
                                     try:
                                         etag = (resp_headers or {}).get("etag")
@@ -253,27 +265,35 @@ class ProcessingWorker:
                                     meta["remote_finalize"].update(
                                         {
                                             "status": "ok",
-                                            "finalized_at": datetime.now(timezone.utc).isoformat(),
+                                            "finalized_at": datetime.now(
+                                                timezone.utc
+                                            ).isoformat(),
                                             "response": fin,
                                         }
                                     )
                                     meta_path.write_text(
                                         json.dumps(meta, ensure_ascii=False, indent=2)
                                     )
-                                    print("[worker] Finalização confirmada pelo backend.")
+                                    print(
+                                        "[worker] Finalização confirmada pelo backend."
+                                    )
                                 except Exception as e:
                                     meta.setdefault("remote_finalize", {})
                                     meta["remote_finalize"].update(
                                         {
                                             "status": "failed",
                                             "error": str(e),
-                                            "attempted_at": datetime.now(timezone.utc).isoformat(),
+                                            "attempted_at": datetime.now(
+                                                timezone.utc
+                                            ).isoformat(),
                                         }
                                     )
                                     meta_path.write_text(
                                         json.dumps(meta, ensure_ascii=False, indent=2)
                                     )
-                                    print(f"[worker] Falha ao finalizar upload no backend: {e}")
+                                    print(
+                                        f"[worker] Falha ao finalizar upload no backend: {e}"
+                                    )
                     except Exception as e:
                         dt_ms = int((time.time() - t0) * 1000)
                         meta.setdefault("remote_upload", {})
@@ -401,18 +421,123 @@ def main() -> int:
     )
     worker.start()
 
-    print(
-        f"Gravando… pressione ENTER para capturar {cfg.pre_seconds}s + {cfg.post_seconds}s (Ctrl+C sai)"
+    # --- Disparo por ENTER ou GPIO (Raspberry Pi) ---
+    # Implementa dois mecanismos de disparo concorrentes que empurram eventos
+    # para uma fila: 1) ENTER (stdin) e 2) botão físico via GPIO (opcional).
+
+    trigger_q: queue.Queue[str] = queue.Queue()
+    stop_evt = threading.Event()
+
+    def _stdin_listener():
+        # Bloqueia em input(); cada ENTER gera um trigger.
+        try:
+            while not stop_evt.is_set():
+                try:
+                    input()
+                except EOFError:
+                    # Sem stdin disponível; encerra listener.
+                    break
+                except KeyboardInterrupt:
+                    # Propaga interrupção para o laço principal via stop_evt.
+                    stop_evt.set()
+                    break
+                trigger_q.put("enter")
+        except Exception:
+            # Loga e encerra o listener sem derrubar o serviço.
+            print("[stdin] erro no listener:\n", traceback.format_exc())
+
+    stdin_t = threading.Thread(target=_stdin_listener, daemon=True)
+    stdin_t.start()
+
+    # GPIO opcional: habilita se GN_GPIO_PIN ou GPIO_PIN estiver definido.
+    gpio_pin_env = os.getenv("GN_GPIO_PIN") or os.getenv("GPIO_PIN")
+    pi = None
+    cb = None
+    if gpio_pin_env is not None:
+        try:
+            gpio_pin = int(gpio_pin_env)
+        except ValueError:
+            print(f"[gpio] pino inválido em GN_GPIO_PIN/GPIO_PIN: {gpio_pin_env!r}")
+            gpio_pin = None
+
+        if gpio_pin is not None:
+            try:
+                import pigpio, time, subprocess
+
+                debounce_ms = float(os.getenv("GN_GPIO_DEBOUNCE_MS", "300"))
+
+                def _connect_pi():
+                    p = pigpio.pi()
+                    if not p.connected:
+                        try:
+                            # Tenta iniciar o daemon sem sudo, então reconecta
+                            subprocess.Popen(["pigpiod"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            time.sleep(0.2)
+                            p = pigpio.pi()
+                        except Exception:
+                            pass
+                    return p
+
+                pi = _connect_pi()
+                if not pi or not pi.connected:
+                    print("[gpio] pigpiod não está acessível. Rode 'pigpiod' e tente novamente.")
+                else:
+                    # Configura pino como entrada com pull-up; botão ao GND.
+                    pi.set_mode(gpio_pin, pigpio.INPUT)
+                    pi.set_pull_up_down(gpio_pin, pigpio.PUD_UP)
+
+                    last_ts = 0.0
+
+                    def on_edge(gpio, level, tick):
+                        nonlocal last_ts
+                        # Considera borda de descida (pressionado)
+                        if level == 0:
+                            now = time.time()
+                            if (now - last_ts) * 1000.0 < debounce_ms:
+                                return
+                            last_ts = now
+                            trigger_q.put("gpio")
+
+                    # Use FALLING_EDGE para já filtrar nível
+                    cb = pi.callback(gpio_pin, pigpio.FALLING_EDGE, on_edge)
+                    print(
+                        f"[gpio] pigpio habilitado no pino BCM {gpio_pin} (debounce {int(debounce_ms)}ms)"
+                    )
+            except ImportError:
+                print("[gpio] pigpio não encontrado; seguindo apenas com ENTER.")
+            except Exception as e:
+                print(f"[gpio] falha ao configurar GPIO (pigpio): {e}")
+
+    prompt = (
+        f"Gravando… pressione ENTER"
+        + (f" ou botão GPIO (BCM {gpio_pin_env})" if gpio_pin_env else "")
+        + f" para capturar {cfg.pre_seconds}s + {cfg.post_seconds}s (Ctrl+C sai)"
     )
+    print(prompt)
+
     try:
-        while True:
-            input()  # stdin apenas aqui
+        while not stop_evt.is_set():
+            try:
+                _ = trigger_q.get(timeout=0.2)
+            except queue.Empty:
+                continue
             out = build_highlight(cfg, segbuf)
             if out:
                 enqueue_clip(cfg, out)  # move p/ queue_raw + salva metadados
     except KeyboardInterrupt:
         print("\nEncerrando…")
     finally:
+        stop_evt.set()
+        try:
+            if cb is not None:
+                cb.cancel()
+        except Exception:
+            pass
+        try:
+            if pi is not None:
+                pi.stop()
+        except Exception:
+            pass
         segbuf.stop(join_timeout=2)
         try:
             proc.terminate()
