@@ -152,87 +152,26 @@
           </v-card>
         </v-col>
       </v-row>
-      <div v-else>
-        <v-card v-for="clip in filteredByLocation" :key="clip.id" class="result-card mb-3" rounded="xl" elevation="2">
-          <v-row class="g-0">
-            <v-col cols="12" md="4">
-              <div class="thumb-wrapper">
-                <v-img :src="clip.thumbUrl" :aspect-ratio="16 / 9" cover class="thumb-img">
-                  <template #placeholder>
-                    <div class="d-flex align-center justify-center h-100">
-                      <v-progress-circular indeterminate color="primary" />
-                    </div>
-                  </template>
-                </v-img>
-                <div class="duration-badge">{{ formatDuration(clip.durationSec) }}</div>
-              </div>
-            </v-col>
-            <v-col cols="12" md="8">
-              <v-card-text>
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="text-subtitle-1 font-weight-medium text-truncate">{{ clip.venue }}</div>
-                  <v-chip size="x-small" color="primary" variant="tonal">
-                    <v-icon :icon="getSportIcon(clip.sport)" size="16" class="me-1" />
-                    {{ getSportLabel(clip.sport) }}
-                  </v-chip>
-                </div>
 
-                <div class="text-caption text-medium-emphasis mb-2">
-                  {{ clip.camera }} • {{ formatDateTime(clip.recordedAt) }}
-                </div>
+      <div ref="sentinel" style="height: 1px"></div>
 
-                <div class="d-flex flex-wrap ga-2 mb-3">
-                  <v-chip size="x-small" variant="tonal" color="secondary">{{ getLocation(clip.id)?.estado }}</v-chip>
-                  <v-chip size="x-small" variant="tonal" color="secondary">{{ getLocation(clip.id)?.cidade }}</v-chip>
-                  <v-chip size="x-small" variant="tonal" color="secondary">{{ getLocation(clip.id)?.quadra }}</v-chip>
-                </div>
-
-                <div class="d-flex align-center">
-                  <v-btn
-                    class="me-2"
-                    size="small"
-                    variant="text"
-                    :prepend-icon="customIcons.play"
-                    @click.stop="openClip(clip)"
-                    >Abrir</v-btn
-                  >
-                  <v-btn
-                    class="me-2"
-                    size="small"
-                    variant="text"
-                    :prepend-icon="customIcons.share"
-                    @click.stop="shareClip(clip)"
-                    >Compartilhar</v-btn
-                  >
-                  <v-spacer />
-                  <v-btn
-                    size="small"
-                    color="primary"
-                    variant="tonal"
-                    :prepend-icon="customIcons.download"
-                    @click.stop="downloadClip(clip)"
-                    >Baixar</v-btn
-                  >
-                </div>
-              </v-card-text>
-            </v-col>
-          </v-row>
-        </v-card>
+      <div v-if="!visibleClips.length" class="py-8">
+        <EmptyState title="Nenhum clipe encontrado" description="Nenhum clipe encontrado com esses filtros." />
       </div>
-    </div>
-
-    <div v-else class="py-8">
-      <EmptyState title="Nenhum vídeo encontrado" description="Tente ajustar os filtros de Estado, Cidade e Quadra." />
     </div>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { useClipsStore } from "@/store/clips";
 import EmptyState from "@/components/EmptyState.vue";
 import { formatDuration, formatDateTime, getSportIcon, getSportLabel } from "@/utils/formatters";
 import { customIcons } from "@/utils/icons";
+import FilterChipsBar from "@/components/filters/FilterChipsBar.vue";
+import FiltersSheet from "@/components/filters/FiltersSheet.vue";
+import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import VideoCard from "@/components/videos/VideoCard.vue";
 
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 
@@ -250,7 +189,13 @@ const clipLocationMap: Record<string, LocalLocation> = reactive({
 const selectedEstado = ref<string | null>("BA");
 const selectedCidade = ref<string | null>("Santo Estêvão");
 const selectedQuadra = ref<string | null>("Quadra Voley/Futvoley Lagoa de Plínio");
-const viewMode = ref<"grid" | "list">("grid");
+const filtersOpen = ref(false);
+const sort = ref<string>("Mais recentes");
+const sortOptions = ["Mais recentes", "Mais vistos", "Melhor avaliados", "Próximos de mim"];
+const loadingUI = ref(true);
+const visibleCount = ref(9);
+const sentinel = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
 
 // Opções dinâmicas
 const estadoOptions = computed(() => {
@@ -287,7 +232,13 @@ const quadraOptions = computed(() => {
 
 // Filtragem por localização sobre os clips existentes (além de filtros globais)
 const filteredByLocation = computed(() => {
-  const base = clipsStore.filteredClips; // respeita filtros globais existentes
+  let base = [...clipsStore.filteredClips];
+  // Ordenação (simplificada)
+  if (sort.value === "Mais recentes") {
+    base.sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime());
+  }
+  // Placeholder for other sorts: keep as-is
+
   return base.filter((c) => {
     const loc = clipLocationMap[c.id];
     if (!loc) return false;
@@ -298,7 +249,31 @@ const filteredByLocation = computed(() => {
   });
 });
 
-//
+const visibleClips = computed(() => filteredByLocation.value.slice(0, visibleCount.value));
+
+onMounted(() => {
+  // Simular carregamento inicial para exibir skeletons brevemente
+  const t = setTimeout(() => (loadingUI.value = false), 500);
+
+  // Infinite scroll
+  observer = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) {
+        visibleCount.value = Math.min(visibleCount.value + 6, filteredByLocation.value.length);
+      }
+    }
+  });
+  if (sentinel.value) observer.observe(sentinel.value);
+});
+
+onBeforeUnmount(() => {
+  observer?.disconnect();
+});
+
+watch(filteredByLocation, () => {
+  // Reset paginação quando filtros mudarem
+  visibleCount.value = 9;
+});
 
 function getLocation(id: string): LocalLocation | null {
   return clipLocationMap[id] ?? null;
@@ -320,6 +295,35 @@ function shareClip(clip: any) {
 function downloadClip(clip: any) {
   console.log("[VideosPage] Baixar clip", clip?.id);
 }
+function unlockClip(clip: any) {
+  console.log("[VideosPage] Desbloquear clip", clip?.id);
+}
+
+// Filter bar helpers
+const sportChips = computed(() => [
+  { label: "Futebol", value: "futebol", icon: getSportIcon("futebol"), selected: clipsStore.filters.sports.includes("futebol") },
+  { label: "Basquete", value: "basquete", icon: getSportIcon("basquete"), selected: clipsStore.filters.sports.includes("basquete") },
+  { label: "Vôlei", value: "volei", icon: getSportIcon("volei"), selected: clipsStore.filters.sports.includes("volei") },
+  { label: "Futevôlei", value: "futevolei", icon: getSportIcon("futevolei"), selected: clipsStore.filters.sports.includes("futevolei") },
+]);
+
+function toggleSport(sport: string) {
+  const current = new Set(clipsStore.filters.sports);
+  if (current.has(sport)) current.delete(sport); else current.add(sport);
+  clipsStore.updateFilters({ sports: Array.from(current) });
+}
+
+function applySheetFilters(payload: any) {
+  clipsStore.updateFilters({ sports: payload.sports, dateRange: payload.dateRange });
+  selectedEstado.value = payload.estado;
+  selectedCidade.value = payload.cidade;
+  selectedQuadra.value = payload.quadra;
+}
+
+function clearAllFilters() {
+  clipsStore.clearFilters();
+  clearLocalFilters();
+}
 
 //
 </script>
@@ -339,60 +343,11 @@ function downloadClip(clip: any) {
   padding: 12px 16px;
 }
 
-.result-card {
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.result-card:hover {
-  transform: translateY(-2px);
+.grava-nois-logo {
+  max-height: 70px;
 }
 
-.thumb-wrapper {
-  position: relative;
-}
-.thumb-img {
-  filter: saturate(1.05);
-}
-.thumb-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.45) 100%);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.result-card:hover .thumb-overlay {
-  opacity: 1;
-}
-
-.play-badge {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.result-card:hover .play-badge {
-  opacity: 0.85;
-}
-
-.duration-badge {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.active-filters {
-  opacity: 0.8;
-}
-.max-w-100 {
-  max-width: 100%;
+@media (min-width: 600px) {
+  :root { --gn-sticky-top: 64px; }
 }
 </style>

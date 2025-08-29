@@ -112,6 +112,7 @@ import { ref, reactive } from "vue";
 import { useAuthStore } from "@/store/auth";
 import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
+import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
 import { useRouter } from 'vue-router'
