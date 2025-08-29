@@ -12,80 +12,86 @@
               </div>
             </v-card-title>
 
-            <!-- Form (visual apenas) -->
+            <!-- Form -->
             <v-card-text class="pa-6 pt-3">
-              <v-text-field
-                v-model.trim="registerData.name"
-                label="Nome"
-                variant="outlined"
-                class="mb-4"
-                autocomplete="name"
-              >
-                <template #prepend-inner>
-                  <User :size="18" class="text-medium-emphasis" />
-                </template>
-              </v-text-field>
+              <v-form ref="formRef" v-model="isValid" @submit.prevent="onRegister">
+                <v-text-field
+                  v-model.trim="registerData.name"
+                  label="Nome"
+                  variant="outlined"
+                  class="mb-4"
+                  :rules="[rules.required, rules.min(2)]"
+                  autocomplete="name"
+                >
+                  <template #prepend-inner>
+                    <User :size="18" class="text-medium-emphasis" />
+                  </template>
+                </v-text-field>
 
-              <v-text-field
-                v-model.trim="registerData.email"
-                label="Email"
-                type="email"
-                variant="outlined"
-                class="mb-4"
-                autocomplete="email"
-              >
-                <template #prepend-inner>
-                  <Mail :size="18" class="text-medium-emphasis" />
-                </template>
-              </v-text-field>
+                <v-text-field
+                  v-model.trim="registerData.email"
+                  label="Email"
+                  type="email"
+                  variant="outlined"
+                  class="mb-4"
+                  :rules="[rules.required, rules.email]"
+                  autocomplete="email"
+                >
+                  <template #prepend-inner>
+                    <Mail :size="18" class="text-medium-emphasis" />
+                  </template>
+                </v-text-field>
 
-              <v-text-field
-                v-model.trim="registerData.password"
-                :type="showPassword ? 'text' : 'password'"
-                label="Senha"
-                variant="outlined"
-                class="mb-3"
-                autocomplete="new-password"
-              >
-                <template #prepend-inner>
-                  <Lock :size="18" class="text-medium-emphasis" />
-                </template>
-                <template #append-inner>
-                  <v-btn
-                    size="small"
-                    variant="text"
-                    :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
-                    @click="showPassword = !showPassword"
-                  >
-                    <Eye v-if="!showPassword" :size="18" />
-                    <EyeOff v-else :size="18" />
-                  </v-btn>
-                </template>
-              </v-text-field>
+                <v-text-field
+                  v-model.trim="registerData.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  label="Senha"
+                  variant="outlined"
+                  class="mb-3"
+                  :rules="[rules.required, rules.min(6)]"
+                  autocomplete="new-password"
+                >
+                  <template #prepend-inner>
+                    <Lock :size="18" class="text-medium-emphasis" />
+                  </template>
+                  <template #append-inner>
+                    <v-btn
+                      size="small"
+                      variant="text"
+                      :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                      @click="showPassword = !showPassword"
+                    >
+                      <Eye v-if="!showPassword" :size="18" />
+                      <EyeOff v-else :size="18" />
+                    </v-btn>
+                  </template>
+                </v-text-field>
 
-              <v-text-field
-                v-model.trim="registerData.confirmPassword"
-                :type="showConfirmPassword ? 'text' : 'password'"
-                label="Confirmar Senha"
-                variant="outlined"
-                class="mb-6"
-                autocomplete="new-password"
-              >
-                <template #prepend-inner>
-                  <Lock :size="18" class="text-medium-emphasis" />
-                </template>
-                <template #append-inner>
-                  <v-btn
-                    size="small"
-                    variant="text"
-                    :aria-label="showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'"
-                    @click="showConfirmPassword = !showConfirmPassword"
-                  >
-                    <Eye v-if="!showConfirmPassword" :size="18" />
-                    <EyeOff v-else :size="18" />
-                  </v-btn>
-                </template>
-              </v-text-field>
+                <v-text-field
+                  v-model.trim="registerData.confirmPassword"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  label="Confirmar Senha"
+                  variant="outlined"
+                  class="mb-6"
+                  :rules="[rules.required, rules.samePassword]"
+                  autocomplete="new-password"
+                >
+                  <template #prepend-inner>
+                    <Lock :size="18" class="text-medium-emphasis" />
+                  </template>
+                  <template #append-inner>
+                    <v-btn
+                      size="small"
+                      variant="text"
+                      :aria-label="showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                      @click="showConfirmPassword = !showConfirmPassword"
+                    >
+                      <Eye v-if="!showConfirmPassword" :size="18" />
+                      <EyeOff v-else :size="18" />
+                    </v-btn>
+                  </template>
+                </v-text-field>
+              </v-form>
 
               <div class="d-flex align-center justify-space-between my-5">
                 <span class="text-body-2 text-medium-emphasis">Já possui uma conta?</span>
@@ -105,7 +111,8 @@
                 size="large" 
                 block 
                 class="mb-4 auth-action"
-                :disabled="!registerData.name || !registerData.email || !registerData.password || !registerData.confirmPassword"
+                :loading="loading"
+                :disabled="loading || !isValid"
               >
                 <template #prepend>
                   <UserPlus :size="18" class="me-1" />
@@ -142,9 +149,13 @@ const loading = ref(false);
 
 import { useAuthStore } from "@/store/auth";
 const auth = useAuthStore();
+import { useSnackbar } from "@/composables/useSnackbar";
+const { showSnackbar } = useSnackbar();
 
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
+const formRef = ref();
+const isValid = ref(false);
 
 const registerData = reactive({
   name: "",
@@ -153,9 +164,22 @@ const registerData = reactive({
   confirmPassword: "",
 });
 
+const rules = {
+  required: (value: string) => !!value || "Campo obrigatório",
+  email: (value: string) => {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return pattern.test(value) || "Email inválido";
+  },
+  min: (n: number) => (value: string) => (value?.length ?? 0) >= n || `Mínimo de ${n} caracteres`,
+  samePassword: (value: string) => value === registerData.password || "Senhas não conferem",
+};
+
 async function onRegister() {
-  if (registerData.password !== registerData.confirmPassword) {
-    console.error("Passwords diferentes");
+  // Dispara validação do formulário
+  const validation = await formRef.value?.validate?.();
+  const valid = typeof validation === "boolean" ? validation : validation?.valid;
+  if (!valid) {
+    showSnackbar("Corrija os campos destacados.", "warning");
     return;
   }
 
@@ -168,13 +192,15 @@ async function onRegister() {
     );
 
     if (session) {
+      showSnackbar("Cadastro realizado com sucesso!", "success");
       router.push("/lances-gravanois");
     } else {
-      // TODO: mostre snackbar/toast “Verifique seu e-mail para confirmar a conta”
+      showSnackbar("Verifique seu e-mail para confirmar a conta.", "info");
       router.push("/login");
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error("Registration error:", e);
+    showSnackbar(e?.message || "Erro ao cadastrar. Tente novamente.", "error");
   } finally {
     loading.value = false;
   }
