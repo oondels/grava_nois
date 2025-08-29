@@ -8,20 +8,11 @@
     <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">
       <div>
         <h1 class="text-h4 font-weight-bold mb-1">Replays e Lances</h1>
-        <p class="text-medium-emphasis mb-0">
-          "Resgates seus mehlores laces"
-        </p>
+        <p class="text-medium-emphasis mb-0">"Resgates seus mehlores laces"</p>
       </div>
-
-      <!-- <div v-if="filteredByLocation.length" class="text-right">
-        <div class="text-h5 font-weight-medium">{{ filteredByLocation.length }}</div>
-        <div class="text-caption text-medium-emphasis">
-          {{ filteredByLocation.length === 1 ? "resultado" : "resultados" }}
-        </div>
-      </div> -->
     </div>
 
-    <!-- Filtros (moderno/compacto) -->
+    <!-- Filtros -->
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <v-expansion-panels variant="accordion" class="filters-panel" :multiple="false" elevation="0">
         <v-expansion-panel>
@@ -36,7 +27,7 @@
               </div>
             </div>
           </v-expansion-panel-title>
-          
+
           <v-expansion-panel-text>
             <div class="d-flex flex-wrap ga-3 align-center">
               <v-select
@@ -85,8 +76,90 @@
       </v-expansion-panels>
     </v-sheet>
 
-    <!-- Resultados -->
-    <div v-if="filteredByLocation.length > 0">
+    <!-- Supabase Videos -->
+    <v-sheet class="mb-6" color="surface" rounded="lg" border>
+      <div class="d-flex align-center justify-space-between px-4 py-3">
+        <div class="d-flex align-center ga-2">
+          <v-icon :icon="customIcons.play" size="20" class="text-medium-emphasis" />
+          <span class="text-subtitle-1">Vídeos Grava Nóis - Seus Lances</span>
+        </div>
+        <div class="text-caption text-medium-emphasis">{{ videosList.count }} itens</div>
+      </div>
+
+      <div v-if="loadingVideos" class="d-flex align-center justify-center py-6">
+        <v-progress-circular indeterminate color="primary" />
+      </div>
+      <div v-else-if="errorVideos" class="px-4 pb-4">
+        <v-alert type="error" variant="tonal">{{ errorVideos }}</v-alert>
+      </div>
+      <div v-else class="px-4 pb-4">
+        <v-row>
+          <v-col v-for="file in videosList.files" :key="file.path" cols="12" sm="6" md="4" lg="3">
+            <v-card rounded="xl" elevation="3" class="result-card">
+              <div class="thumb-wrapper">
+                <div class="thumb-video">
+                  <video
+                    v-if="file.preview_url"
+                    :src="file.preview_url"
+                    controls
+                    preload="metadata"
+                    playsinline
+                    style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px 12px 0 0"
+                  />
+                  <div
+                    v-else
+                    class="d-flex align-center justify-center"
+                    style="width: 100%; aspect-ratio: 16/9; background: #111; color: #ccc; border-radius: 12px 12px 0 0"
+                  >
+                    Sem prévia
+                  </div>
+                </div>
+
+                <div class="duration-badge" v-if="file.size">{{ prettySize(file.size) }}</div>
+              </div>
+
+              <v-card-text class="pt-3">
+                <!-- <div class="text-subtitle-2 font-weight-medium text-truncate" :title="file.name">
+                  {{ file.name }}
+                </div>
+                <div class="text-caption text-medium-emphasis text-truncate" :title="file.path">
+                  {{ file.path }}
+                </div> -->
+              </v-card-text>
+
+              <v-card-actions class="pt-0">
+                <v-btn
+                  size="small"
+                  variant="outlined"
+                  :href="file.preview_url || undefined"
+                  target="_blank"
+                  prepend-icon="mdi mdi-play"
+                  :disabled="!file.preview_url"
+                >
+                  Abrir
+                </v-btn>
+
+                <v-spacer />
+
+                <v-btn
+                  size="small"
+                  color="green"
+                  variant="outlined"
+                  :href="file.download_url || undefined"
+                  prepend-icon="mde mdi-download"
+                  :disabled="!file.download_url"
+                >
+                  Baixar
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
+    </v-sheet>
+
+    <!-- Exemplo de video mockado -->
+    <!-- <div v-if="filteredByLocation.length > 0">
       <v-row >
         <v-col v-for="clip in filteredByLocation" :key="clip.id" cols="12" sm="6" md="4" lg="3">
           <v-card class="result-card" rounded="xl" elevation="3">
@@ -99,13 +172,11 @@
                 </template>
               </v-img>
 
-              <!-- Overlay + Play -->
               <div class="thumb-overlay"></div>
               <div class="play-badge">
                 <v-icon :icon="customIcons.play" size="40" />
               </div>
 
-              <!-- Duração -->
               <div class="duration-badge">{{ formatDuration(clip.durationSec) }}</div>
             </div>
 
@@ -158,7 +229,7 @@
       <div v-if="!visibleClips.length" class="py-8">
         <EmptyState title="Nenhum clipe encontrado" description="Nenhum clipe encontrado com esses filtros." />
       </div>
-    </div>
+    </div> -->
   </v-container>
 </template>
 
@@ -176,6 +247,65 @@ import VideoCard from "@/components/videos/VideoCard.vue";
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 
 type LocalLocation = { estado: string; cidade: string; quadra: string };
+
+// ================= Supabase list (server) =================
+type VideoFile = {
+  name: string;
+  path: string;
+  bucket: string;
+  size: number | null;
+  last_modified: string | null;
+  preview_url: string | null;
+  download_url: string | null;
+};
+
+type VideosListResponse = {
+  bucket: string;
+  prefix: string;
+  count: number;
+  files: VideoFile[];
+};
+
+const loadingVideos = ref(true);
+const errorVideos = ref<string | null>(null);
+const videosList = ref<VideosListResponse>({ bucket: "temp", prefix: "", count: 0, files: [] });
+
+function getApiBase() {
+  const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
+  if (envBase) return envBase.replace(/\/$/, "");
+  // Dev fallback: client runs on 5173, server on 3000
+  if (typeof window !== "undefined" && window.location.port === "5173") return "http://localhost:3000";
+  return "";
+}
+
+async function fetchVideos() {
+  loadingVideos.value = true;
+  errorVideos.value = null;
+  try {
+    const base = getApiBase();
+    const url = `http://localhost:3000/api/videos/list?bucket=temp&prefix=temp/test/test2&limit=10&order=desc&ttl=3600"`;
+    const res = await fetch(url, { credentials: "include" });
+    if (!res.ok) throw new Error(`Falha ao carregar vídeos: ${res.status}`);
+    const data = (await res.json()) as VideosListResponse;
+    videosList.value = data;
+  } catch (e: any) {
+    errorVideos.value = e?.message || "Erro ao carregar vídeos";
+  } finally {
+    loadingVideos.value = false;
+  }
+}
+
+function prettySize(bytes?: number | null) {
+  if (!bytes || bytes <= 0) return "";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  let n = bytes;
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return `${n.toFixed(n >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
+}
 
 // Clips (mock) + mapeamento de localização (temporário)
 const clipsStore = useClipsStore();
@@ -252,6 +382,8 @@ const filteredByLocation = computed(() => {
 const visibleClips = computed(() => filteredByLocation.value.slice(0, visibleCount.value));
 
 onMounted(() => {
+  // Carrega lista de vídeos do servidor (Supabase Storage)
+  fetchVideos();
   // Simular carregamento inicial para exibir skeletons brevemente
   const t = setTimeout(() => (loadingUI.value = false), 500);
 
@@ -301,15 +433,36 @@ function unlockClip(clip: any) {
 
 // Filter bar helpers
 const sportChips = computed(() => [
-  { label: "Futebol", value: "futebol", icon: getSportIcon("futebol"), selected: clipsStore.filters.sports.includes("futebol") },
-  { label: "Basquete", value: "basquete", icon: getSportIcon("basquete"), selected: clipsStore.filters.sports.includes("basquete") },
-  { label: "Vôlei", value: "volei", icon: getSportIcon("volei"), selected: clipsStore.filters.sports.includes("volei") },
-  { label: "Futevôlei", value: "futevolei", icon: getSportIcon("futevolei"), selected: clipsStore.filters.sports.includes("futevolei") },
+  {
+    label: "Futebol",
+    value: "futebol",
+    icon: getSportIcon("futebol"),
+    selected: clipsStore.filters.sports.includes("futebol"),
+  },
+  {
+    label: "Basquete",
+    value: "basquete",
+    icon: getSportIcon("basquete"),
+    selected: clipsStore.filters.sports.includes("basquete"),
+  },
+  {
+    label: "Vôlei",
+    value: "volei",
+    icon: getSportIcon("volei"),
+    selected: clipsStore.filters.sports.includes("volei"),
+  },
+  {
+    label: "Futevôlei",
+    value: "futevolei",
+    icon: getSportIcon("futevolei"),
+    selected: clipsStore.filters.sports.includes("futevolei"),
+  },
 ]);
 
 function toggleSport(sport: string) {
   const current = new Set(clipsStore.filters.sports);
-  if (current.has(sport)) current.delete(sport); else current.add(sport);
+  if (current.has(sport)) current.delete(sport);
+  else current.add(sport);
   clipsStore.updateFilters({ sports: Array.from(current) });
 }
 
@@ -348,6 +501,8 @@ function clearAllFilters() {
 }
 
 @media (min-width: 600px) {
-  :root { --gn-sticky-top: 64px; }
+  :root {
+    --gn-sticky-top: 64px;
+  }
 }
 </style>
