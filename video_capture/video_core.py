@@ -88,7 +88,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "-rtsp_transport",
         "tcp",
         "-i",
-        "rtsp://admin:wa0i4Ochu@192.168.1.21:2399/cam/realmonitor?channel=1&subtype=0",
+        "rtsp://admin:wa0i4Ochu@192.168.68.104:554/cam/realmonitor?channel=1&subtype=0",
         "-c:v",
         "libx264",
         "-preset",
