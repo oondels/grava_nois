@@ -5,7 +5,7 @@
       <HeroSection />
 
       <v-divider :thickness="4" color="success"></v-divider>
-
+      
       <HowItWorksSection />
 
       <v-divider :thickness="4" color="success"></v-divider>
@@ -27,39 +27,41 @@
       </section>
 
       <v-divider :thickness="4" color="success"></v-divider>
+      
+      <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- DIFFERENTIALS -->
       <section id="differentials" class="section" aria-labelledby="diff-title">
         <div class="container">
           <h2 id="diff-title" class="section-title">Por que somos diferentes</h2>
           <div class="card-grid">
-            <article class="card flex flex-column justify-center align-center">
+            <article class="card mirror flex flex-column justify-center align-center">
               <h3 class="flex flex-row justify-center align-center">
                 <Target color="red" class="mr-2" /> Foco no amador
               </h3>
               <p>Feito para quem joga por paixão, não por contrato.</p>
             </article>
 
-            <article class="card">
+            <article class="card mirror">
               <h3 class="flex flex-row justify-center align-center">
                 <Zap color="yellow" class="mr-2" /> Replays instantâneos
               </h3>
               <p>Reviva o lance na hora, sem esperar o jogo acabar.</p>
             </article>
 
-            <article class="card">
+            <article class="card mirror">
               <h3 class="flex flex-row justify-center align-center">
                 <Banknote class="mr-2" color="green" /> Premiações (em breve)
               </h3>
               <p>Ganhe prêmios com seus clipes! Ideal para quadras parceiras e atletas criadores.</p>
             </article>
 
-            <article class="card">
+            <article class="card mirror">
               <h3 class="flex flex-row justify-center align-center"><AppWindow class="mr-2" />Plataforma intuitiva</h3>
               <p>Baixe seus vídeos quando quiser, com poucos cliques.</p>
             </article>
 
-            <article class="card">
+            <article class="card mirror">
               <h3 class="flex flex-row justify-center align-center">
                 <ShieldCheckIcon class="mr-2" color="orange" /> Segurança
               </h3>
@@ -104,13 +106,13 @@
             </div>
 
             <div class="">
-              <!-- <img
+              <img
                 class="media-img"
                 :src="IMAGES.feed"
                 alt="Preview do feed vertical de lances"
                 loading="lazy"
                 decoding="async"
-              /> -->
+              />
             </div>
           </div>
         </div>
@@ -118,8 +120,36 @@
 
       <v-divider :thickness="4" color="success"></v-divider>
 
-      <!-- SHOWCASE (visual-heavy block) -->
-      <ShowCaseSection />
+      <!-- SHOWCASE (padronizado, sem glassmorphism) -->
+      <section class="section alt" aria-labelledby="showcase-title">
+        <div class="container">
+          <h2 id="showcase-title" class="section-title">Feito para qualquer quadra, qualquer time</h2>
+          <div class="showcase-grid">
+            <div class="media-card">
+              <img class="media-img" :src="IMAGES.soccer" alt="Partida de Futebol" loading="lazy" decoding="async" />
+              <div class="media-label">Futebol</div>
+            </div>
+            <div class="media-card">
+              <img class="media-img" :src="IMAGES.volleyball" alt="Quadra de vôlei" loading="lazy" decoding="async" />
+              <div class="media-label">Vôlei</div>
+            </div>
+            <div class="media-card">
+              <img
+                class="media-img"
+                :src="IMAGES.basketball"
+                alt="Quadra de basquete"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="media-label">Basquete</div>
+            </div>
+            <div class="media-card">
+              <img class="media-img" :src="IMAGES.outdoor" alt="Quadra externa/areia" loading="lazy" decoding="async" />
+              <div class="media-label">Areia & quadras externas</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <v-divider :thickness="4" color="success"></v-divider>
 
@@ -165,28 +195,28 @@
       <section id="faq" class="section alt" aria-labelledby="faq-title">
         <div class="container narrow">
           <h2 id="faq-title" class="section-title">Perguntas frequentes</h2>
-          <details class="faq-item">
+          <details class="faq-item mirror">
             <summary>Como instalo o sistema no meu campo?</summary>
             <p class="mt-3">
               A instalaçõa é feita por nossa equipe técnica. Basta entrar em contato e agendamos uma visita.
             </p>
           </details>
 
-          <details class="faq-item">
+          <details class="faq-item mirror">
             <summary>Funciona com internet instável?</summary>
             <p class="mt-3">
               Sim. Gravamos localmente com buffer e fazemos upload resiliente em blocos quando a conexão permite.
             </p>
           </details>
 
-          <details class="faq-item">
+          <details class="faq-item mirror">
             <summary>Como pago e baixo meus vídeos?</summary>
             <p class="mt-3">
               Os vídeos ficam na plataforma; você paga por clip ou pacote e recebe um link seguro para download.
             </p>
           </details>
 
-          <details class="faq-item">
+          <details class="faq-item mirror">
             <summary>Como vai funcionar a premiação?</summary>
             <p class="mt-3">
               Durante o piloto, quadras e atletas parceiros concorrerão a prêmios mensais baseados em engajamento e
@@ -200,7 +230,7 @@
 
       <!-- CTA -->
       <section id="cta" class="cta" aria-labelledby="cta-title">
-        <div class="container cta-inner">
+        <div class="container cta-inner mirror">
           <h2 id="cta-title">Pronto para eternizar seus lances?</h2>
           <p>Leve o Grava Nóis para sua quadra e não perca mais nenhum momento.</p>
 
@@ -238,12 +268,26 @@ import {
   Target,
   Banknote,
 } from "lucide-vue-next";
-import HeroSection from "@/components/home-sections/HeroSection.vue";
-import HowItWorksSection from "@/components/home-sections/HowItWorksSection.vue";
-import ShowCaseSection from "@/components/home-sections/ShowCaseSection.vue";
+import HeroSection from '@/components/home-sections/HeroSection.vue';
+import HowItWorksSection from '@/components/home-sections/HowItWorksSection.vue';
 
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
+
+import hero from "@/assets/images/hero-about.webp";
+import soccer from "@/assets/images/society-about.webp";
+import volleyball from "@/assets/images/volleyball-about.webp";
+import basketball from "@/assets/images/basketball-about.webp";
+import outdoor from "@/assets/images/futbolley-about.webp";
+import feed from "@/assets/images/feed-preview.webp";
+const IMAGES = {
+  hero: hero,
+  soccer: soccer,
+  volleyball: volleyball,
+  basketball: basketball,
+  outdoor: outdoor,
+  feed: feed,
+};
 
 const showTop = ref(false);
 const showHowDialog = ref(false);
@@ -356,13 +400,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   background: var(--card);
   box-shadow: 0 20px 60px -24px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  min-height: 220px;
-}
-.media-card.tall {
-  min-height: 360px;
-}
-.media-card.wide {
-  grid-column: span 2;
+  aspect-ratio: 16 / 9;   /* padroniza todas as imagens */
+  min-height: auto;
 }
 .media-img {
   width: 100%;
@@ -438,15 +477,24 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   color: var(--muted);
 }
 
+/* Mirror glossy reflection — desativado */
+.mirror {
+  position: relative;
+  overflow: hidden;
+}
+.mirror::before {
+  content: none !important; /* remove glassmorphism */
+}
+
 /* Showcase */
 .showcase-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr); /* 2x2 no desktop */
   gap: 1rem;
 }
-.showcase-grid .wide {
-  grid-column: span 2;
-}
+/* neutraliza variações antigas */
+.media-card.tall,
+.media-card.wide { min-height: auto; grid-column: auto; }
 
 /* Stats strip */
 .stats {
@@ -592,7 +640,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
     grid-template-columns: repeat(2, 1fr);
   }
   .showcase-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* mantém 2 colunas no tablet */
   }
 }
 
@@ -605,13 +653,13 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   }
   .card-grid,
   .showcase-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* mobile 1x1 */
   }
   .stats-inner {
     grid-template-columns: 1fr 1fr;
   }
   .showcase-grid .media-card.wide {
-    grid-column: auto; /* remove span 2 que escondia o restante */
+    grid-column: auto; /* legado */
   }
 }
 
@@ -626,3 +674,4 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   }
 }
 </style>
+  
