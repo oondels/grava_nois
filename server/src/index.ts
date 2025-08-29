@@ -336,6 +336,167 @@ AppDataSource.initialize()
         res.send("Video upload api is running.");
       })
 
+
+      // Listagem de videos para o frontEnd
+      /** ========================= API DOC =========================
+     * GET /api/videos/list
+     *
+     * Lista arquivos (não recursivo) em um prefix do Supabase Storage
+     * e retorna URLs assinadas para preview e download.
+     *
+     * Query params:
+     * - bucket: string (default: "temp")
+     *     Buckets permitidos (validados por allowlist no backend).
+     * - prefix: string (default: "")
+     *     Caminho dentro do bucket. Ex.: "temp/test/test2".
+     *     É sanitizado (remove //, trim de /, bloqueia "..").
+     * - limit: number (default: 100, range: 1..100)
+     * - offset: number (default: 0, >= 0)
+     * - order: "asc" | "desc" (default: "desc")
+     * - ttl: number (default: 3600, range: 60..86400)
+     *     Tempo de expiração (segundos) das URLs assinadas.
+     *
+     * Respostas:
+     * 200 OK
+     *   {
+     *     bucket: string,
+     *     prefix: string,
+     *     count: number,
+     *     files: Array<{
+     *       name: string,
+     *       path: string,           // prefix/name
+     *       bucket: string,
+     *       size: number | null,    // metadata.size
+     *       last_modified: string | null, // updated_at || created_at
+     *       preview_url: string | null,   // signed GET
+     *       download_url: string | null   // signed GET (download=1)
+     *     }>
+     *   }
+     *
+     * 400 Bad Request
+     *   { error: "Invalid bucket" | "Invalid prefix" }
+     *
+     * 502 Bad Gateway
+     *   { error: string, details?: string }  // falha ao listar ou assinar URLs
+     *
+     * 500 Internal Server Error
+     *   { error: "Internal server error" }
+     *
+     * Segurança / Observações:
+     * - Allowlist de buckets (evita enumeração indevida).
+     * - `prefix` sanitizado (bloqueia path traversal com "..").
+     * - A listagem é **não recursiva** (apenas o nível de `prefix`).
+     * - Pastas são filtradas; retornamos apenas itens com `metadata.size`.
+     *
+     * Exemplos:
+     * - GET /api/videos/list?bucket=temp&prefix=temp/test/test2&limit=50&order=desc
+     * - GET /api/videos/list?prefix=main/cliente123/jogo-45&ttl=1800
+     * - GET /api/videos/list?bucket=temp&prefix=temp/test/test2&limit=10&order=desc&ttl=3600"
+     * =========================================================== */
+      const ALLOWED_BUCKETS = new Set(['temp', 'main'])
+
+      function sanitizePrefix(raw: string): string {
+        const decoded = decodeURIComponent(raw || '')
+        if (decoded.includes('..')) throw new Error('invalid_prefix')
+        const compact = decoded.replace(/\/{2,}/g, '/')
+        return compact.replace(/^\/+|\/+$/g, '') // remove barras no começo/fim
+      }
+
+      function clamp(n: number, min: number, max: number) {
+        return Math.min(max, Math.max(min, n))
+      }
+      app.get('/api/videos/list', async (req: Request, res: Response) => {
+        try {
+          // ========= Query params =========
+          const bucket = typeof req.query.bucket === 'string' ? req.query.bucket : 'temp'
+          if (!ALLOWED_BUCKETS.has(bucket)) {
+            return res.status(400).json({ error: 'Invalid bucket' })
+          }
+
+          const prefixRaw = typeof req.query.prefix === 'string' ? req.query.prefix : ''
+          let prefix = ''
+          try {
+            prefix = sanitizePrefix(prefixRaw)
+          } catch {
+            return res.status(400).json({ error: 'Invalid prefix' })
+          }
+
+          const limit = clamp(
+            Number.isFinite(+req.query.limit!) ? parseInt(req.query.limit as string, 10) : 100,
+            1,
+            100
+          )
+
+          const offset = Math.max(
+            0,
+            Number.isFinite(+req.query.offset!) ? parseInt(req.query.offset as string, 10) : 0
+          )
+
+          const order: 'asc' | 'desc' = req.query.order === 'asc' ? 'asc' : 'desc'
+
+          const ttlSec = clamp(
+            Number.isFinite(+req.query.ttl!) ? parseInt(req.query.ttl as string, 10) : 3600,
+            60,
+            60 * 60 * 24
+          )
+          // =================================
+
+          const { data: items, error: listErr } = await supabase
+            .storage
+            .from(bucket)
+            .list(prefix, { limit, offset, sortBy: { column: 'name', order } })
+
+          if (listErr) {
+            return res.status(502).json({ error: 'Failed to list files', details: listErr.message })
+          }
+
+          // Somente arquivos (pasta não tem metadata.size)
+          const files = (items ?? []).filter((it: any) => it?.metadata && typeof it.metadata.size === 'number')
+
+          const paths = files.map((f: any) => (prefix ? `${prefix}/${f.name}` : f.name))
+
+          if (paths.length === 0) {
+            return res.json({ bucket, prefix, count: 0, files: [] })
+          }
+
+          const { data: signedView, error: signViewErr } = await supabase
+            .storage
+            .from(bucket)
+            .createSignedUrls(paths, ttlSec)
+
+          if (signViewErr) {
+            return res.status(502).json({ error: 'Failed to create signed view URLs', details: signViewErr.message })
+          }
+
+          const { data: signedDownload, error: signDownErr } = await supabase
+            .storage
+            .from(bucket)
+            .createSignedUrls(paths, ttlSec, { download: true })
+
+          if (signDownErr) {
+            return res.status(502).json({ error: 'Failed to create signed download URLs', details: signDownErr.message })
+          }
+
+          const result = files.map((f: any, i: number) => ({
+            name: f.name,
+            path: paths[i],
+            bucket,
+            size: f.metadata?.size ?? null,
+            last_modified: f.updated_at ?? f.created_at ?? null,
+            preview_url: signedView?.[i]?.signedUrl ?? null,
+            download_url: signedDownload?.[i]?.signedUrl ?? null,
+          }))
+
+          return res.json({ bucket, prefix, count: result.length, files: result })
+        } catch (err: any) {
+          if (err?.message === 'invalid_prefix') {
+            return res.status(400).json({ error: 'Invalid prefix' })
+          }
+          console.error('Error listing videos:', err)
+          return res.status(500).json({ error: 'Internal server error' })
+        }
+      })
+
       /**
        * Recebe metadados do vídeo
        * @param clientId - ID do cliente
