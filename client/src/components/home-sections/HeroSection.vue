@@ -95,23 +95,23 @@ const heroImages = Object.values(heroModules)
 // Fallbacks explícitos para assets (mantidos para tree-shaking ameno)
 const logoSrc = LogoSymbol;
 const mockupSrc = Mockup;
-const bgFallback = HeroBG || BasketBall;
+// const bgFallback = HeroBG || BasketBall;
 
-// BG como computed para evitar recomputações e aceitar troca futura
-const bgUrl = ref<string>(BasketBall || bgFallback);
+// // BG como computed para evitar recomputações e aceitar troca futura
+// const bgUrl = ref<string>(BasketBall || bgFallback);
 /**
  * Overlay dinâmico sem tocar no <style>:
  * Camada 1: highlight suave que segue --px/--py
  * Camada 2: vinheta escura que segue --px/--py
  * Camada 3: imagem de fundo
  */
-const bgStyle = computed(() => ({
-  backgroundImage: `
-    radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(255,255,255,0.16), transparent 65%),
-    radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(0,0,0,0) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0.78) 100%),
-    url(${bgUrl.value})
-  `
-}));
+// const bgStyle = computed(() => ({
+//   backgroundImage: `
+//     radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(255,255,255,0.16), transparent 65%),
+//     radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(0,0,0,0) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0.78) 100%),
+//     url(${bgUrl.value})
+//   `
+// }));
 
 // Pré-carregar imagens do carrossel para suavizar a primeira troca
 function preloadImages(urls: string[]) {
