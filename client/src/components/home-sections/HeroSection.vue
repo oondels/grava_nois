@@ -1,5 +1,5 @@
 <template>
-  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${BasketBall})` }">
+  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${VolleyBall})` }">
     <div class="hero__container">
       <!-- Top-centered symbol-only logo -->
       <div class="hero__logo-wrap parallax parallax--logo">
@@ -22,13 +22,13 @@
 
           <span class="d-flex justify-center align-center">
             <a href="#how">
-              <ChevronsDown role="button" class="my-2" :size="28" />
+              <ChevronsDown  role="button" class="my-2" :size="28" />
             </a>
           </span>
 
           <div class="hero__ctas">
             <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"> Veja como funciona </a>
-            <a href="/pricing" class="btn btn--secondary" role="button" aria-label="View pricing"> Contrate </a>
+            <!-- <a href="/pricing" class="btn btn--primary" role="button" aria-label="View pricing"> Contrate </a> -->
           </div>
         </div>
 
@@ -53,8 +53,10 @@
 <script setup lang="ts">
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
-import HeroBG from "@/assets/images/soccer_bg.jpg";
-import BasketBall from "@/assets/bak/basket_ball.png";
+// import HeroBG from "@/assets/images/soccer_bg.jpg";
+// import BasketBall from "@/assets/bak/basket_ball.png";
+import VolleyBall from "@/assets/bak/volleysvg.svg";
+
 import { ChevronsDown } from "lucide-vue-next";
 
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
@@ -446,11 +448,36 @@ onBeforeUnmount(() => {
   text-align: center;
   margin: 0 auto;
   max-width: 760px;
+  position: relative;
+  z-index: 1; /* ensure content sits above the background band */
+}
+
+/* Soft blurred dark band behind hero content to increase focus */
+.hero__content::before {
+  content: "";
+  position: absolute;
+  /* make it a thin horizontal band centered vertically */
+  left: -10px;
+  right: -10px;
+  top: calc(50% - 22px);
+  bottom: calc(50% - 22px);
+  border-radius: 14px;
+  pointer-events: none;
+  /* lighter opacity so it doesn't draw attention */
+  background: rgba(0, 0, 0, 0.14);
+  /* gentler blur to keep it subtle */
+  filter: blur(4px);
+  -webkit-filter: blur(4px);
+  /* minimal background blur, can be removed if undesired */
+  backdrop-filter: blur(0.5px);
+  -webkit-backdrop-filter: blur(0.5px);
+  z-index: -1;
 }
 
 .hero__title {
   margin: 0;
   font-family: var(--font-heading);
+  color:rgba(0, 0, 0, 1);
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -556,6 +583,13 @@ onBeforeUnmount(() => {
   .hero__content {
     text-align: left;
     margin-left: 0;
+  }
+  .hero__content::before {
+    left: -14px;
+    right: -14px;
+    top: calc(50% - 26px);
+    bottom: calc(50% - 26px);
+    border-radius: 16px;
   }
   .hero__ctas {
     justify-content: flex-start;

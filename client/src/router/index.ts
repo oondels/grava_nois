@@ -36,12 +36,12 @@ const routes = [
     component: () => import("@/pages/UserPage.vue"),
     meta: { requiresAuth: true },
   },
-  // {
-  //   path: "/contato",
-  //   name: "Contato",
-  //   component: () => import("@/pages/ContactPage.vue"),
-  //   meta: { requiresAuth: false },
-  // },
+  {
+    path: "/contato",
+    name: "Contato",
+    component: () => import("@/pages/ContactPage.vue"),
+    meta: { requiresAuth: false },
+  },
   {
     path: "/:pathMatch(.*)*",
     name: "NotFound",

@@ -56,10 +56,10 @@
                   </template>
                 </v-text-field>
 
-                <div class="d-flex align-center justify-space-between my-5">
-                  <v-btn variant="text" size="small" class="text-primary"> Esqueci minha senha </v-btn>
+                <div class="d-flex align-center justify-center my-5">
+                  <!-- <v-btn variant="text" size="small" class="text-primary"> Esqueci minha senha </v-btn> -->
 
-                  <div>
+                  <div class="d-flex justify-center align-center">
                     <!-- <span> Não possui uma conta? </span> -->
                     <RouterLink
                       to="/register"

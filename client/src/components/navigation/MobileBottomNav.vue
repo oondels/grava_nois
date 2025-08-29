@@ -98,6 +98,7 @@
             :key="item.to"
             :to="item.disabled ? '#' : item.to"
             class="relative flex flex-col items-center justify-center gap-1 rounded-xl p-3 transition hover:bg-black/5 dark:hover:bg-white/10 text-center"
+            :class="{ 'displaynone': item.label === 'Registrar' && auth.isAuthenticated }"
             :aria-disabled="item.disabled || undefined"
             :tabindex="item.disabled ? -1 : 0"
             @click.prevent="handleItemClick(item)"
@@ -140,7 +141,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Home, HelpCircle, LogInIcon, MenuIcon, ClapperboardIcon, XIcon } from "lucide-vue-next";
+import { Home, HelpCircle, LogInIcon, MenuIcon, ClapperboardIcon, XIcon, PlusCircleIcon, UserPlus2Icon } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
 
@@ -159,7 +160,9 @@ type NavItem = {
 const navigationItems: NavItem[] = [
   { label: "Home", to: "/", icon: Home, disabled: false },
   { label: auth.isAuthenticated ? "Logout" : "Login", to: auth.isAuthenticated ? "/user-page" :  "/login", icon: LogInIcon, disabled: false },
+  { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false },
   { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false },
+  { label: "Instalar em meu campo", to: "/contato", icon: PlusCircleIcon, disabled: false },
   { label: "Suporte", to: "/suporte", icon: HelpCircle, disabled: true },
 ];
 
@@ -190,6 +193,10 @@ function goBack() {
 </script>
 
 <style scoped>
+.displaynone {
+  display: none;
+}
+
 @media (min-width: 768px) {
   nav {
     display: none;

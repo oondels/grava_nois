@@ -11,20 +11,21 @@
 
       <nav class="hidden md:flex items-center gap-2">
         <HeaderLink to="/" label="Início" />
-        <HeaderLink to="/contato" label="Contato" />
+        <!-- <HeaderLink to="/contato" label="Contato" /> -->
         <HeaderLink to="/contato" label="Instalar no meu campo" class="nav-cta" />
-        <HeaderLink to="#faq" label="FAQ" class="opacity-50 pointer-events-none select-none" />
+        <!-- <HeaderLink to="#faq" label="FAQ" class="opacity-50 pointer-events-none select-none" /> -->
         <span class="relative">
           <HeaderLink
             to="/login"
             label="Login"
             aria-disabled="true"
-            class="opacity-50 pointer-events-none select-none"
-          />
-          <span
+            />
+            <!-- class="opacity-50 pointer-events-none select-none" -->
+          <!-- <span
             class="absolute -right-3 -top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
-            >breve</span
-          >
+            >
+            em breve</span
+          > -->
         </span>
       </nav>
     </div>
