@@ -87,7 +87,7 @@
 
     <!-- Resultados -->
     <div v-if="filteredByLocation.length > 0">
-      <v-row v-if="viewMode === 'grid'">
+      <v-row >
         <v-col v-for="clip in filteredByLocation" :key="clip.id" cols="12" sm="6" md="4" lg="3">
           <v-card class="result-card" rounded="xl" elevation="3">
             <div class="thumb-wrapper">

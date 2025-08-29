@@ -20,13 +20,16 @@ const vuetify = createVuetify({
   },
 });
 
-const auth = useAuthStore()
-const app = createApp(App);
+const pinia = createPinia()
 
-app.use(createPinia());
+const app = createApp(App);
+app.use(pinia);
 app.use(router);
 app.use(vuetify);
 
-auth.init().finally(() => {
+const auth = useAuthStore()
+
+;(async () => {
+  await auth.init()      // await válido aqui, pois está dentro de uma função async
   app.mount('#app')
-})
+})()
