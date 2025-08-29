@@ -19,17 +19,29 @@ const routes = [
     meta: { requiresGuest: false },
   },
   {
+    path: "/register",
+    name: "Register",
+    component: () => import("@/pages/RegisterPage.vue"),
+    meta: { requiresGuest: false },
+  },
+  {
+    path: "/auth/update-password",
+    name: "Mudar Senha",
+    component: () => import("@/pages/auth/ResetPassword.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
     path: "/user-page",
     name: "Usuário",
     component: () => import("@/pages/UserPage.vue"),
     meta: { requiresAuth: false },
   },
-  {
-    path: "/contato",
-    name: "Contato",
-    component: () => import("@/pages/ContactPage.vue"),
-    meta: { requiresAuth: false },
-  },
+  // {
+  //   path: "/contato",
+  //   name: "Contato",
+  //   component: () => import("@/pages/ContactPage.vue"),
+  //   meta: { requiresAuth: false },
+  // },
   {
     path: "/:pathMatch(.*)*",
     name: "NotFound",

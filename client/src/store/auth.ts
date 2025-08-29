@@ -37,10 +37,58 @@ export const useAuthStore = defineStore('auth', () => {
     if (error) throw error
   }
 
+  async function signInWithEmail(email: string, password: string) {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      const msg = error.message?.toLowerCase() ?? ''
+      if (msg.includes('email not confirmed')) {
+        throw new Error('Confirme seu e-mail antes de entrar. Você pode reenviar o link.')
+      }
+      if (msg.includes('invalid login credentials')) {
+        // Could be wrong creds OR a Google-only account without a password set
+        throw new Error('Credenciais inválidas. Se sua conta foi criada com Google, defina uma senha via “Esqueci minha senha”.')
+      }
+      throw error
+    }
+
+    // Ensure the UI is immediately in sync even if onAuthStateChange hasn't fired yet
+    session.value = data.session
+    return data.user
+  }
+
+  // Rquest para torca de senha
+  async function sendReset(email: string) {
+    console.log('a trocar senha');
+    console.log(email);
+
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/update-password`,
+    })
+    if (error) throw error
+  }
+
+  // Troca de senha
+  async function updatePassword(newPassword: string) {
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword })
+    if (error) throw error
+    // pronto: próximo login por email+senha funcionará
+  }
+
+  // (once, keep your listener to track future changes)
+  supabaseClient.auth.onAuthStateChange((event, newSession) => {
+    // optional: instrument for debugging:
+    console.log('[auth] event:', event)
+    session.value = newSession
+  })
+
   async function signOut() {
     const { error } = await supabaseClient.auth.signOut()
     if (error) throw error
   }
 
-  return { session, user, isAuthenticated, loading, init, signInWithGoogle, signOut }
+  return {
+    session, user, isAuthenticated, loading, init,
+    signInWithGoogle, signInWithEmail, signOut, sendReset, updatePassword
+  }
 })

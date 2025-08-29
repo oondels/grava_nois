@@ -3,27 +3,37 @@
     <v-row justify="center">
       <v-col cols="12" sm="10" md="6" lg="4">
         <transition name="fade-slide">
-          <v-card elevation="10" class="login-card rounded-xl overflow-hidden">
+          <v-card elevation="10" class="auth-card rounded-xl overflow-hidden">
             <!-- Header -->
             <v-card-title class="text-center pa-6 pb-2">
               <div class="d-flex flex-column align-center justify-center mb-1">
                 <img :src="LogoGravaNoisBranco" alt="Grava Nóis" class="brand-logo mb-2" />
-                <p class="text-body-2 text-medium-emphasis mb-0">Seus melhores lances em alta qualidade!</p>
+                <p class="text-body-2 text-medium-emphasis mb-0">Crie sua conta e comece a publicar!</p>
               </div>
             </v-card-title>
 
-            <!-- Form -->
+            <!-- Form (visual apenas) -->
             <v-card-text class="pa-6 pt-3">
               <v-form>
                 <v-text-field
-                  v-model.trim="loginData.email"
+                  v-model.trim="registerData.name"
+                  label="Nome"
+                  variant="outlined"
+                  class="mb-4"
+                  autocomplete="name"
+                >
+                  <template #prepend-inner>
+                    <User :size="18" class="text-medium-emphasis" />
+                  </template>
+                </v-text-field>
+
+                <v-text-field
+                  v-model.trim="registerData.email"
                   label="Email"
                   type="email"
                   variant="outlined"
-                  :rules="[rules.required, rules.email]"
                   class="mb-4"
                   autocomplete="email"
-                  autofocus
                 >
                   <template #prepend-inner>
                     <Mail :size="18" class="text-medium-emphasis" />
@@ -31,18 +41,16 @@
                 </v-text-field>
 
                 <v-text-field
-                  v-model.trim="loginData.password"
+                  v-model.trim="registerData.password"
                   :type="showPassword ? 'text' : 'password'"
                   label="Senha"
                   variant="outlined"
-                  :rules="[rules.required]"
-                  class="mb-2"
-                  autocomplete="current-password"
+                  class="mb-3"
+                  autocomplete="new-password"
                 >
                   <template #prepend-inner>
                     <Lock :size="18" class="text-medium-emphasis" />
                   </template>
-
                   <template #append-inner>
                     <v-btn
                       size="small"
@@ -56,34 +64,46 @@
                   </template>
                 </v-text-field>
 
-                <div class="d-flex align-center justify-space-between my-5">
-                  <v-btn variant="text" size="small" class="text-primary"> Esqueci minha senha </v-btn>
-
-                  <div>
-                    <!-- <span> Não possui uma conta? </span> -->
-                    <RouterLink
-                      to="/register"
-                      class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
-                      aria-label="Ir para página de cadastro"
+                <v-text-field
+                  v-model.trim="registerData.confirmPassword"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  label="Confirmar Senha"
+                  variant="outlined"
+                  class="mb-6"
+                  autocomplete="new-password"
+                >
+                  <template #prepend-inner>
+                    <Lock :size="18" class="text-medium-emphasis" />
+                  </template>
+                  <template #append-inner>
+                    <v-btn
+                      size="small"
+                      variant="text"
+                      :aria-label="showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                      @click="showConfirmPassword = !showConfirmPassword"
                     >
-                      <v-btn variant="text" size="small" class="text-primary"> Cadastre-se </v-btn>
-                    </RouterLink>
-                  </div>
+                      <Eye v-if="!showConfirmPassword" :size="18" />
+                      <EyeOff v-else :size="18" />
+                    </v-btn>
+                  </template>
+                </v-text-field>
+
+                <div class="d-flex align-center justify-space-between my-5">
+                  <span class="text-body-2 text-medium-emphasis">Já possui uma conta?</span>
+                  <RouterLink
+                    to="/login"
+                    class="flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition px-2 py-1 active:scale-[.98]"
+                    aria-label="Ir para página de login"
+                  >
+                    <v-btn variant="text" size="small" class="text-primary"> Entrar </v-btn>
+                  </RouterLink>
                 </div>
 
-                <v-btn
-                  color="primary"
-                  variant="flat"
-                  size="large"
-                  block
-                  :loading="loadingAuth"
-                  class="mb-4 login-action"
-                  @click="submitLogin"
-                >
+                <v-btn color="primary" variant="flat" size="large" block class="mb-4 auth-action">
                   <template #prepend>
-                    <LogIn :size="18" class="me-1" />
+                    <UserPlus :size="18" class="me-1" />
                   </template>
-                  Entrar
+                  Criar conta
                 </v-btn>
 
                 <v-btn
@@ -91,12 +111,10 @@
                   variant="outlined"
                   size="large"
                   block
-                  :loading="loadingAuth"
                   class="mb-4 d-flex align-center justify-center"
-                  @click="auth.signInWithGoogle"
                 >
                   <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
-                  Entrar com Google
+                  Cadastrar com Google
                 </v-btn>
               </v-form>
             </v-card-text>
@@ -109,59 +127,26 @@
 
 <script setup lang="ts">
 import { ref, reactive } from "vue";
-import { useAuthStore } from "@/store/auth";
-import { useSnackbar } from "@/composables/useSnackbar";
-import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
+import { Mail, Lock, Eye, EyeOff, User, UserPlus } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
-const { showSnackbar } = useSnackbar();
-
-const rules = {
-  required: (value: string) => !!value || "Campo obrigatório",
-  email: (value: string) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return pattern.test(value) || "Email inválido";
-  },
-};
-
-const auth = useAuthStore();
-
-const loadingAuth = ref(false);
 
 const showPassword = ref(false);
-const loginData = reactive({
+const showConfirmPassword = ref(false);
+
+const registerData = reactive({
+  name: "",
   email: "",
   password: "",
+  confirmPassword: "",
 });
-
-const submitLogin = async () => {
-  loadingAuth.value = true;
-  try {
-    await auth.signInWithEmail(loginData.email, loginData.password);
-  } catch (error: any) {
-    showSnackbar(error.message, "error");
-    console.error("signIn error:", error);
-  } finally {
-    loadingAuth.value = false;
-  }
-};
-
-// const handleForgotPassword = () => {
-//   console.log("Trocando senha");
-
-//   auth.sendReset(loginData.email);
-// };
 </script>
 
 <style scoped>
-.login-card {
+.auth-card {
   min-height: 85vh;
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.min-height-screen {
-  min-height: 100vh;
 }
 
 /* Microinterações e transições sutis */
@@ -172,13 +157,13 @@ const submitLogin = async () => {
   opacity: 0;
   transform: translateY(8px);
 }
-.login-action:hover {
+.auth-action:hover {
   filter: brightness(1.05);
 }
-.login-action :deep(svg) {
+.auth-action :deep(svg) {
   transition: transform 0.2s ease;
 }
-.login-action:hover :deep(svg) {
+.auth-action:hover :deep(svg) {
   transform: translateX(2px);
 }
 
