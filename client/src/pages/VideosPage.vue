@@ -1,22 +1,24 @@
 <template>
   <v-container class="py-6" fluid>
     <!-- Header -->
-    <div class="d-flex align-center justify-space-between mb-4 flex-wrap ga-4">
-      <img :src="LogoGravaNois" alt="Logo Grava Nóis" />
+    <div class="d-flex justify-center align-center mb-4">
+      <img class="gravanois-logo" :src="LogoGravaNois" alt="Logo Grava Nóis" />
+    </div>
 
+    <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">
       <div>
         <h1 class="text-h4 font-weight-bold mb-1">Replays e Lances</h1>
         <p class="text-medium-emphasis mb-0">
-          Descubra clipes por localização e horário — organize por Estado, Cidade e Quadra.
+          "Resgates seus mehlores laces"
         </p>
       </div>
 
-      <div v-if="filteredByLocation.length" class="text-right">
+      <!-- <div v-if="filteredByLocation.length" class="text-right">
         <div class="text-h5 font-weight-medium">{{ filteredByLocation.length }}</div>
         <div class="text-caption text-medium-emphasis">
           {{ filteredByLocation.length === 1 ? "resultado" : "resultados" }}
         </div>
-      </div>
+      </div> -->
     </div>
 
     <!-- Filtros (moderno/compacto) -->
@@ -34,6 +36,7 @@
               </div>
             </div>
           </v-expansion-panel-title>
+          
           <v-expansion-panel-text>
             <div class="d-flex flex-wrap ga-3 align-center">
               <v-select
@@ -323,6 +326,10 @@ function downloadClip(clip: any) {
 
 <style scoped>
 /* header reverted to simple layout */
+/* logo header */
+.gravanois-logo {
+  width: 90px;
+}
 
 .filter-item {
   min-width: 220px;

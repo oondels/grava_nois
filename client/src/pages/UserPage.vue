@@ -557,7 +557,7 @@ const handleItemClick = (item: any) => {
 }
 
 const handleLogout = () => {
-  authStore.logout()
+  authStore.signOut()
   router.push('/login')
   showSnackbarMessage('Logout realizado com sucesso!', 'success')
 }
@@ -626,10 +626,10 @@ const goBack = () => {
 
 // Inicialização
 onMounted(() => {
-  if (user.value) {
-    profileForm.name = user.value.name
-    profileForm.email = user.value.email
-  }
+  // if (user.value) {
+  //   profileForm.name = user.value.name
+  //   profileForm.email = user.value.email
+  // }
 })
 </script>
 

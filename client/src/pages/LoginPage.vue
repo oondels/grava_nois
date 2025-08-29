@@ -1,7 +1,4 @@
 <template>
-  <!-- <div class="login-page d-flex align-center justify-center min-height-screen">
-
-  </div> -->
   <v-container class="py-8">
     <v-row justify="center">
       <v-col cols="12" sm="10" md="6" lg="4">
@@ -87,26 +84,6 @@
                   Entrar
                 </v-btn>
 
-                <!-- <div
-                  id="g_id_onload"
-                  data-client_id="grava-nois-470322"
-                  data-context="signin"
-                  data-ux_mode="popup"
-                  data-callback="signInWithOAuth"
-                  data-nonce=""
-                  data-auto_select="true"
-                  data-itp_support="true"
-                  data-use_fedcm_for_prompt="true"
-                ></div>
-                <div
-                  class="g_id_signin"
-                  data-type="standard"
-                  data-shape="pill"
-                  data-theme="outline"
-                  data-text="signin_with"
-                  data-size="large"
-                  data-logo_alignment="left"
-                ></div> -->
                 <v-btn
                   color="red"
                   variant="outlined"
@@ -114,7 +91,7 @@
                   block
                   :loading="loadingAuth"
                   class="mb-4 d-flex align-center justify-center"
-                  @click="auth.signInWithGoogleRedirect(loadingAuth)"
+                  @click="auth.signInWithGoogle(loadingAuth)"
                 >
                   <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
                   Entrar com Google
@@ -130,7 +107,6 @@
 
 <script setup lang="ts">
 import { ref, reactive } from "vue";
-import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
@@ -138,12 +114,9 @@ import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
 
 const auth = useAuthStore();
-console.log(auth.isAuthenticated);
 
-const router = useRouter();
 const loadingAuth = ref(false);
 
-const remember = ref(false);
 const showPassword = ref(false);
 const loginData = reactive({
   email: "",

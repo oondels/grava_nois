@@ -1,98 +1,46 @@
+// stores/auth.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { supabaseClient } from "@/lib/supabaseAuth";
+import { supabaseClient } from '@/lib/supabaseAuth'
 
-type MePayload = {
-  user: { id: string; email: string; app_metadata?: Record<string, any> }
-  profile?: Record<string, any> | null
-}
+type SessionT = Awaited<ReturnType<typeof supabaseClient.auth.getSession>>['data']['session']
+type UserT = NonNullable<SessionT>['user']
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:2512'
-
-export interface User {
-  id: string
-  email: string
-  name: string
-}
-
-//TODO: Trazer configurações de login do supabase para aqui
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<MePayload['user'] | null>(null)
-  const profile = ref<MePayload['profile']>(null)
-  const loading = ref(false)
-  const ready = ref(false)
+  const session = ref<SessionT>(null)
+  const loading = ref(true)
 
-  const isAuthenticated = computed(() => !!user.value)
+  const user = computed<UserT | null>(() => session.value?.user ?? null)
+  const isAuthenticated = computed(() => !!session.value)
 
   async function init() {
-    await refreshMe()
-    ready.value = true
+    // 1) pick up existing session from storage or URL (PKCE)
+    const { data: { session: s }, error } = await supabaseClient.auth.getSession()
+    if (error) console.error('getSession error', error)
+    session.value = s
+    loading.value = false
+
+    // 2) keep Pinia in sync with Supabase
+    supabaseClient.auth.onAuthStateChange((_event, newSession) => {
+      session.value = newSession
+    })
   }
 
-  async function refreshMe() {
-    try {
-      const r = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' })
-      if (!r.ok) {
-        user.value = null
-        profile.value = null
-        return
-      }
-      const data: MePayload = await r.json()
-      user.value = data.user
-      profile.value = data.profile ?? null
-    } catch {
-      user.value = null
-      profile.value = null
-    } 
+  async function signInWithGoogle() {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/lances-gravanois`,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
+      },
+    })
+    if (error) throw error
   }
 
-  const signInWithGoogleRedirect = async (loadingAuth: any) => {
-    try {
-      loadingAuth = true;
-      const { data, error } = await supabaseClient.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/lances-gravanois`,
-          queryParams: { access_type: "offline", prompt: "consent" },
-        },
-      });
-      if (error) throw error;
-
-    } catch (e) {
-      console.error(e);
-      alert(e instanceof Error ? e.message : "Falha no login");
-    } finally {
-      loadingAuth = false;
-    }
-  };
-
-  async function signUpEmail(loadingAuth: any) {
-    try {
-      loadingAuth.value = true;
-
-      const { data, error } = await supabaseClient.auth.signUp({
-        email: loadingAuth.email,
-        password: loadingAuth.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/lances-gravanois`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (e) {
-      console.error("Deu erro: ", e);
-      alert(e instanceof Error ? e.message : "Falha no login");
-    } finally {
-      loadingAuth.value = false;
-    }
+  async function signOut() {
+    const { error } = await supabaseClient.auth.signOut()
+    if (error) throw error
   }
 
-  return {
-    user: computed(() => user.value), profile, ready,
-    loading: computed(() => loading.value),
-    init, refreshMe,
-    isAuthenticated,
-    signInWithGoogleRedirect,
-    signUpEmail
-  }
+  return { session, user, isAuthenticated, loading, init, signInWithGoogle, signOut }
 })

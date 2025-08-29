@@ -44,7 +44,7 @@ AppDataSource.initialize()
       });
 
       app.use(cors({
-        origin: ["http://localhost:5174", "https://www.gravanois.com.br"],
+        origin: ["http://localhost:5174", "https://www.gravanois.com.br", 'http://localhost:5173'],
         credentials: true,
       }));
     
@@ -115,7 +115,7 @@ AppDataSource.initialize()
         return res.status(204).end();
       });
 
-      app.get("/me", async (req, res) => {
+      app.get("/auth/me", async (req, res) => {
         const supabase = makeSupabase(req, res);
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error || !user) return res.status(401).json({ error: "unauthorized" });

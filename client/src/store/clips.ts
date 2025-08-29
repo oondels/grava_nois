@@ -121,11 +121,6 @@ export const useClipsStore = defineStore('clips', () => {
     status: []
   })
 
-  onMounted(() => {
-    console.log("Montado");
-    
-  })
-
   const filteredClips = computed(() => {
     let result = [...clips.value]
 
