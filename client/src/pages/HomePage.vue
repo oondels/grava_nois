@@ -5,9 +5,11 @@
       <HeroSection />
 
       <v-divider :thickness="4" color="success"></v-divider>
-      
+
       <HowItWorksSection />
 
+      <v-divider :thickness="4" color="success"></v-divider>
+      <Patrocinadores />
       <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- MISSION -->
@@ -27,7 +29,7 @@
       </section>
 
       <v-divider :thickness="4" color="success"></v-divider>
-      
+
       <v-divider :thickness="4" color="success"></v-divider>
 
       <!-- DIFFERENTIALS -->
@@ -268,11 +270,12 @@ import {
   Target,
   Banknote,
 } from "lucide-vue-next";
-import HeroSection from '@/components/home-sections/HeroSection.vue';
-import HowItWorksSection from '@/components/home-sections/HowItWorksSection.vue';
+import HeroSection from "@/components/home-sections/HeroSection.vue";
+import HowItWorksSection from "@/components/home-sections/HowItWorksSection.vue";
+import Patrocinadores from "@/components/Patrocinadores.vue";
 
-import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
-import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
+// import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
+// import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 
 import hero from "@/assets/images/hero-about.webp";
 import soccer from "@/assets/images/society-about.webp";
@@ -400,7 +403,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   background: var(--card);
   box-shadow: 0 20px 60px -24px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  aspect-ratio: 16 / 9;   /* padroniza todas as imagens */
+  aspect-ratio: 16 / 9; /* padroniza todas as imagens */
   min-height: auto;
 }
 .media-img {
@@ -494,7 +497,10 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
 }
 /* neutraliza variações antigas */
 .media-card.tall,
-.media-card.wide { min-height: auto; grid-column: auto; }
+.media-card.wide {
+  min-height: auto;
+  grid-column: auto;
+}
 
 /* Stats strip */
 .stats {
@@ -674,4 +680,3 @@ onBeforeUnmount(() => window.removeEventListener("scroll", onScroll));
   }
 }
 </style>
-  
