@@ -1,16 +1,16 @@
-import express, { Request, Response, NextFunction } from 'express';
-import multer from 'multer';
-import { createClient } from '@supabase/supabase-js';
-import { AppDataSource } from './config/database';
-import { VideoStatus } from './models/Videos';
-import { z } from 'zod';
-import { randomUUID } from 'crypto';
-import cors from "cors"
-import { publishClipEvent } from './rabbitmq/publisher';
-import nodeMailer from "nodemailer"
-import { config } from './config/dotenv';
+import express, { Request, Response, NextFunction } from "express";
+import multer from "multer";
+import { createClient } from "@supabase/supabase-js";
+import { AppDataSource } from "./config/database";
+import { VideoStatus } from "./models/Videos";
+import { z } from "zod";
+import { randomUUID } from "crypto";
+import cors from "cors";
+import { publishClipEvent } from "./rabbitmq/publisher";
+import nodeMailer from "nodemailer";
+import { config } from "./config/dotenv";
 
-import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr"
+import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import { serialize as serializeCookie, parse as parseCookie } from "cookie";
 
 type ContactFormPayload = {
@@ -43,46 +43,59 @@ AppDataSource.initialize()
         },
       });
 
-      app.use(cors({
-        origin: ["http://localhost:5174", "https://www.gravanois.com.br", 'http://localhost:5173'],
-        credentials: true,
-      }));
-    
-      app.use(express.json())
+      const ALLOWED_ORIGINS = new Set([
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://gravanois.com.br",
+        "https://www.gravanois.com.br",
+      ]);
 
-      // Initialize Supabase client with service role key (secure, only on server)
-      const supabase = createClient(
-        config.supabaseUrl,
-        config.supabaseServiceKey
+      app.use((req, res, next) => {
+        next();
+      });
+
+      app.use(
+        cors({
+          origin(origin, cb) {
+            // allow same-origin/no-origin (ex.: curl, healthchecks)
+            if (!origin) return cb(null, true);
+            if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
+            return cb(new Error(`CORS: origin não permitido: ${origin}`));
+          },
+          credentials: true, // use true só se você REALMENTE usa cookies
+          methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+          allowedHeaders: ["Content-Type", "Authorization", "apikey", "accept-profile"],
+        })
       );
 
+      app.use(express.json());
+
+      // Initialize Supabase client with service role key (secure, only on server)
+      const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
+
       function makeSupabase(req: Request, res: Response) {
-        return createServerClient(
-          config.supabaseUrl!,
-          config.supabasePublishableKey!,
-          {
-            cookies: {
-              getAll() {
-                const parsed = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
-                const arr = Object.entries(parsed).map(([name, value]) => ({ name, value: String(value ?? "") }));
-                return arr.length ? arr : null;
-              },
-              setAll(cookies) {
-                cookies.forEach(({ name, value, options }) => {
-                  const final = {
-                    path: "/",
-                    sameSite: "lax" as const,
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    ...options,
-                  };
-                  res.append("Set-Cookie", serializeCookie(name, value, final));
-                });
-              },
+        return createServerClient(config.supabaseUrl!, config.supabasePublishableKey!, {
+          cookies: {
+            getAll() {
+              const parsed = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
+              const arr = Object.entries(parsed).map(([name, value]) => ({ name, value: String(value ?? "") }));
+              return arr.length ? arr : null;
             },
-          }
-        );
-      };
+            setAll(cookies) {
+              cookies.forEach(({ name, value, options }) => {
+                const final = {
+                  path: "/",
+                  sameSite: "lax" as const,
+                  httpOnly: true,
+                  secure: process.env.NODE_ENV === "production",
+                  ...options,
+                };
+                res.append("Set-Cookie", serializeCookie(name, value, final));
+              });
+            },
+          },
+        });
+      }
 
       // email login
       app.post("/sign-in", async (req, res) => {
@@ -117,7 +130,10 @@ AppDataSource.initialize()
 
       app.get("/auth/me", async (req, res) => {
         const supabase = makeSupabase(req, res);
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
         if (error || !user) return res.status(401).json({ error: "unauthorized" });
 
         // Ex.: buscar perfil
@@ -125,41 +141,34 @@ AppDataSource.initialize()
         return res.json({ user: { id: user.id, email: user.email, app_metadata: user.app_metadata }, profile });
       });
 
-
       // google login
       app.get("/auth/callback", async (req: Request, res: Response) => {
         const code = req.query.code;
         const nextRaw = req.query.next ?? "/";
 
         if (code) {
-          const supabase = createServerClient(config.supabaseUrl, config.supabasePublishableKey,
-            {
-              cookies: {
-                getAll() {
-                  const parsed = req.headers.cookie
-                    ? parseCookie(req.headers.cookie)
-                    : {};
-                  const entries = Object.entries(parsed).map(([name, value]) => ({
-                    name,
-                    value: String(value ?? ""), // ensure non-optional string
-                  }));
-                  return entries.length ? entries : null;
-                },
-                setAll(cookies) {
-                  cookies.forEach(({ name, value, options }) => {
-                    // You can tweak defaults if you want:
-                    // const final = { path: "/", sameSite: "lax", ...options };
-                    const final = options ?? { path: "/" };
-                    res.append(
-                      "Set-Cookie",
-                      serializeCookie(name, value, final)
-                    );
-                  });
-                },
+          const supabase = createServerClient(config.supabaseUrl, config.supabasePublishableKey, {
+            cookies: {
+              getAll() {
+                const parsed = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
+                const entries = Object.entries(parsed).map(([name, value]) => ({
+                  name,
+                  value: String(value ?? ""), // ensure non-optional string
+                }));
+                return entries.length ? entries : null;
               },
-            });
+              setAll(cookies) {
+                cookies.forEach(({ name, value, options }) => {
+                  // You can tweak defaults if you want:
+                  // const final = { path: "/", sameSite: "lax", ...options };
+                  const final = options ?? { path: "/" };
+                  res.append("Set-Cookie", serializeCookie(name, value, final));
+                });
+              },
+            },
+          });
 
-          await supabase.auth.exchangeCodeForSession(code as string)
+          await supabase.auth.exchangeCodeForSession(code as string);
         }
 
         // Prevent open-redirects & normalize path
@@ -180,17 +189,16 @@ AppDataSource.initialize()
         try {
           const { venueId } = req.query;
 
-          const videoRepository = AppDataSource.getRepository('Video');
+          const videoRepository = AppDataSource.getRepository("Video");
 
           const clips = await videoRepository.find({
             where: { venueId },
-            order: { capturedAt: 'DESC' },
+            order: { capturedAt: "DESC" },
           });
 
-          const paths = clips.map(c => c.storage_path);
-          const { data: signedBatch, error: signErr } = await supabase
-            .storage
-            .from('temp')
+          const paths = clips.map((c) => c.storage_path);
+          const { data: signedBatch, error: signErr } = await supabase.storage
+            .from("temp")
             .createSignedUrls(paths, 600);
 
           if (signErr) return res.status(400).json({ error: signErr });
@@ -201,18 +209,18 @@ AppDataSource.initialize()
             captured_at: c.captured_at,
             duration_sec: c.duration_sec,
             meta: c.meta,
-            contract_type: c.contract_type
+            contract_type: c.contract_type,
           }));
 
           res.json({ items });
         } catch (error) {
           console.error("Erro ao buscar clipes gerados: ", error);
           res.status(500).json({
-            message: "Erro ao buscar clipes gerados"
-          })
+            message: "Erro ao buscar clipes gerados",
+          });
           return;
         }
-      })
+      });
 
       // Send email function
       app.post("/send-email", async (req: Request, res: Response) => {
@@ -249,7 +257,7 @@ AppDataSource.initialize()
         const subject = subjectParts.join(" ");
 
         // ===== HTML do e-mail =====
-        const safe = (v?: string | number) => (String(v ?? "").trim() || "—");
+        const safe = (v?: string | number) => String(v ?? "").trim() || "—";
         const html = `
         <div style="font-family: Arial, sans-serif; color:#333; line-height:1.6; max-width:640px; margin:0 auto; background:#f9f9f9; padding:20px; border-radius:12px;">
           <div style="text-align:center; margin-bottom:20px;">
@@ -261,22 +269,42 @@ AppDataSource.initialize()
             <h2 style="color:#0056b3; font-size:18px; margin:0 0 12px;">Dados do Estabelecimento</h2>
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
-                <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Estabelecimento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(estabelecimento)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CNPJ/CPF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(cnpjCpf)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Segmento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(segmento)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Qtd. Câmeras</td><td style="border-bottom:1px solid #f0f0f0;">${safe(cameras)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Endereço</td><td style="border-bottom:1px solid #f0f0f0;">${safe(endereco)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Cidade/UF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(loc)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CEP</td><td style="border-bottom:1px solid #f0f0f0;">${safe(cep)}</td></tr>
+                <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Estabelecimento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  estabelecimento
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CNPJ/CPF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  cnpjCpf
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Segmento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  segmento
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Qtd. Câmeras</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  cameras
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Endereço</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  endereco
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Cidade/UF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  loc
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CEP</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  cep
+                )}</td></tr>
               </tbody>
             </table>
 
             <h2 style="color:#0056b3; font-size:18px; margin:20px 0 12px;">Contato</h2>
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
-                <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(nome)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Telefone</td><td style="border-bottom:1px solid #f0f0f0;">${safe(telefone)}</td></tr>
-                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(email)}</td></tr>
+                <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  nome
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Telefone</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  telefone
+                )}</td></tr>
+                <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
+                  email
+                )}</td></tr>
               </tbody>
             </table>
 
@@ -319,162 +347,158 @@ AppDataSource.initialize()
 
           console.log("Email sent");
           res.status(200).send("Email enviado. Entraremos em contato em breve.");
-          return
+          return;
         } catch (error) {
           console.error("Erro ao enviar e-mail:", error);
           res
             .status(502)
-            .send(
-              "Erro de comunicação ao enviar e-mail. Tente contato por WhatsApp -> +55 (75) 98246-6403"
-            );
-          return
+            .send("Erro de comunicação ao enviar e-mail. Tente contato por WhatsApp -> +55 (75) 98246-6403");
+          return;
         }
       });
 
       // Health check
       app.get("/", (req: Request, res: Response) => {
         res.send("Video upload api is running.");
-      })
-
+      });
 
       // Listagem de videos para o frontEnd
       /** ========================= API DOC =========================
-     * GET /api/videos/list
-     *
-     * Lista arquivos (não recursivo) em um prefix do Supabase Storage
-     * e retorna URLs assinadas para preview e download.
-     *
-     * Query params:
-     * - bucket: string (default: "temp")
-     *     Buckets permitidos (validados por allowlist no backend).
-     * - prefix: string (default: "")
-     *     Caminho dentro do bucket. Ex.: "temp/test/test2".
-     *     É sanitizado (remove //, trim de /, bloqueia "..").
-     * - limit: number (default: 100, range: 1..100)
-     * - offset: number (default: 0, >= 0)
-     * - order: "asc" | "desc" (default: "desc")
-     * - ttl: number (default: 3600, range: 60..86400)
-     *     Tempo de expiração (segundos) das URLs assinadas.
-     *
-     * Respostas:
-     * 200 OK
-     *   {
-     *     bucket: string,
-     *     prefix: string,
-     *     count: number,
-     *     files: Array<{
-     *       name: string,
-     *       path: string,           // prefix/name
-     *       bucket: string,
-     *       size: number | null,    // metadata.size
-     *       last_modified: string | null, // updated_at || created_at
-     *       preview_url: string | null,   // signed GET
-     *       download_url: string | null   // signed GET (download=1)
-     *     }>
-     *   }
-     *
-     * 400 Bad Request
-     *   { error: "Invalid bucket" | "Invalid prefix" }
-     *
-     * 502 Bad Gateway
-     *   { error: string, details?: string }  // falha ao listar ou assinar URLs
-     *
-     * 500 Internal Server Error
-     *   { error: "Internal server error" }
-     *
-     * Segurança / Observações:
-     * - Allowlist de buckets (evita enumeração indevida).
-     * - `prefix` sanitizado (bloqueia path traversal com "..").
-     * - A listagem é **não recursiva** (apenas o nível de `prefix`).
-     * - Pastas são filtradas; retornamos apenas itens com `metadata.size`.
-     *
-     * Exemplos:
-     * - GET /api/videos/list?bucket=temp&prefix=temp/test/test2&limit=50&order=desc
-     * - GET /api/videos/list?prefix=main/cliente123/jogo-45&ttl=1800
-     * - GET /api/videos/list?bucket=temp&prefix=temp/test/test2&limit=10&order=desc&ttl=3600"
-     * =========================================================== */
-      const ALLOWED_BUCKETS = new Set(['temp', 'main'])
+       * GET /api/videos/list
+       *
+       * Lista arquivos (não recursivo) em um prefix do Supabase Storage
+       * e retorna URLs assinadas para preview e download.
+       *
+       * Query params:
+       * - bucket: string (default: "temp")
+       *     Buckets permitidos (validados por allowlist no backend).
+       * - prefix: string (default: "")
+       *     Caminho dentro do bucket. Ex.: "temp/test/test2".
+       *     É sanitizado (remove //, trim de /, bloqueia "..").
+       * - limit: number (default: 100, range: 1..100)
+       * - offset: number (default: 0, >= 0)
+       * - order: "asc" | "desc" (default: "desc")
+       * - ttl: number (default: 3600, range: 60..86400)
+       *     Tempo de expiração (segundos) das URLs assinadas.
+       *
+       * Respostas:
+       * 200 OK
+       *   {
+       *     bucket: string,
+       *     prefix: string,
+       *     count: number,
+       *     files: Array<{
+       *       name: string,
+       *       path: string,           // prefix/name
+       *       bucket: string,
+       *       size: number | null,    // metadata.size
+       *       last_modified: string | null, // updated_at || created_at
+       *       preview_url: string | null,   // signed GET
+       *       download_url: string | null   // signed GET (download=1)
+       *     }>
+       *   }
+       *
+       * 400 Bad Request
+       *   { error: "Invalid bucket" | "Invalid prefix" }
+       *
+       * 502 Bad Gateway
+       *   { error: string, details?: string }  // falha ao listar ou assinar URLs
+       *
+       * 500 Internal Server Error
+       *   { error: "Internal server error" }
+       *
+       * Segurança / Observações:
+       * - Allowlist de buckets (evita enumeração indevida).
+       * - `prefix` sanitizado (bloqueia path traversal com "..").
+       * - A listagem é **não recursiva** (apenas o nível de `prefix`).
+       * - Pastas são filtradas; retornamos apenas itens com `metadata.size`.
+       *
+       * Exemplos:
+       * - GET /api/videos/list?bucket=temp&prefix=temp/test/test2&limit=50&order=desc
+       * - GET /api/videos/list?prefix=main/cliente123/jogo-45&ttl=1800
+       * - GET /api/videos/list?bucket=temp&prefix=temp/test/test2&limit=10&order=desc&ttl=3600"
+       * =========================================================== */
+      const ALLOWED_BUCKETS = new Set(["temp", "main"]);
 
       function sanitizePrefix(raw: string): string {
-        const decoded = decodeURIComponent(raw || '')
-        if (decoded.includes('..')) throw new Error('invalid_prefix')
-        const compact = decoded.replace(/\/{2,}/g, '/')
-        return compact.replace(/^\/+|\/+$/g, '') // remove barras no começo/fim
+        const decoded = decodeURIComponent(raw || "");
+        if (decoded.includes("..")) throw new Error("invalid_prefix");
+        const compact = decoded.replace(/\/{2,}/g, "/");
+        return compact.replace(/^\/+|\/+$/g, ""); // remove barras no começo/fim
       }
 
       function clamp(n: number, min: number, max: number) {
-        return Math.min(max, Math.max(min, n))
+        return Math.min(max, Math.max(min, n));
       }
-      app.get('/api/videos/list', async (req: Request, res: Response) => {
+      app.get("/api/videos/list", async (req: Request, res: Response) => {
         try {
           // ========= Query params =========
-          const bucket = typeof req.query.bucket === 'string' ? req.query.bucket : 'temp'
+          const bucket = typeof req.query.bucket === "string" ? req.query.bucket : "temp";
           if (!ALLOWED_BUCKETS.has(bucket)) {
-            return res.status(400).json({ error: 'Invalid bucket' })
+            return res.status(400).json({ error: "Invalid bucket" });
           }
 
-          const prefixRaw = typeof req.query.prefix === 'string' ? req.query.prefix : ''
-          let prefix = ''
+          const prefixRaw = typeof req.query.prefix === "string" ? req.query.prefix : "";
+          let prefix = "";
           try {
-            prefix = sanitizePrefix(prefixRaw)
+            prefix = sanitizePrefix(prefixRaw);
           } catch {
-            return res.status(400).json({ error: 'Invalid prefix' })
+            return res.status(400).json({ error: "Invalid prefix" });
           }
 
           const limit = clamp(
             Number.isFinite(+req.query.limit!) ? parseInt(req.query.limit as string, 10) : 100,
             1,
             100
-          )
+          );
 
           const offset = Math.max(
             0,
             Number.isFinite(+req.query.offset!) ? parseInt(req.query.offset as string, 10) : 0
-          )
+          );
 
-          const order: 'asc' | 'desc' = req.query.order === 'asc' ? 'asc' : 'desc'
+          const order: "asc" | "desc" = req.query.order === "asc" ? "asc" : "desc";
 
           const ttlSec = clamp(
             Number.isFinite(+req.query.ttl!) ? parseInt(req.query.ttl as string, 10) : 3600,
             60,
             60 * 60 * 24
-          )
+          );
           // =================================
 
-          const { data: items, error: listErr } = await supabase
-            .storage
+          const { data: items, error: listErr } = await supabase.storage
             .from(bucket)
-            .list(prefix, { limit, offset, sortBy: { column: 'name', order } })
+            .list(prefix, { limit, offset, sortBy: { column: "name", order } });
 
           if (listErr) {
-            return res.status(502).json({ error: 'Failed to list files', details: listErr.message })
+            return res.status(502).json({ error: "Failed to list files", details: listErr.message });
           }
 
           // Somente arquivos (pasta não tem metadata.size)
-          const files = (items ?? []).filter((it: any) => it?.metadata && typeof it.metadata.size === 'number')
+          const files = (items ?? []).filter((it: any) => it?.metadata && typeof it.metadata.size === "number");
 
-          const paths = files.map((f: any) => (prefix ? `${prefix}/${f.name}` : f.name))
+          const paths = files.map((f: any) => (prefix ? `${prefix}/${f.name}` : f.name));
 
           if (paths.length === 0) {
-            return res.json({ bucket, prefix, count: 0, files: [] })
+            return res.json({ bucket, prefix, count: 0, files: [] });
           }
 
-          const { data: signedView, error: signViewErr } = await supabase
-            .storage
+          const { data: signedView, error: signViewErr } = await supabase.storage
             .from(bucket)
-            .createSignedUrls(paths, ttlSec)
+            .createSignedUrls(paths, ttlSec);
 
           if (signViewErr) {
-            return res.status(502).json({ error: 'Failed to create signed view URLs', details: signViewErr.message })
+            return res.status(502).json({ error: "Failed to create signed view URLs", details: signViewErr.message });
           }
 
-          const { data: signedDownload, error: signDownErr } = await supabase
-            .storage
+          const { data: signedDownload, error: signDownErr } = await supabase.storage
             .from(bucket)
-            .createSignedUrls(paths, ttlSec, { download: true })
+            .createSignedUrls(paths, ttlSec, { download: true });
 
           if (signDownErr) {
-            return res.status(502).json({ error: 'Failed to create signed download URLs', details: signDownErr.message })
+            return res
+              .status(502)
+              .json({ error: "Failed to create signed download URLs", details: signDownErr.message });
           }
 
           const result = files.map((f: any, i: number) => ({
@@ -485,17 +509,17 @@ AppDataSource.initialize()
             last_modified: f.updated_at ?? f.created_at ?? null,
             preview_url: signedView?.[i]?.signedUrl ?? null,
             download_url: signedDownload?.[i]?.signedUrl ?? null,
-          }))
+          }));
 
-          return res.json({ bucket, prefix, count: result.length, files: result })
+          return res.json({ bucket, prefix, count: result.length, files: result });
         } catch (err: any) {
-          if (err?.message === 'invalid_prefix') {
-            return res.status(400).json({ error: 'Invalid prefix' })
+          if (err?.message === "invalid_prefix") {
+            return res.status(400).json({ error: "Invalid prefix" });
           }
-          console.error('Error listing videos:', err)
-          return res.status(500).json({ error: 'Internal server error' })
+          console.error("Error listing videos:", err);
+          return res.status(500).json({ error: "Internal server error" });
         }
-      })
+      });
 
       /**
        * Recebe metadados do vídeo
@@ -509,7 +533,7 @@ AppDataSource.initialize()
        * 3. Cria registro `clips` (status=`queued`).
        *    - Gera **URL assinada** para upload.
        * 4. Não publica no RabbitMQ ainda.
-       * 
+       *
        * @body {
        *   "venue_id": string,
        *   "duration_sec": number,
@@ -517,8 +541,8 @@ AppDataSource.initialize()
        *   "meta": object, // { "codec": "h264", "fps": 30, "width": 1920, "height": 1080 },
        *   "sha256": string, // hash do arquivo de vídeo "HEX_DO_ARQUIVO"
        * }
-       * 
-       * @returns JSON com mensagem de sucesso e informações de upload,  
+       *
+       * @returns JSON com mensagem de sucesso e informações de upload,
        * {
        *  "clip_id": "nanoid-clip-id", //* Id único
        *  "contract_type": "per_video",
@@ -526,7 +550,7 @@ AppDataSource.initialize()
        *  "upload_url": "https://...signed-url...", //* O upload real do vídeo é realizado pela url retornada
        *  "expires_hint_hours": 12
        * }
-      */
+       */
       app.post("/api/videos/metadados/client/:clientId/venue/:venueId", async (req: Request, res: Response) => {
         try {
           const { clientId, venueId } = req.params;
@@ -539,15 +563,15 @@ AppDataSource.initialize()
               codec: z.string(),
               fps: z.number().int().positive(),
               width: z.number().int().positive(),
-              height: z.number().int().positive()
+              height: z.number().int().positive(),
             }),
-            sha256: z.string().regex(/^[a-f0-9]{64}$/i)
+            sha256: z.string().regex(/^[a-f0-9]{64}$/i),
           });
 
           // Validate Body
           const parsed = bodySchema.safeParse(req.body);
           if (!parsed.success) {
-            res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
+            res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
             return;
           }
           const { duration_sec, captured_at, meta, sha256 } = parsed.data;
@@ -564,11 +588,11 @@ AppDataSource.initialize()
           // 1. Descobre contrato
           let contractType: string; // Lógica para determinar o tipo de contrato
 
-          const venueInstalationRepo = AppDataSource.getRepository("VenueInstallation")
+          const venueInstalationRepo = AppDataSource.getRepository("VenueInstallation");
           const venue = await venueInstalationRepo.findOne({
             where: { clientId: clientId, id: venueId },
-            select: ["contractMethod"]
-          })
+            select: ["contractMethod"],
+          });
 
           if (!venue?.contractMethod) {
             // TODO: Adicionar lógica de erro e envio de mensagem para central do cliente
@@ -603,7 +627,7 @@ AppDataSource.initialize()
             meta,
             sha256,
             status: "queued",
-            storagePath
+            storagePath,
           };
 
           const videoRepository = AppDataSource.getRepository("Video");
@@ -611,21 +635,20 @@ AppDataSource.initialize()
           const existingClip = await videoRepository.findOne({ where: { clipId: clip.clipId } });
           if (existingClip) {
             res.status(409).json({ error: "Clip with this ID already exists." });
-            return
+            return;
           }
 
           const videoClip = videoRepository.create(clip);
           await videoRepository.save(videoClip);
 
           // Gera URL assinada para upload
-          const { data, error } = await supabase
-            .storage
+          const { data, error } = await supabase.storage
             .from("temp") // Bucket temporário do supabase
             .createSignedUploadUrl(storagePath);
 
           if (error || !data?.signedUrl) {
-            console.error('createSignedUploadUrl error:', error);
-            return res.status(500).json({ error: 'Failed to create signed upload URL' });
+            console.error("createSignedUploadUrl error:", error);
+            return res.status(500).json({ error: "Failed to create signed upload URL" });
           }
 
           res.status(201).json({
@@ -633,7 +656,7 @@ AppDataSource.initialize()
             contract_type: contractType,
             storage_path: storagePath,
             upload_url: data.signedUrl,
-            expires_hint_hours: 12
+            expires_hint_hours: 12,
           });
         } catch (error) {
           console.error("Error processing video metadata:", error);
@@ -642,7 +665,7 @@ AppDataSource.initialize()
         }
       });
 
-      /** 
+      /**
        * Recebe metadados do vídeo
        * @param clientId - ID do cliente
        * @description Este endpoint recebe metadados do vídeo e inicia o processo de upload.
@@ -654,7 +677,7 @@ AppDataSource.initialize()
        *   "size_bytes": number, // Tamanho do arquivo em bytes ex: 18234000
        *   "sha256": string // "HEX_DO_ARQUIVO"
        * }
-       * 
+       *
        * Publica para o RabbitMQ:
        * {
        *  "event": "clip.created",
@@ -678,8 +701,8 @@ AppDataSource.initialize()
        *  "upload_url": "https://...signed-url...",
        *  "expires_hint_hours": 12
        * }
-      */
-      app.post('/api/videos/:videoId/uploaded', async (req: Request, res: Response) => {
+       */
+      app.post("/api/videos/:videoId/uploaded", async (req: Request, res: Response) => {
         try {
           const { videoId } = req.params;
 
@@ -691,64 +714,62 @@ AppDataSource.initialize()
           });
           const parsed = bodySchema.safeParse(req.body);
           if (!parsed.success) {
-            res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() });
+            res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
             return;
           }
           const { size_bytes, sha256, etag: clientEtag } = parsed.data;
 
           // 2) Fetch video by clipId
-          const videoRepository = AppDataSource.getRepository('Video');
+          const videoRepository = AppDataSource.getRepository("Video");
           const video = await videoRepository.findOne({ where: { clipId: videoId } });
           if (!video) {
-            res.status(404).json({ error: 'Video not found' });
+            res.status(404).json({ error: "Video not found" });
             return;
           }
 
           if (!video.storagePath) {
-            res.status(422).json({ error: 'Video has no storage_path set' });
+            res.status(422).json({ error: "Video has no storage_path set" });
             return;
           }
 
           // 3) Verifica existência e tamanho via HEAD (evita baixar o blob inteiro)
           const storagePath = video.storagePath as string;
-          const bucket = storagePath.startsWith('main/') ? 'main' : 'temp';
+          const bucket = storagePath.startsWith("main/") ? "main" : "temp";
 
-          const { data: signedGet, error: signErr } = await supabase
-            .storage
+          const { data: signedGet, error: signErr } = await supabase.storage
             .from(bucket)
             .createSignedUrl(storagePath, 60);
           if (signErr || !signedGet?.signedUrl) {
-            res.status(502).json({ error: 'Failed to create signed GET URL to verify upload' });
+            res.status(502).json({ error: "Failed to create signed GET URL to verify upload" });
             return;
           }
 
-          const headResp = await fetch(signedGet.signedUrl, { method: 'HEAD' });
+          const headResp = await fetch(signedGet.signedUrl, { method: "HEAD" });
           if (!headResp.ok) {
-            res.status(422).json({ error: 'Uploaded object not accessible for verification (HEAD failed)' });
+            res.status(422).json({ error: "Uploaded object not accessible for verification (HEAD failed)" });
             return;
           }
 
-          const contentLength = Number(headResp.headers.get('content-length') || '0');
-          const objectEtagRaw = headResp.headers.get('etag') || headResp.headers.get('x-etag') || undefined;
-          const objectEtag = objectEtagRaw ? objectEtagRaw.replace(/\"/g, '') : undefined;
+          const contentLength = Number(headResp.headers.get("content-length") || "0");
+          const objectEtagRaw = headResp.headers.get("etag") || headResp.headers.get("x-etag") || undefined;
+          const objectEtag = objectEtagRaw ? objectEtagRaw.replace(/\"/g, "") : undefined;
 
           if (contentLength !== size_bytes) {
             res.status(422).json({
-              error: 'Uploaded object size mismatch',
+              error: "Uploaded object size mismatch",
               details: { expected: { size_bytes }, got: { size_bytes: contentLength } },
             });
             return;
           }
 
-          if (clientEtag && objectEtag && clientEtag.replace(/\"/g, '') !== objectEtag) {
-            res.status(422).json({ error: 'ETag mismatch', details: { expected: clientEtag, got: objectEtag } });
+          if (clientEtag && objectEtag && clientEtag.replace(/\"/g, "") !== objectEtag) {
+            res.status(422).json({ error: "ETag mismatch", details: { expected: clientEtag, got: objectEtag } });
             return;
           }
 
           // 4) Update status based on contract type and persist size/sha
-          const newStatus = video.contract === 'monthly_subscription'
-            ? VideoStatus.UPLOADED
-            : VideoStatus.UPLOADED_TEMP;
+          const newStatus =
+            video.contract === "monthly_subscription" ? VideoStatus.UPLOADED : VideoStatus.UPLOADED_TEMP;
 
           video.status = newStatus;
           video.sha256 = sha256;
@@ -757,8 +778,8 @@ AppDataSource.initialize()
 
           // 5) Publica evento no RabbitMQ (clip.created)
           try {
-            await publishClipEvent('clip.created', {
-              event: 'clip.created',
+            await publishClipEvent("clip.created", {
+              event: "clip.created",
               clip_id: video.clipId,
               client_id: video.clientId,
               venue_id: video.venueId,
@@ -771,7 +792,7 @@ AppDataSource.initialize()
               meta: video.meta ?? {},
             });
           } catch (e) {
-            console.warn('[rabbitmq] Failed to publish clip.created:', e);
+            console.warn("[rabbitmq] Failed to publish clip.created:", e);
           }
 
           // 6) Return JSON
@@ -779,11 +800,11 @@ AppDataSource.initialize()
             clip_id: video.clipId,
             contract_type: video.contract,
             storage_path: video.storagePath,
-            status: newStatus === VideoStatus.UPLOADED ? 'uploaded' : 'uploaded_temp',
+            status: newStatus === VideoStatus.UPLOADED ? "uploaded" : "uploaded_temp",
           });
         } catch (err) {
-          console.error('Error finalizing uploaded video:', err);
-          res.status(500).json({ error: 'Internal server error' });
+          console.error("Error finalizing uploaded video:", err);
+          res.status(500).json({ error: "Internal server error" });
         }
       });
 
@@ -803,7 +824,7 @@ AppDataSource.initialize()
             legalName: data.legalName,
             email: data.email,
             cnpj: data.cnpj,
-            responsibleCpf: data.responsibleCpf
+            responsibleCpf: data.responsibleCpf,
           });
           await clientRepository.save(newClient);
 
@@ -820,8 +841,19 @@ AppDataSource.initialize()
           const data = req.body;
           const { clientId } = req.params;
 
-          if (!data || !clientId || !data.venueName || !data.addressLine || !data.country || !data.state || !data.city || !data.postalCode) {
-            return res.status(400).json({ error: "Client ID, Venue Name, Address Line, Country, State, City and Postal Code are required." });
+          if (
+            !data ||
+            !clientId ||
+            !data.venueName ||
+            !data.addressLine ||
+            !data.country ||
+            !data.state ||
+            !data.city ||
+            !data.postalCode
+          ) {
+            return res.status(400).json({
+              error: "Client ID, Venue Name, Address Line, Country, State, City and Postal Code are required.",
+            });
           }
 
           const venueInstallationRepository = AppDataSource.getRepository("VenueInstallation");
@@ -847,8 +879,8 @@ AppDataSource.initialize()
       app.listen(port, () => {
         console.log(`Listening on http://localhost:${port}`);
       });
-    })()
+    })();
   })
-  .catch(error => {
+  .catch((error) => {
     console.error("Error initializing Data Source:", error);
-  })
+  });

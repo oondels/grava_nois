@@ -286,7 +286,7 @@ async function fetchVideos() {
     //! TODO - Temporario, futuramente coletar os dados pelo filtro do usuario
     const clientId = "86015dcb-cdbe-406b-8ef8-f7cc6d5a6887";
     const venueId = "5b388420-8379-4418-80d9-5a9f7b2023cf";
-    const url = `https://api.gravanois-api.com.br/api/videos/list?bucket=temp&prefix=temp/${clientId}/${venueId}&limit=10&order=desc&ttl=3600"`;
+    const url = `https://api.gravanois-api.com.br/api/videos/list?bucket=temp&prefix=temp/${clientId}/${venueId}&limit=10&order=desc&ttl=3600`;
     const res = await fetch(url, { credentials: "include" });
     if (!res.ok) throw new Error(`Falha ao carregar vídeos: ${res.status}`);
     const data = (await res.json()) as VideosListResponse;
