@@ -13,7 +13,7 @@
     </div>
 
     <!-- Filtros -->
-    <v-sheet class="mb-6" color="surface" rounded="lg" border>
+    <!-- <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <v-expansion-panels variant="accordion" class="filters-panel" :multiple="false" elevation="0">
         <v-expansion-panel>
           <v-expansion-panel-title :expand-icon="customIcons.chevronDown" :collapse-icon="customIcons.chevronDown">
@@ -74,7 +74,13 @@
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
-    </v-sheet>
+    </v-sheet> -->
+
+    <div>
+      <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="my-3" @click="fetchVideos">
+        Atualizar Vídeos
+      </v-btn>
+    </div>
 
     <!-- Supabase Videos -->
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
@@ -158,6 +164,7 @@
       </div>
     </v-sheet>
 
+    <!-- TODO: Melhorar diferenciacao de mobile e desktop -->
     <!-- Exemplo de video mockado -->
     <!-- <div v-if="filteredByLocation.length > 0">
       <v-row >
@@ -236,13 +243,13 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { useClipsStore } from "@/store/clips";
-import EmptyState from "@/components/EmptyState.vue";
+// import EmptyState from "@/components/EmptyState.vue";
 import { formatDuration, formatDateTime, getSportIcon, getSportLabel } from "@/utils/formatters";
 import { customIcons } from "@/utils/icons";
-import FilterChipsBar from "@/components/filters/FilterChipsBar.vue";
-import FiltersSheet from "@/components/filters/FiltersSheet.vue";
-import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
-import VideoCard from "@/components/videos/VideoCard.vue";
+// import FilterChipsBar from "@/components/filters/FilterChipsBar.vue";
+// import FiltersSheet from "@/components/filters/FiltersSheet.vue";
+// import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+// import VideoCard from "@/components/videos/VideoCard.vue";
 
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 
