@@ -1,5 +1,5 @@
-import { useRoute } from 'vue-router';
-import { computed } from 'vue';
+import { useRoute } from "vue-router";
+import { computed } from "vue";
 
 /**
  * Composable para verificar se uma rota está ativa
@@ -7,7 +7,7 @@ import { computed } from 'vue';
  */
 export function useActiveRoute() {
   const route = useRoute();
-  
+
   /**
    * Verifica se uma rota é a ativa atual
    * @param to - Path ou hash para comparação
@@ -15,16 +15,16 @@ export function useActiveRoute() {
    */
   const isActive = computed(() => (to: string): boolean => {
     // Verifica se é um link de hash
-    if (to.startsWith('#')) {
+    if (to.startsWith("#")) {
       // Compara com o hash atual (se existir)
       return route.hash === to;
     }
-    
+
     // Para links normais de rota, compara com o path atual
     return route.path === to;
   });
-  
+
   return {
-    isActive
+    isActive,
   };
 }
