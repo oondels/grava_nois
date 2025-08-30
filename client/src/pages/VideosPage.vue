@@ -283,8 +283,7 @@ async function fetchVideos() {
   errorVideos.value = null;
   try {
     const base = getApiBase();
-    // const clientId = (import.meta as any).env?.VITE_CLIENT_ID;
-    // const venueId = (import.meta as any).env?.VITE_VENUE_ID;
+    //! TODO - Temporario, futuramente coletar os dados pelo filtro do usuario
     const clientId = "86015dcb-cdbe-406b-8ef8-f7cc6d5a6887";
     const venueId = "5b388420-8379-4418-80d9-5a9f7b2023cf";
     const url = `http://82.29.56.105:2399/api/videos/list?bucket=temp&prefix=temp/${clientId}/${venueId}&limit=10&order=desc&ttl=3600"`;

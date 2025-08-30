@@ -3,7 +3,7 @@
 > Objetivo: capturar replays com pré/pós-buffer, gerar um highlight, enfileirar para tratamento (marca d’água + thumbnail + metadados) para rodar em Raspberry Pi.
 
 - **Arquivos principais**: `video_core.py` (núcleo) e `capture_service.py` (serviço + worker)
-- **Dependências**: Python 3.10+, FFmpeg/ffprobe, MoviePy v2
+- **Dependências**: Python 3.10+, FFmpeg/ffprobe
 - **Fluxo**: _Captura contínua_ → _Highlight on-demand_ → _Fila_ → _Watermark + Thumbnail_ → _Registro no backend (URL assinada)_
 
 ---
@@ -24,7 +24,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install "moviepy>=2.0.0"          # necessário para watermark/thumbnail
+# (MoviePy não é necessário: watermark/thumbnail implementados com ffmpeg)
 
 export GN_GPIO_PIN=17                 # ou mantenha no .env
 python3 capture_service.py            # ENTER ou botão no BCM 17 dispara
@@ -88,13 +88,13 @@ Observação: `stdout`/`stderr` do FFmpeg estão direcionados para `DEVNULL` par
    sudo apt update && sudo apt install -y ffmpeg
    ```
 
-2. **Crie venv e instale MoviePy v2**:
+2. **Crie venv**:
 
    ```
    python3 -m venv .venv
    source .venv/bin/activate
    pip install --upgrade pip
-   pip install "moviepy>=2.0.0"
+   # dependências estão em requirements.txt
    ```
 
 3. **Estruture os arquivos** no mesmo diretório:
@@ -118,7 +118,7 @@ Observação: `stdout`/`stderr` do FFmpeg estão direcionados para `DEVNULL` par
 3. Ao pressionar ENTER, `build_highlight()` aguarda `post_seconds`, seleciona `pre_seconds + post_seconds` de segmentos, cria `to_concat_*.txt` e concatena com `ffmpeg -f concat -c copy` para `clips_dir/highlight_*.mp4`.
 4. `enqueue_clip()` move o highlight para `queue_dir` e grava sidecar JSON com metadados de `ffprobe` e hash `sha256`.
 5. `ProcessingWorker` varre `queue_dir` periodicamente, faz lock com `.lock`, e para cada item:
-   - Aplica watermark com MoviePy v2 para um `*.wm_tmp.mp4` e faz `replace()` atômico para `20_highlights_wm/highlight_*.mp4`.
+   - Aplica watermark com ffmpeg para um `*.wm_tmp.mp4` e faz `replace()` atômico para `20_highlights_wm/highlight_*.mp4`.
    - Gera `20_highlights_wm/highlight_*.jpg` (thumbnail).
    - Atualiza o JSON na fila com `status="watermarked"`, caminhos de saída e `meta_wm` (ffprobe do arquivo final).
    - Envia POST `GN_API_BASE/api/videos/metadados` com metadados do arquivo final; salva a resposta no sidecar em `remote_registration`.
@@ -228,15 +228,15 @@ Move o highlight para `queue_dir` e cria sidecar JSON com metadados e `status="q
 
 ### `add_image_watermark(input_path, watermark_path, output_path, margin=24, opacity=0.6, rel_width=0.2, codec="libx264", crf=20, preset="medium")`
 
-Aplica marca d’água com MoviePy v2 no **canto inferior direito**:
+Aplica marca d’água usando ffmpeg no **canto inferior direito**:
 
-- `rel_width` é a fração da largura do vídeo para escalar a logo.
-- posição `(x, y) = (W - w - margin, H - h - margin)`.
-- saída com `crf` e `preset` ajustáveis.
+- `rel_width` escala a logo para `rel_width * largura_do_vídeo`.
+- Posição `(x, y) = (W - w - margin, H - h - margin)`.
+- Usa `overlay` com ajuste de opacidade e reencode H.264 (`crf` e `preset`).
 
 ### `generate_thumbnail(input_path, output_path, at_sec=None)`
 
-Gera uma imagem `.jpg` (meio do vídeo ou tempo específico) via MoviePy (`save_frame`).
+Gera uma imagem `.jpg` (meio do vídeo ou tempo específico) usando ffmpeg (`-ss ... -frames:v 1`).
 
 ---
 
@@ -297,7 +297,7 @@ Worker de varredura de diretório para aplicar watermark e gerar thumbnail.
 - `seg_time`: segmento menor → mais precisão no corte; maior → menos arquivos.
 - `max_buffer_seconds`: retenção no disco para evitar encher `/tmp`.
 - Watermark: ajuste `rel_width` e `margin` conforme resolução do vídeo.
-- MoviePy preset: use `ultrafast` no Raspberry Pi; `crf 20–23` costuma equilibrar qualidade/tamanho.
+- Encoder preset: use `ultrafast` no Raspberry Pi; `crf 20–23` costuma equilibrar qualidade/tamanho.
 
 ### 7.1) GPIO (botão físico)
 
