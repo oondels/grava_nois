@@ -302,48 +302,91 @@ def add_image_watermark(
     preset: str = "medium",
 ) -> None:
     """
-    Mantém a marca d'água no canto inferior direito, com margem fixa.
-    Requer MoviePy v2: from moviepy import VideoFileClip, ImageClip, CompositeVideoClip
+    Aplica marca d'água de imagem no canto inferior direito usando ffmpeg.
+
+    - Dimensiona a marca d'água para `rel_width * largura_do_vídeo`.
+    - Aplica opacidade (canal alpha) e sobrepõe com margens.
+    - Requer ffmpeg no PATH. Não requer MoviePy.
     """
-    from moviepy import (
-        VideoFileClip,
-        ImageClip,
-        CompositeVideoClip,
-    )  # import local p/ opção de não instalar no Pi de captura
+    in_p = Path(input_path)
+    wm_p = Path(watermark_path)
+    if not in_p.exists():
+        raise FileNotFoundError(f"Vídeo inexistente: {input_path}")
+    if not wm_p.exists():
+        raise FileNotFoundError(f"Watermark inexistente: {watermark_path}")
 
-    video = VideoFileClip(input_path)
-    wmark = (
-        ImageClip(watermark_path)
-        .resized(width=int(video.w * rel_width))
-        .with_duration(video.duration)
-        .with_opacity(opacity)
+    meta = ffprobe_metadata(in_p)
+    vw = int(meta.get("width") or 0)
+    if vw <= 0:
+        raise RuntimeError("Não foi possível obter largura do vídeo via ffprobe.")
+
+    # Largura alvo da marca d'água (em pixels)
+    wm_w = max(1, int(vw * float(rel_width)))
+    # Filtro: escala watermark, aplica alpha e sobrepõe com margem
+    # - format=rgba garante canal alpha; colorchannelmixer ajusta opacidade
+    filt = (
+        f"[1:v]scale={wm_w}:-1,format=rgba,colorchannelmixer=aa={float(opacity):.3f}[wm];"
+        f"[0:v][wm]overlay=x=main_w-overlay_w-{int(margin)}:y=main_h-overlay_h-{int(margin)}"
     )
 
-    x = int(video.w - wmark.w - margin)
-    y = int(video.h - wmark.h - margin)
-    wmark = wmark.with_position((x, y))
-
-    out = CompositeVideoClip([video, wmark])
-    out.write_videofile(
-        output_path,
-        codec=codec,
-        audio_codec="aac",
-        preset=preset,
-        ffmpeg_params=["-crf", str(crf)],
-    )
+    cmd = [
+        "ffmpeg",
+        "-nostdin",
+        "-y",
+        "-i",
+        str(in_p),
+        "-i",
+        str(wm_p),
+        "-filter_complex",
+        filt,
+        "-map",
+        "0:v:0",
+        "-map",
+        "0:a?",
+        "-c:v",
+        codec,
+        "-preset",
+        preset,
+        "-crf",
+        str(int(crf)),
+        "-c:a",
+        "aac",
+        "-b:a",
+        "96k",
+        str(output_path),
+    ]
+    subprocess.run(cmd, check=True)
 
 
 # ---- Thumbnail helper (opcional) -------------------------------------------
 def generate_thumbnail(
     input_path: Path, output_path: Path, at_sec: float | None = None
 ) -> None:
-    """Gera thumbnail .jpg no meio do vídeo (ou em at_sec)."""
-    from moviepy import VideoFileClip  # MoviePy v2
+    """Gera thumbnail .jpg no meio do vídeo (ou em at_sec) usando ffmpeg."""
+    input_path = Path(input_path)
+    output_path = Path(output_path)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Vídeo inexistente: {input_path}")
 
-    clip = VideoFileClip(str(input_path))
-    t = at_sec if at_sec is not None else max(0.0, clip.duration * 0.5)
-    # save_frame aceita extensão pelo caminho
-    clip.save_frame(str(output_path), t=t)
+    meta = ffprobe_metadata(input_path)
+    dur = float(meta.get("duration_sec") or 0.0)
+    t = at_sec if at_sec is not None else (dur * 0.5 if dur > 0 else 0.0)
+
+    cmd = [
+        "ffmpeg",
+        "-nostdin",
+        "-y",
+        "-ss",
+        f"{t:.3f}",
+        "-i",
+        str(input_path),
+        "-frames:v",
+        "1",
+        "-q:v",
+        "2",
+        str(output_path),
+    ]
+    subprocess.run(cmd, check=True)
 
 
 # ---- HTTP helper & registration --------------------------------------------
