@@ -6,21 +6,19 @@
   >
     <div class="mx-auto w-full max-w-6xl px-3 md:px-6 h-16 flex items-center justify-between">
       <router-link to="/" class="flex items-center gap-2 group">
-        <img :src="LogoGravaNois" alt="Logo Grava Nóis" class="drop-shadow-sm h-11 w-auto" />
+        <img :src="LogoGravaNoisCol" alt="Logo Grava Nóis" class="drop-shadow-sm h-11 w-auto" />
       </router-link>
 
       <nav class="hidden md:flex items-center gap-2">
         <HeaderLink to="/" label="Início" />
         <!-- <HeaderLink to="/contato" label="Contato" /> -->
+        <HeaderLink to="/lances-gravanois" label="Meus Vídeos" />
         <HeaderLink to="/contato" label="Instalar no meu campo" class="nav-cta" />
         <!-- <HeaderLink to="#faq" label="FAQ" class="opacity-50 pointer-events-none select-none" /> -->
         <span class="relative">
-          <HeaderLink
-            to="/login"
-            label="Login"
-            aria-disabled="true"
-            />
-            <!-- class="opacity-50 pointer-events-none select-none" -->
+          <HeaderLink to="/login" label="Login" aria-disabled="true" />
+          <HeaderLink to="/register" label="Registrar" aria-disabled="true" />
+          <!-- class="opacity-50 pointer-events-none select-none" -->
           <!-- <span
             class="absolute -right-3 -top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
             >
@@ -37,6 +35,7 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 import { defineComponent, h, resolveComponent } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
+import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 
 const baseLink =
   "nav-link relative inline-flex items-center px-3 py-2 rounded-lg font-semibold transition hover:bg-black/5 dark:hover:bg-white/10";

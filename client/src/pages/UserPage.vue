@@ -2,60 +2,40 @@
   <div class="user-page">
     <!-- Botão de voltar no topo esquerdo -->
     <div class="back-button-container">
-      <button
-        @click="goBack"
-        class="back-button"
-        aria-label="Voltar"
-      >
+      <button @click="goBack" class="back-button" aria-label="Voltar">
         <ArrowLeftIcon class="back-icon" />
       </button>
     </div>
 
     <!-- Header com foto e informações básicas -->
-        <div class="user-header">
-            <div class="user-avatar-container">
-            <img 
-                :src="LogoGravaNoisSimbol" 
-                alt="Foto de perfil" 
-                class="user-avatar"
-            />
-            <button 
-            @click="showProfileEdit = true"
-            class="edit-avatar-btn"
-            aria-label="Editar foto de perfil"
-            >
-            <Edit3Icon class="edit-icon" />
-            </button>
-        </div>
-        
-        <div class="user-info">
-            <!-- <h1 class="user-name">{{ user?.name || 'Usuário' }}</h1> -->
-            <p class="user-email">{{ user?.email || 'email@exemplo.com' }}</p>
-            <div class="user-status">
-            </div>
-        </div>
-        </div>
+    <div class="user-header">
+      <div class="user-avatar-container">
+        <img :src="LogoGravaNoisSimbol" alt="Foto de perfil" class="user-avatar" />
+        <button @click="showProfileEdit = true" class="edit-avatar-btn" aria-label="Editar foto de perfil">
+          <Edit3Icon class="edit-icon" />
+        </button>
+      </div>
 
-            <!-- Menu de opções -->
+      <div class="user-info">
+        <!-- <h1 class="user-name">{{ user?.name || "Usuário" }}</h1> -->
+        <p class="user-email">{{ user?.email || "email@exemplo.com" }}</p>
+        <div class="user-status"></div>
+      </div>
+    </div>
+
+    <!-- Menu de opções -->
     <div class="user-menu">
-      <div 
-        v-for="section in menuSections" 
-        :key="section.id"
-        class="menu-section"
-      >
+      <div v-for="section in menuSections" :key="section.id" class="menu-section">
         <h2 class="section-title">
           <component :is="section.icon" class="section-icon" />
           {{ section.title }}
         </h2>
-        
+
         <div class="menu-items">
           <div
             v-for="item in section.items"
             :key="item.id"
-            :class="[
-              'menu-item',
-              { 'menu-item--coming-soon': item.comingSoon }
-            ]"
+            :class="['menu-item', { 'menu-item--coming-soon': item.comingSoon }]"
             @click="item.comingSoon ? null : handleItemClick(item)"
           >
             <div class="menu-item-content">
@@ -66,264 +46,201 @@
               </div>
             </div>
             <ChevronRightIcon class="menu-item-arrow" />
-            
+
             <!-- Badge "Em breve" -->
-            <span
-              v-if="item.comingSoon"
-              class="coming-soon-badge"
-            >
-              Em breve
-            </span>
+            <span v-if="item.comingSoon" class="coming-soon-badge"> Em breve </span>
           </div>
         </div>
       </div>
 
-        <!-- Botão de Logout -->
-        <div class="logout-section">
-            <v-btn
-            @click="handleLogout"
-            color="error"
-            variant="outlined"
-            size="large"
-            block
-            class="logout-btn"
-            >
-            <LogOutIcon class="me-2" />
-            Sair da Conta
-            </v-btn>
-        </div>
-        </div>
+      <!-- Botão de Logout -->
+      <div class="logout-section">
+        <v-btn @click="handleLogout" color="error" variant="outlined" size="large" block class="logout-btn">
+          <LogOutIcon class="me-2" />
+          Sair da Conta
+        </v-btn>
+      </div>
+    </div>
 
-        <!-- Modal: Editar Perfil -->
-        <v-dialog v-model="showProfileEdit" max-width="500" persistent>
-        <v-card>
-            <v-card-title class="d-flex align-center">
-            <UserIcon class="me-2" />
-            Editar Perfil
-            <span
-                class="absolute -right-3 -top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
-                >breve</span
-            >
-            </v-card-title>
-            
-            <v-card-text>
-            <v-form ref="profileFormRef" @submit.prevent="saveProfile">
-                <v-text-field
-                v-model="profileForm.name"
-                label="Nome completo"
-                variant="outlined"
-                density="comfortable"
-                :rules="[rules.required]"
-                class="mb-3"
-                />
-                
-                <v-text-field
-                v-model="profileForm.email"
-                label="Email"
-                type="email"
-                variant="outlined"
-                density="comfortable"
-                :rules="[rules.required, rules.email]"
-                class="mb-3"
-                />
-                
-                <v-text-field
-                v-model="profileForm.phone"
-                label="Telefone (opcional)"
-                variant="outlined"
-                density="comfortable"
-                class="mb-3"
-                />
-            </v-form>
-            </v-card-text>
-            
-            <v-card-actions>
-            <v-spacer />
-            <v-btn
-                @click="showProfileEdit = false"
-                variant="text"
-            >
-                Cancelar
-            </v-btn>
-            <v-btn
-                @click="saveProfile"
-                color="primary"
-                variant="flat"
-                :loading="savingProfile"
-            >
-                Salvar
-            </v-btn>
-            </v-card-actions>
-        </v-card>
-        </v-dialog>
+    <!-- Modal: Editar Perfil -->
+    <v-dialog v-model="showProfileEdit" max-width="500" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <UserIcon class="me-2" />
+          Editar Perfil
+          <span
+            class="absolute -right-3 -top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
+            >breve</span
+          >
+        </v-card-title>
 
-        <!-- Modal: Editar Localização -->
-        <v-dialog v-model="showLocationEdit" max-width="500" persistent>
-        <v-card>
-            <v-card-title class="d-flex align-center">
-            <MapPinIcon class="me-2" />
-            Editar Localização
-            </v-card-title>
-            
-            <v-card-text>
-            <v-form ref="locationFormRef" @submit.prevent="saveLocation">
-                <v-text-field
-                v-model="locationForm.cep"
-                label="CEP"
-                variant="outlined"
-                density="comfortable"
-                :rules="[rules.required, rules.cep]"
-                class="mb-3"
-                @blur="autoFillAddress"
-                />
-                
-                <v-text-field
-                v-model="locationForm.address"
-                label="Endereço"
-                variant="outlined"
-                density="comfortable"
-                :rules="[rules.required]"
-                class="mb-3"
-                />
-                
-                <v-text-field
-                v-model="locationForm.city"
-                label="Cidade"
-                variant="outlined"
-                density="comfortable"
-                :rules="[rules.required]"
-                class="mb-3"
-                />
-                
-                <v-text-field
-                v-model="locationForm.state"
-                label="Estado"
-                variant="outlined"
-                density="comfortable"
-                :rules="[rules.required]"
-                class="mb-3"
-                />
-            </v-form>
-            </v-card-text>
-            
-            <v-card-actions>
-            <v-spacer />
-            <v-btn
-                @click="showLocationEdit = false"
-                variant="text"
-            >
-                Cancelar
-            </v-btn>
-            <v-btn
-                @click="saveLocation"
-                color="primary"
-                variant="flat"
-                :loading="savingLocation"
-            >
-                Salvar
-            </v-btn>
-            </v-card-actions>
-        </v-card>
-        </v-dialog>
+        <v-card-text>
+          <v-form ref="profileFormRef" @submit.prevent="saveProfile">
+            <v-text-field
+              v-model="profileForm.name"
+              label="Nome completo"
+              variant="outlined"
+              density="comfortable"
+              :rules="[rules.required]"
+              class="mb-3"
+            />
 
-        <!-- Modal: Quadras Vinculadas -->
-        <v-dialog v-model="showQuadras" max-width="600" persistent>
-        <v-card>
-            <v-card-title class="d-flex align-center">
-            <BuildingIcon class="me-2" />
-            Minhas Quadras
-            </v-card-title>
-            
-            <v-card-text>
-            <div v-if="quadrasVinculadas.length === 0" class="text-center py-8">
-                <BuildingIcon class="text-h1 text-medium-emphasis mb-3" />
-                <h3 class="text-h6 mb-2">Nenhuma quadra vinculada</h3>
-                <p class="text-body-2 text-medium-emphasis">
-                Você ainda não está vinculado a nenhum local esportivo.
-                </p>
-            </div>
-            
-            <div v-else class="quadras-list">
-                <div 
-                v-for="quadra in quadrasVinculadas" 
-                :key="quadra.id"
-                class="quadra-item"
-                >
-                <div class="quadra-info">
-                    <h4 class="quadra-name">{{ quadra.name }}</h4>
-                    <p class="quadra-address">{{ quadra.address }}</p>
-                    <div class="quadra-sports">
-                    <v-chip
-                        v-for="sport in quadra.sports"
-                        :key="sport"
-                        :color="getSportColor(sport)"
-                        size="small"
-                        variant="flat"
-                        class="me-1 mb-1"
-                    >
-                        {{ getSportLabel(sport) }}
-                    </v-chip>
-                    </div>
-                </div>
-                
-                <div class="quadra-status">
-                    <v-chip
-                    :color="quadra.active ? 'success' : 'warning'"
+            <v-text-field
+              v-model="profileForm.email"
+              label="Email"
+              type="email"
+              variant="outlined"
+              density="comfortable"
+              :rules="[rules.required, rules.email]"
+              class="mb-3"
+            />
+
+            <v-text-field
+              v-model="profileForm.phone"
+              label="Telefone (opcional)"
+              variant="outlined"
+              density="comfortable"
+              class="mb-3"
+            />
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="showProfileEdit = false" variant="text"> Cancelar </v-btn>
+          <v-btn @click="saveProfile" color="primary" variant="flat" :loading="savingProfile"> Salvar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Modal: Editar Localização -->
+    <v-dialog v-model="showLocationEdit" max-width="500" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <MapPinIcon class="me-2" />
+          Editar Localização
+        </v-card-title>
+
+        <v-card-text>
+          <v-form ref="locationFormRef" @submit.prevent="saveLocation">
+            <v-text-field
+              v-model="locationForm.cep"
+              label="CEP"
+              variant="outlined"
+              density="comfortable"
+              :rules="[rules.required, rules.cep]"
+              class="mb-3"
+              @blur="autoFillAddress"
+            />
+
+            <v-text-field
+              v-model="locationForm.address"
+              label="Endereço"
+              variant="outlined"
+              density="comfortable"
+              :rules="[rules.required]"
+              class="mb-3"
+            />
+
+            <v-text-field
+              v-model="locationForm.city"
+              label="Cidade"
+              variant="outlined"
+              density="comfortable"
+              :rules="[rules.required]"
+              class="mb-3"
+            />
+
+            <v-text-field
+              v-model="locationForm.state"
+              label="Estado"
+              variant="outlined"
+              density="comfortable"
+              :rules="[rules.required]"
+              class="mb-3"
+            />
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="showLocationEdit = false" variant="text"> Cancelar </v-btn>
+          <v-btn @click="saveLocation" color="primary" variant="flat" :loading="savingLocation"> Salvar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Modal: Quadras Vinculadas -->
+    <v-dialog v-model="showQuadras" max-width="600" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <BuildingIcon class="me-2" />
+          Minhas Quadras
+        </v-card-title>
+
+        <v-card-text>
+          <div v-if="quadrasVinculadas.length === 0" class="text-center py-8">
+            <BuildingIcon class="text-h1 text-medium-emphasis mb-3" />
+            <h3 class="text-h6 mb-2">Nenhuma quadra vinculada</h3>
+            <p class="text-body-2 text-medium-emphasis">Você ainda não está vinculado a nenhum local esportivo.</p>
+          </div>
+
+          <div v-else class="quadras-list">
+            <div v-for="quadra in quadrasVinculadas" :key="quadra.id" class="quadra-item">
+              <div class="quadra-info">
+                <h4 class="quadra-name">{{ quadra.name }}</h4>
+                <p class="quadra-address">{{ quadra.address }}</p>
+                <div class="quadra-sports">
+                  <v-chip
+                    v-for="sport in quadra.sports"
+                    :key="sport"
+                    :color="getSportColor(sport)"
                     size="small"
                     variant="flat"
-                    >
-                    {{ quadra.active ? 'Ativo' : 'Inativo' }}
-                    </v-chip>
+                    class="me-1 mb-1"
+                  >
+                    {{ getSportLabel(sport) }}
+                  </v-chip>
                 </div>
-                </div>
-            </div>
-            </v-card-text>
-            
-            <v-card-actions>
-            <v-spacer />
-            <v-btn
-                @click="showQuadras = false"
-                color="primary"
-                variant="flat"
-            >
-                Fechar
-            </v-btn>
-            </v-card-actions>
-        </v-card>
-        </v-dialog>
+              </div>
 
-        <!-- Snackbar para feedback -->
-        <v-snackbar
-        v-model="showSnackbar"
-        :color="snackbarColor"
-        :timeout="3000"
-        location="bottom"
-        >
-        {{ snackbarMessage }}
-        
-        <template v-slot:actions>
-            <v-btn
-            @click="showSnackbar = false"
-            variant="text"
-            color="white"
-            >
-            Fechar
-            </v-btn>
-        </template>
-        </v-snackbar>
-    </div>
+              <div class="quadra-status">
+                <v-chip :color="quadra.active ? 'success' : 'warning'" size="small" variant="flat">
+                  {{ quadra.active ? "Ativo" : "Inativo" }}
+                </v-chip>
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="showQuadras = false" color="primary" variant="flat"> Fechar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Snackbar para feedback -->
+    <v-snackbar v-model="showSnackbar" :color="snackbarColor" :timeout="3000" location="bottom">
+      {{ snackbarMessage }}
+
+      <template v-slot:actions>
+        <v-btn @click="showSnackbar = false" variant="text" color="white"> Fechar </v-btn>
+      </template>
+    </v-snackbar>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/store/auth'
-import { 
-  UserIcon, 
-  MapPinIcon, 
-  SettingsIcon, 
-  MapIcon, 
-  BuildingIcon, 
+import { ref, reactive, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/store/auth";
+import {
+  UserIcon,
+  MapPinIcon,
+  SettingsIcon,
+  MapIcon,
+  BuildingIcon,
   PlusIcon,
   ShieldIcon,
   LockIcon,
@@ -334,287 +251,287 @@ import {
   LogOutIcon,
   Edit3Icon,
   ChevronRightIcon,
-  ArrowLeftIcon
-} from 'lucide-vue-next'
-import LogoGravaNoisSimbol from '@/assets/icons/grava-nois-simbol.webp'
-import { getSportColor, getSportLabel } from '@/utils/formatters'
+  ArrowLeftIcon,
+} from "lucide-vue-next";
+import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
+import { getSportColor, getSportLabel } from "@/utils/formatters";
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
 // Dados do usuário
-const user = computed(() => authStore.user)
+const user = computed(() => authStore.user);
 
 // Estados dos modais
-const showProfileEdit = ref(false)
-const showLocationEdit = ref(false)
-const showPreferences = ref(false)
-const showQuadras = ref(false)
-const showAddQuadra = ref(false)
-const showPasswordChange = ref(false)
-const showTwoFactor = ref(false)
-const showContactSupport = ref(false)
+const showProfileEdit = ref(false);
+const showLocationEdit = ref(false);
+const showPreferences = ref(false);
+const showQuadras = ref(false);
+const showAddQuadra = ref(false);
+const showPasswordChange = ref(false);
+const showTwoFactor = ref(false);
+const showContactSupport = ref(false);
 
 // Estados de loading
-const savingProfile = ref(false)
-const savingLocation = ref(false)
+const savingProfile = ref(false);
+const savingLocation = ref(false);
 
 // Snackbar
-const showSnackbar = ref(false)
-const snackbarMessage = ref('')
-const snackbarColor = ref('success')
+const showSnackbar = ref(false);
+const snackbarMessage = ref("");
+const snackbarColor = ref("success");
 
 // Formulários
 const profileForm = reactive({
-  name: '',
-  email: '',
-  phone: ''
-})
+  name: "",
+  email: "",
+  phone: "",
+});
 
 const locationForm = reactive({
-  cep: '',
-  address: '',
-  city: '',
-  state: ''
-})
+  cep: "",
+  address: "",
+  city: "",
+  state: "",
+});
 
 // Regras de validação
 const rules = {
-  required: (value: string) => !!value || 'Campo obrigatório',
+  required: (value: string) => !!value || "Campo obrigatório",
   email: (value: string) => {
-    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return pattern.test(value) || 'Email inválido'
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return pattern.test(value) || "Email inválido";
   },
   cep: (value: string) => {
-    const pattern = /^\d{5}-?\d{3}$/
-    return pattern.test(value) || 'CEP inválido'
-  }
-}
+    const pattern = /^\d{5}-?\d{3}$/;
+    return pattern.test(value) || "CEP inválido";
+  },
+};
 
 // Mock de quadras vinculadas
 const quadrasVinculadas = ref([
   {
-    id: '1',
-    name: 'Quadra do Zé',
-    address: 'Rua das Flores, 123 - Centro',
-    sports: ['futebol', 'futevolei'],
-    active: true
+    id: "1",
+    name: "Quadra do Zé",
+    address: "Rua das Flores, 123 - Centro",
+    sports: ["futebol", "futevolei"],
+    active: true,
   },
   {
-    id: '2',
-    name: 'Ginásio Municipal',
-    address: 'Av. Principal, 456 - Bairro Novo',
-    sports: ['basquete', 'volei'],
-    active: true
-  }
-])
+    id: "2",
+    name: "Ginásio Municipal",
+    address: "Av. Principal, 456 - Bairro Novo",
+    sports: ["basquete", "volei"],
+    active: true,
+  },
+]);
 
 // Array de seções e opções do menu
 const menuSections = ref([
   {
-    id: 'profile',
-    title: 'Perfil e Configurações',
+    id: "profile",
+    title: "Perfil e Configurações",
     icon: UserIcon,
     items: [
       {
-        id: 'edit-profile',
-        title: 'Editar Perfil',
-        subtitle: 'Nome, email e informações pessoais',
+        id: "edit-profile",
+        title: "Editar Perfil",
+        subtitle: "Nome, email e informações pessoais",
         icon: UserIcon,
-        action: 'showProfileEdit',
-        comingSoon: true
+        action: "showProfileEdit",
+        comingSoon: true,
       },
       {
-        id: 'location',
-        title: 'Localização',
-        subtitle: 'Endereço e cidade',
+        id: "location",
+        title: "Localização",
+        subtitle: "Endereço e cidade",
         icon: MapPinIcon,
-        action: 'showLocationEdit',
-        comingSoon: true
+        action: "showLocationEdit",
+        comingSoon: true,
       },
       {
-        id: 'preferences',
-        title: 'Preferências',
-        subtitle: 'Notificações e privacidade',
+        id: "preferences",
+        title: "Preferências",
+        subtitle: "Notificações e privacidade",
         icon: SettingsIcon,
-        action: 'showPreferences',
-        comingSoon: true
-      }
-    ]
+        action: "showPreferences",
+        comingSoon: true,
+      },
+    ],
   },
   {
-    id: 'quadras',
-    title: 'Minhas Quadras',
+    id: "quadras",
+    title: "Minhas Quadras",
     icon: MapIcon,
     items: [
       {
-        id: 'quadras-vinculadas',
-        title: 'Quadras Vinculadas',
+        id: "quadras-vinculadas",
+        title: "Quadras Vinculadas",
         subtitle: `${quadrasVinculadas.value.length} local(is) ativo(s)`,
         icon: BuildingIcon,
-        action: 'showQuadras',
-        comingSoon: true
+        action: "showQuadras",
+        comingSoon: true,
       },
       {
-        id: 'add-quadra',
-        title: 'Adicionar Quadra',
-        subtitle: 'Vincular novo local esportivo',
+        id: "add-quadra",
+        title: "Adicionar Quadra",
+        subtitle: "Vincular novo local esportivo",
         icon: PlusIcon,
-        action: 'showAddQuadra',
-        comingSoon: true
-      }
-    ]
+        action: "showAddQuadra",
+        comingSoon: true,
+      },
+    ],
   },
   {
-    id: 'security',
-    title: 'Conta e Segurança',
+    id: "security",
+    title: "Conta e Segurança",
     icon: ShieldIcon,
     items: [
       {
-        id: 'change-password',
-        title: 'Alterar Senha',
-        subtitle: 'Atualizar credenciais de acesso',
+        id: "change-password",
+        title: "Alterar Senha",
+        subtitle: "Atualizar credenciais de acesso",
         icon: LockIcon,
-        action: 'showPasswordChange',
-        comingSoon: true
+        action: "showPasswordChange",
+        comingSoon: true,
       },
       {
-        id: 'two-factor',
-        title: 'Autenticação 2FA',
-        subtitle: 'Segurança adicional para sua conta',
+        id: "two-factor",
+        title: "Autenticação 2FA",
+        subtitle: "Segurança adicional para sua conta",
         icon: SmartphoneIcon,
-        action: 'showTwoFactor',
-        comingSoon: true
-      }
-    ]
+        action: "showTwoFactor",
+        comingSoon: true,
+      },
+    ],
   },
   {
-    id: 'support',
-    title: 'Suporte e Ajuda',
+    id: "support",
+    title: "Suporte e Ajuda",
     icon: HelpCircleIcon,
     items: [
       {
-        id: 'help-center',
-        title: 'Central de Ajuda',
-        subtitle: 'FAQ e tutoriais',
+        id: "help-center",
+        title: "Central de Ajuda",
+        subtitle: "FAQ e tutoriais",
         icon: MessageCircleIcon,
-        action: 'navigateToSuporte',
-        comingSoon: true
+        action: "navigateToSuporte",
+        comingSoon: true,
       },
       {
-        id: 'contact-support',
-        title: 'Contatar Suporte',
-        subtitle: 'Enviar mensagem para nossa equipe',
+        id: "contact-support",
+        title: "Contatar Suporte",
+        subtitle: "Enviar mensagem para nossa equipe",
         icon: MailIcon,
-        action: 'showContactSupport',
-        comingSoon: true
-      }
-    ]
-  }
-])
+        action: "showContactSupport",
+        comingSoon: true,
+      },
+    ],
+  },
+]);
 
 // Função para gerenciar cliques nos itens do menu
 const handleItemClick = (item: any) => {
-  if (item.comingSoon) return
-  
+  if (item.comingSoon) return;
+
   switch (item.action) {
-    case 'showProfileEdit':
-      showProfileEdit.value = true
-      break
-    case 'showLocationEdit':
-      showLocationEdit.value = true
-      break
-    case 'showPreferences':
+    case "showProfileEdit":
+      showProfileEdit.value = true;
+      break;
+    case "showLocationEdit":
+      showLocationEdit.value = true;
+      break;
+    case "showPreferences":
       // Funcionalidade em breve
-      break
-    case 'showQuadras':
-      showQuadras.value = true
-      break
-    case 'showAddQuadra':
+      break;
+    case "showQuadras":
+      showQuadras.value = true;
+      break;
+    case "showAddQuadra":
       // Funcionalidade em breve
-      break
-    case 'showPasswordChange':
+      break;
+    case "showPasswordChange":
       // Funcionalidade em breve
-      break
-    case 'showTwoFactor':
+      break;
+    case "showTwoFactor":
       // Funcionalidade em breve
-      break
-    case 'navigateToSuporte':
-      router.push('/suporte')
-      break
-    case 'showContactSupport':
+      break;
+    case "navigateToSuporte":
+      router.push("/suporte");
+      break;
+    case "showContactSupport":
       // Funcionalidade em breve
-      break
+      break;
   }
-}
+};
 
 const handleLogout = () => {
-  authStore.signOut()
-  router.push('/login')
-  showSnackbarMessage('Logout realizado com sucesso!', 'success')
-}
+  authStore.signOut();
+  router.push("/login");
+  showSnackbarMessage("Logout realizado com sucesso!", "success");
+};
 
 const saveProfile = async () => {
-  savingProfile.value = true
-  
+  savingProfile.value = true;
+
   try {
     // Simular salvamento
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    showProfileEdit.value = false
-    showSnackbarMessage('Perfil atualizado com sucesso!', 'success')
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    showProfileEdit.value = false;
+    showSnackbarMessage("Perfil atualizado com sucesso!", "success");
+
     // Reset form
-    profileForm.name = ''
-    profileForm.email = ''
-    profileForm.phone = ''
+    profileForm.name = "";
+    profileForm.email = "";
+    profileForm.phone = "";
   } catch (error) {
-    showSnackbarMessage('Erro ao salvar perfil', 'error')
+    showSnackbarMessage("Erro ao salvar perfil", "error");
   } finally {
-    savingProfile.value = false
+    savingProfile.value = false;
   }
-}
+};
 
 const saveLocation = async () => {
-  savingLocation.value = true
-  
+  savingLocation.value = true;
+
   try {
     // Simular salvamento
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    showLocationEdit.value = false
-    showSnackbarMessage('Localização atualizada com sucesso!', 'success')
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    showLocationEdit.value = false;
+    showSnackbarMessage("Localização atualizada com sucesso!", "success");
+
     // Reset form
-    locationForm.cep = ''
-    locationForm.address = ''
-    locationForm.city = ''
-    locationForm.state = ''
+    locationForm.cep = "";
+    locationForm.address = "";
+    locationForm.city = "";
+    locationForm.state = "";
   } catch (error) {
-    showSnackbarMessage('Erro ao salvar localização', 'error')
+    showSnackbarMessage("Erro ao salvar localização", "error");
   } finally {
-    savingLocation.value = false
+    savingLocation.value = false;
   }
-}
+};
 
 const autoFillAddress = () => {
   // Simular preenchimento automático por CEP
-  if (locationForm.cep === '12345-678') {
-    locationForm.address = 'Rua Exemplo, 123'
-    locationForm.city = 'São Paulo'
-    locationForm.state = 'SP'
+  if (locationForm.cep === "12345-678") {
+    locationForm.address = "Rua Exemplo, 123";
+    locationForm.city = "São Paulo";
+    locationForm.state = "SP";
   }
-}
+};
 
-const showSnackbarMessage = (message: string, color: 'success' | 'error' | 'warning' | 'info' = 'success') => {
-  snackbarMessage.value = message
-  snackbarColor.value = color
-  showSnackbar.value = true
-}
+const showSnackbarMessage = (message: string, color: "success" | "error" | "warning" | "info" = "success") => {
+  snackbarMessage.value = message;
+  snackbarColor.value = color;
+  showSnackbar.value = true;
+};
 
 const goBack = () => {
-  router.back()
-}
+  router.back();
+};
 
 // Inicialização
 onMounted(() => {
@@ -622,7 +539,7 @@ onMounted(() => {
   //   profileForm.name = user.value.name
   //   profileForm.email = user.value.email
   // }
-})
+});
 </script>
 
 <style scoped>
@@ -972,7 +889,7 @@ onMounted(() => {
     max-width: 600px;
     margin: 0 auto;
   }
-  
+
   .user-header {
     border-radius: 0 0 24px 24px;
   }

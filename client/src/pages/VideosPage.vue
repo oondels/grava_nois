@@ -2,15 +2,39 @@
   <v-container class="py-6" fluid>
     <!-- Header -->
     <div class="d-flex justify-center align-center mb-4">
-      <img class="gravanois-logo" :src="LogoGravaNois" alt="Logo Grava Nóis" />
+      <img class="gravanois-logo" :src="LogoGravaNoisCol" alt="Logo Grava Nóis" />
     </div>
 
     <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">
       <div>
         <h1 class="text-h4 font-weight-bold mb-1">Replays e Lances</h1>
-        <p class="text-medium-emphasis mb-0">"Resgates seus mehlores laces"</p>
+        <p class="text-medium-emphasis mb-0">Resgates seus melhores lances</p>
       </div>
     </div>
+
+    <!-- Aviso sutil: fase inicial -->
+    <v-alert
+      v-if="showEarlyNotice"
+      type="info"
+      variant="tonal"
+      border="start"
+      rounded="lg"
+      density="comfortable"
+      class="mb-6"
+    >
+      <div class="d-flex align-center justify-space-between ga-3">
+        <div class="text-body-2">
+          Este aplicativo está em fase inicial (beta). Pedimos um pouco de paciência e, por favor, reporte qualquer erro
+          que encontrar.
+        </div>
+        <div class="d-flex align-center ga-2">
+          <v-btn size="small" variant="outlined" color="primary" to="/contato">Reportar erro</v-btn>
+          <v-btn size="small" variant="text" icon @click="showEarlyNotice = false" :aria-label="'Fechar aviso'">
+            <v-icon class="mdi mdi-close" />
+          </v-btn>
+        </div>
+      </div>
+    </v-alert>
 
     <!-- Filtros -->
     <!-- <v-sheet class="mb-6" color="surface" rounded="lg" border>
@@ -76,25 +100,27 @@
       </v-expansion-panels>
     </v-sheet> -->
 
-    <div>
-      <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="my-3" @click="fetchVideos">
-        Atualizar Vídeos
-      </v-btn>
-    </div>
-
     <!-- Supabase Videos -->
+    <!-- <div class="d-flex align-center justify-center ga-2 p-3 border rounded-lg mb-6">
+      <v-icon size="20" class="mdi mdi-play text-medium-emphasis" />
+      <span class="text-subtitle-1">Vídeos Grava Nóis - Seus Lances</span>
+    </div> -->
+    <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="mb-3" @click="fetchVideos">
+      Atualizar Vídeos
+    </v-btn>
+
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <div class="d-flex align-center justify-space-between px-4 py-3">
-        <div class="d-flex align-center ga-2">
-          <v-icon :icon="customIcons.play" size="20" class="text-medium-emphasis" />
-          <span class="text-subtitle-1">Vídeos Grava Nóis - Seus Lances</span>
-        </div>
         <div class="text-caption text-medium-emphasis">{{ videosList.count }} itens</div>
       </div>
 
       <div v-if="loadingVideos" class="d-flex align-center justify-center py-6">
-        <v-progress-circular indeterminate color="primary" />
+        <!-- <v-progress-circular indeterminate color="primary" /> -->
+        <v-col cols="12" md="6">
+          <v-skeleton-loader class="mx-auto border" max-width="300" type="card-avatar, actions"></v-skeleton-loader>
+        </v-col>
       </div>
+
       <div v-else-if="errorVideos" class="px-4 pb-4">
         <v-alert type="error" variant="tonal">{{ errorVideos }}</v-alert>
       </div>
@@ -104,6 +130,10 @@
             <v-card rounded="xl" elevation="3" class="result-card">
               <div class="thumb-wrapper">
                 <div class="thumb-video">
+                  <v-chip size="small" color="grey-darken-1" class="date-badge mb-2" variant="outlined">
+                    {{ formatLastModified(file.last_modified) }}
+                  </v-chip>
+
                   <video
                     v-if="file.preview_url"
                     :src="file.preview_url"
@@ -121,7 +151,7 @@
                   </div>
                 </div>
 
-                <div class="duration-badge" v-if="file.size">{{ prettySize(file.size) }}</div>
+                <!-- <div class="duration-badge" v-if="file.size">{{ prettySize(file.size) }}</div> -->
               </div>
 
               <v-card-text class="pt-3">
@@ -252,8 +282,12 @@ import { customIcons } from "@/utils/icons";
 // import VideoCard from "@/components/videos/VideoCard.vue";
 
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
+import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 
 type LocalLocation = { estado: string; cidade: string; quadra: string };
+
+// Aviso sutil de fase inicial
+const showEarlyNotice = ref(true);
 
 // ================= Supabase list (server) =================
 type VideoFile = {
@@ -283,6 +317,18 @@ function getApiBase() {
   // Dev fallback: client runs on 5173, server on 3000
   if (typeof window !== "undefined" && window.location.port === "5173") return "http://localhost:3000";
   return "";
+}
+
+function formatLastModified(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${date.getHours().toString().padStart(2, "0")}:${date
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")} - ${date.getDate()} ${months[date.getMonth()]} - ${date.getFullYear()}`;
 }
 
 async function fetchVideos() {

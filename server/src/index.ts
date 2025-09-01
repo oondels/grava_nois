@@ -200,7 +200,7 @@ AppDataSource.initialize()
           const { data: signedBatch, error: signErr } = await supabase.storage
             .from("temp")
             .createSignedUrls(paths, 600);
-
+          1;
           if (signErr) return res.status(400).json({ error: signErr });
 
           const items = clips.map((c, i) => ({

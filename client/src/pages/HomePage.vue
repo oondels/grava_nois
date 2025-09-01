@@ -107,7 +107,7 @@
               </div> -->
             </div>
 
-            <div class="">
+            <!-- <div class="">
               <img
                 class="media-img"
                 :src="IMAGES.feed"
@@ -115,7 +115,7 @@
                 loading="lazy"
                 decoding="async"
               />
-            </div>
+            </div> -->
           </div>
         </div>
       </section>
