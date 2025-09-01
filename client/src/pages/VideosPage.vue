@@ -336,7 +336,7 @@ function getApiBase() {
   return "";
 }
 
-function formatLastModified(dateString) {
+function formatLastModified(dateString: any) {
   if (!dateString) return "";
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "";
