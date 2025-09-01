@@ -31,7 +31,7 @@ class ProcessingWorker:
         out_wm_dir: Path,  # 20_highlights_wm/
         failed_dir: Path,  # 90_failed/
         watermark_path: Path,  # assets/logo.png
-        scan_interval: float = 1.5,  # varredura a cada 1.5s
+        scan_interval: float = 1,  # varredura a cada 1.5s
         max_attempts: int = 3,
         wm_margin: int = 24,
         wm_opacity: float = 0.4,
@@ -536,7 +536,7 @@ def main() -> int:
         out_wm_dir=out_wm_dir,
         failed_dir=failed_dir,
         watermark_path=watermark_path,
-        scan_interval=1.5,
+        scan_interval=1,
         max_attempts=3,
         wm_margin=24,
         wm_opacity=0.6,
