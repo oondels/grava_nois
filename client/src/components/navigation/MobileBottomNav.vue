@@ -42,7 +42,7 @@
       </RouterLink>
 
       <div
-        v-if="!auth.isAuthenticated"
+        v-if="auth.isAuthenticated"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition cursor-not-allowed opacity-50"
         aria-disabled="true"
       >

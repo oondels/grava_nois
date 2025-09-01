@@ -14,6 +14,35 @@
       <slot />
     </v-main>
 
+    <!-- Botão flutuante de Aviso -->
+    <v-btn
+      color="warning"
+      variant="elevated"
+      size="large"
+      position="fixed"
+      class="ma-4 bottom-20"
+      style="z-index: 1001"
+      prepend-icon="mdi-alert-circle-outline"
+      @click="maintenanceDialog = true"
+    >
+      Aviso
+    </v-btn>
+
+    <!-- Diálogo de manutenção -->
+    <v-dialog v-model="maintenanceDialog" max-width="480">
+      <v-card class="rounded-xl" elevation="12">
+        <v-card-title class="text-h6 d-flex align-center">
+          <v-icon icon="mdi-alert" color="warning" class="me-2" />
+          Aviso de manutenção
+        </v-card-title>
+        <v-card-text> O sistema está em manutenção e já já estará de volta. </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="maintenanceDialog = false">Fechar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Mobile Bottom Nav (visível apenas em dispositivos móveis) -->
 
     <!-- Footer -->
@@ -65,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from "vue";
+import { onMounted, computed, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
@@ -89,6 +118,9 @@ const handleSearch = (value: string | null) => {
 };
 
 onMounted(() => {});
+
+// Controle do diálogo de manutenção
+const maintenanceDialog = ref(false);
 </script>
 
 <style scoped>
