@@ -204,6 +204,13 @@ class ProcessingWorker:
                 size_upload = upload_target.stat().st_size
                 sha256_upload = _sha256_file(upload_target)
                 meta_up = ffprobe_metadata(upload_target)
+
+                def _as_int(x, default=0):
+                    try:
+                        return int(round(float(x)))
+                    except Exception:
+                        return default
+
                 payload = {
                     "venue_id": venue_id,
                     "duration_sec": float(meta_up.get("duration_sec") or 0.0),
@@ -406,6 +413,7 @@ class ProcessingWorker:
 
 def main() -> int:
     base = Path(__file__).resolve().parent
+
     # Modo leve (pula watermark/thumbnail) por env GN_LIGHT_MODE=1/true/yes
     def _env_bool(name: str, default: bool = False) -> bool:
         v = os.getenv(name)
@@ -505,7 +513,11 @@ def main() -> int:
                     if not p.connected:
                         try:
                             # Tenta iniciar o daemon sem sudo, então reconecta
-                            subprocess.Popen(["pigpiod"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            subprocess.Popen(
+                                ["pigpiod"],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL,
+                            )
                             time.sleep(0.2)
                             p = pigpio.pi()
                         except Exception:
@@ -514,7 +526,9 @@ def main() -> int:
 
                 pi = _connect_pi()
                 if not pi or not pi.connected:
-                    print("[gpio] pigpiod não está acessível. Rode 'pigpiod' e tente novamente.")
+                    print(
+                        "[gpio] pigpiod não está acessível. Rode 'pigpiod' e tente novamente."
+                    )
                 else:
                     # Configura pino como entrada com pull-up; botão ao GND.
                     pi.set_mode(gpio_pin, pigpio.INPUT)
