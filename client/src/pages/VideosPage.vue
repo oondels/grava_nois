@@ -15,24 +15,41 @@
     <!-- Aviso sutil: fase inicial -->
     <v-alert
       v-if="showEarlyNotice"
-      type="info"
+      type="warning"
       variant="tonal"
       border="start"
       rounded="lg"
       density="comfortable"
       class="mb-6"
     >
-      <div class="d-flex align-center justify-space-between ga-3">
+      <div class="d-flex align-center justify-space-between ga-3 position-relative">
         <div class="text-body-2">
           Este aplicativo está em fase inicial (beta). Pedimos um pouco de paciência e, por favor, reporte qualquer erro
           que encontrar.
         </div>
-        <div class="d-flex align-center ga-2">
-          <v-btn size="small" variant="outlined" color="primary" to="/contato">Reportar erro</v-btn>
-          <v-btn size="small" variant="text" icon @click="showEarlyNotice = false" :aria-label="'Fechar aviso'">
-            <v-icon class="mdi mdi-close" />
+
+        <div class="d-flex align-center ga-2 mt-4">
+          <v-btn
+            size="small"
+            variant="outlined"
+            color="red"
+            :to="{ path: '/reportar-erro', query: { page: 'Lances / Grava Nóis' } }"
+          >
+            Reportar
           </v-btn>
         </div>
+
+        <v-btn
+          class="position-absolute"
+          style="top: -10px; right: -10px"
+          size="small"
+          variant="text"
+          icon
+          @click="showEarlyNotice = false"
+          :aria-label="'Fechar aviso'"
+        >
+          <v-icon class="mdi mdi-close" />
+        </v-btn>
       </div>
     </v-alert>
 

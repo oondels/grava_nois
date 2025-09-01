@@ -5,7 +5,7 @@
     role="navigation"
     aria-label="Navegação inferior"
   >
-    <div class="h-15 flex justify-around ">
+    <div class="h-15 flex justify-around">
       <!-- Botão dinâmico: Logo para ir para user-page, X para sair -->
       <button
         v-if="isUserPage"
@@ -15,22 +15,22 @@
       >
         <XIcon class="w-6 h-6 text-white drop-shadow-sm" />
       </button>
-      
+
       <RouterLink
         v-if="!isUserPage"
         :to="auth.isAuthenticated ? '/user-page' : '/'"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
         aria-label="Ir para página do usuário"
       >
-      <div>
-        <span
-        v-if="auth.isAuthenticated"
-            class="absolute top-1.5  text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/90 text-black font-semibold"
+        <div>
+          <span
+            v-if="auth.isAuthenticated"
+            class="absolute top-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/90 text-black font-semibold"
           >
             Perfil
           </span>
-        <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="drop-shadow-sm w-6 h-6" />
-      </div>
+          <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="drop-shadow-sm w-6 h-6" />
+        </div>
       </RouterLink>
 
       <RouterLink
@@ -41,10 +41,18 @@
         <Home />
       </RouterLink>
 
+      <div
+        v-if="auth.isAuthenticated"
+        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition cursor-not-allowed opacity-50"
+        aria-disabled="true"
+      >
+        <Bell />
+      </div>
+
       <!-- Trigger abre menu -->
       <button
         type="button"
-        class=" inline-flex items-center justify-center rounded-lg px-3 py-2 active:scale-[.98] hover:bg-black/5 dark:hover:bg-white/10 transition"
+        class="inline-flex items-center justify-center rounded-lg px-3 py-2 active:scale-[.98] hover:bg-black/5 dark:hover:bg-white/10 transition"
         :aria-expanded="isOpen ? 'true' : 'false'"
         aria-controls="mobile-menu-overlay"
         @click="toggleMenu"
@@ -98,7 +106,7 @@
             :key="item.to"
             :to="item.disabled ? '#' : item.to"
             class="relative flex flex-col items-center justify-center gap-1 rounded-xl p-3 transition hover:bg-black/5 dark:hover:bg-white/10 text-center"
-            :class="{ 'displaynone': item.label === 'Registrar' && auth.isAuthenticated }"
+            :class="{ displaynone: item.label === 'Registrar' && auth.isAuthenticated }"
             :aria-disabled="item.disabled || undefined"
             :tabindex="item.disabled ? -1 : 0"
             @click.prevent="handleItemClick(item)"
@@ -141,7 +149,17 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Home, HelpCircle, LogInIcon, MenuIcon, ClapperboardIcon, XIcon, PlusCircleIcon, UserPlus2Icon } from "lucide-vue-next";
+import {
+  Home,
+  HelpCircle,
+  LogInIcon,
+  MenuIcon,
+  ClapperboardIcon,
+  XIcon,
+  PlusCircleIcon,
+  UserPlus2Icon,
+  Bell,
+} from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
 
@@ -159,7 +177,12 @@ type NavItem = {
 
 const navigationItems: NavItem[] = [
   { label: "Home", to: "/", icon: Home, disabled: false },
-  { label: auth.isAuthenticated ? "Logout" : "Login", to: auth.isAuthenticated ? "/user-page" :  "/login", icon: LogInIcon, disabled: false },
+  {
+    label: auth.isAuthenticated ? "Logout" : "Login",
+    to: auth.isAuthenticated ? "/user-page" : "/login",
+    icon: LogInIcon,
+    disabled: false,
+  },
   { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false },
   { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false },
   { label: "Instalar em meu campo", to: "/contato", icon: PlusCircleIcon, disabled: false },

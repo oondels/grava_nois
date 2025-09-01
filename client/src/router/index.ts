@@ -43,6 +43,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: "/reportar-erro",
+    name: "Reportar Erro",
+    component: () => import("@/pages/ReportErrorPage.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/pages/NotFoundPage.vue"),
