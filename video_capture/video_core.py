@@ -173,38 +173,85 @@ def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]
         print("Nenhum segmento disponível — encerrando.")
         return None
 
-    list_txt = cfg.buffer_dir / f"to_concat_{int(click_ts)}.txt"
+    # Move os segmentos correspondentes para a pasta dedicada e limpa o buffer
+    target_dir = Path("/buffered_seguiments_post_clique")
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    moved_paths: List[Path] = []
+    for seg in selected:
+        src = Path(seg)
+        if not src.exists():
+            continue
+        dst = target_dir / src.name
+        try:
+            src.replace(dst)  # move (substitui se já existir)
+            moved_paths.append(dst)
+        except Exception:
+            # Falha ao mover este segmento — segue para o próximo
+            pass
+
+    # Exclui todos os arquivos do diretório de buffer original (/tmp/recorded_videos)
+    try:
+        for p in cfg.buffer_dir.glob("*"):
+            try:
+                if p.is_file():
+                    p.unlink()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    if not moved_paths:
+        print("Nenhum segmento movido — encerrando.")
+        return None
+
+    # Cria a lista de concat a partir dos arquivos movidos
+    list_txt = target_dir / f"to_concat_{int(click_ts)}.txt"
     with open(list_txt, "w") as f:
-        for seg in selected:
-            f.write(f"file '{seg}'\n")
+        for p in moved_paths:
+            f.write(f"file '{str(p)}'\n")
 
     out = (
         cfg.clips_dir
         / f"highlight_{datetime.fromtimestamp(click_ts, tz=timezone.utc).strftime('%Y%m%d-%H%M%SZ')}.mp4"
     )
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-nostdin",
-            "-f",
-            "concat",
-            "-safe",
-            "0",
-            "-i",
-            str(list_txt),
-            "-c",
-            "copy",
-            str(out),
-        ],
-        check=True,
-    )
     try:
-        list_txt.unlink()
-    except FileNotFoundError:
-        pass
-
-    print(f"Saved {out}")
-    return out
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-nostdin",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                str(list_txt),
+                "-c",
+                "copy",
+                str(out),
+            ],
+            check=True,
+        )
+        print(f"Saved {out}")
+        return out
+    finally:
+        # Limpa arquivos temporários: lista de concat e segmentos movidos
+        try:
+            list_txt.unlink()
+        except FileNotFoundError:
+            pass
+        except Exception:
+            pass
+        try:
+            for p in moved_paths:
+                try:
+                    p.unlink()
+                except FileNotFoundError:
+                    pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
 
 # ---- Queueing & metadata ----------------------------------------------------
