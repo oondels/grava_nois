@@ -270,26 +270,26 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Estabelecimento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  estabelecimento
-                )}</td></tr>
+          estabelecimento
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CNPJ/CPF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  cnpjCpf
-                )}</td></tr>
+          cnpjCpf
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Segmento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  segmento
-                )}</td></tr>
+          segmento
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Qtd. Câmeras</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  cameras
-                )}</td></tr>
+          cameras
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Endereço</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  endereco
-                )}</td></tr>
+          endereco
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Cidade/UF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  loc
-                )}</td></tr>
+          loc
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CEP</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  cep
-                )}</td></tr>
+          cep
+        )}</td></tr>
               </tbody>
             </table>
 
@@ -297,14 +297,14 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  nome
-                )}</td></tr>
+          nome
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Telefone</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  telefone
-                )}</td></tr>
+          telefone
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  email
-                )}</td></tr>
+          email
+        )}</td></tr>
               </tbody>
             </table>
 
@@ -406,17 +406,17 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Título</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  title
-                )}</td></tr>
+          title
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Severidade</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  String(severity)
-                )}</td></tr>
+          String(severity)
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Página</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  page
-                )}</td></tr>
+          page
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">URL</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  url
-                )}</td></tr>
+          url
+        )}</td></tr>
               </tbody>
             </table>
 
@@ -425,27 +425,26 @@ AppDataSource.initialize()
               ${safe(description)}
             </div>
 
-            ${
-              steps?.trim()
-                ? `<h3 style="color:#333; font-size:16px; margin:16px 0 8px;">Passos para reproduzir</h3>
+            ${steps?.trim()
+            ? `<h3 style="color:#333; font-size:16px; margin:16px 0 8px;">Passos para reproduzir</h3>
                  <div style=\"font-size:15px; color:#555; background:#f7f7f7; padding:12px; border-radius:8px; border:1px solid #eee; white-space:pre-wrap;\">${safe(
-                   steps
-                 )}</div>`
-                : ""
-            }
+              steps
+            )}</div>`
+            : ""
+          }
 
             <h2 style="color:#0056b3; font-size:18px; margin:20px 0 12px;">Contato</h2>
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  name
-                )}</td></tr>
+            name
+          )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  email
-                )}</td></tr>
+            email
+          )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">User-Agent</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  userAgent
-                )}</td></tr>
+            userAgent
+          )}</td></tr>
               </tbody>
             </table>
           </div>
@@ -526,17 +525,17 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  name
-                )}</td></tr>
+          name
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  email
-                )}</td></tr>
+          email
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Página</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  page
-                )}</td></tr>
+          page
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">URL</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  url
-                )}</td></tr>
+          url
+        )}</td></tr>
               </tbody>
             </table>
           </div>
@@ -771,7 +770,6 @@ AppDataSource.initialize()
 
           const bodySchema = z.object({
             venue_id: z.string().uuid(),
-            duration_sec: z.number().int().positive(),
             captured_at: z.string(),
             meta: z.object({
               codec: z.string(),
@@ -788,7 +786,8 @@ AppDataSource.initialize()
             res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
             return;
           }
-          const { duration_sec, captured_at, meta, sha256 } = parsed.data;
+          const { captured_at, meta, sha256 } = parsed.data;
+          // const { duration_sec, captured_at, meta, sha256 } = parsed.data;
 
           // Validate Client ID
           const clientRepository = AppDataSource.getRepository("Client");
@@ -835,7 +834,6 @@ AppDataSource.initialize()
             clipId: clip_id,
             clientId: clientId,
             venueId: venueId,
-            durationSec: duration_sec,
             capturedAt: capturedAtDate,
             contract: contractType,
             meta,
