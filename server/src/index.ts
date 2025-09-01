@@ -270,26 +270,26 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Estabelecimento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          estabelecimento
-        )}</td></tr>
+                  estabelecimento
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CNPJ/CPF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          cnpjCpf
-        )}</td></tr>
+                  cnpjCpf
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Segmento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          segmento
-        )}</td></tr>
+                  segmento
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Qtd. Câmeras</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          cameras
-        )}</td></tr>
+                  cameras
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Endereço</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          endereco
-        )}</td></tr>
+                  endereco
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Cidade/UF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          loc
-        )}</td></tr>
+                  loc
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CEP</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          cep
-        )}</td></tr>
+                  cep
+                )}</td></tr>
               </tbody>
             </table>
 
@@ -297,14 +297,14 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          nome
-        )}</td></tr>
+                  nome
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Telefone</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          telefone
-        )}</td></tr>
+                  telefone
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          email
-        )}</td></tr>
+                  email
+                )}</td></tr>
               </tbody>
             </table>
 
@@ -406,17 +406,17 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Título</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          title
-        )}</td></tr>
+                  title
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Severidade</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          String(severity)
-        )}</td></tr>
+                  String(severity)
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Página</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          page
-        )}</td></tr>
+                  page
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">URL</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          url
-        )}</td></tr>
+                  url
+                )}</td></tr>
               </tbody>
             </table>
 
@@ -425,26 +425,27 @@ AppDataSource.initialize()
               ${safe(description)}
             </div>
 
-            ${steps?.trim()
-            ? `<h3 style="color:#333; font-size:16px; margin:16px 0 8px;">Passos para reproduzir</h3>
+            ${
+              steps?.trim()
+                ? `<h3 style="color:#333; font-size:16px; margin:16px 0 8px;">Passos para reproduzir</h3>
                  <div style=\"font-size:15px; color:#555; background:#f7f7f7; padding:12px; border-radius:8px; border:1px solid #eee; white-space:pre-wrap;\">${safe(
-              steps
-            )}</div>`
-            : ""
-          }
+                   steps
+                 )}</div>`
+                : ""
+            }
 
             <h2 style="color:#0056b3; font-size:18px; margin:20px 0 12px;">Contato</h2>
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-            name
-          )}</td></tr>
+                  name
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-            email
-          )}</td></tr>
+                  email
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">User-Agent</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-            userAgent
-          )}</td></tr>
+                  userAgent
+                )}</td></tr>
               </tbody>
             </table>
           </div>
@@ -525,17 +526,17 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          name
-        )}</td></tr>
+                  name
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          email
-        )}</td></tr>
+                  email
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Página</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          page
-        )}</td></tr>
+                  page
+                )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">URL</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-          url
-        )}</td></tr>
+                  url
+                )}</td></tr>
               </tbody>
             </table>
           </div>
@@ -989,23 +990,23 @@ AppDataSource.initialize()
           await videoRepository.save(video);
 
           // 5) Publica evento no RabbitMQ (clip.created)
-          try {
-            await publishClipEvent("clip.created", {
-              event: "clip.created",
-              clip_id: video.clipId,
-              client_id: video.clientId,
-              venue_id: video.venueId,
-              contract_type: video.contract,
-              storage_path: video.storagePath,
-              duration_sec: video.durationSec,
-              captured_at: video.capturedAt?.toISOString?.() ?? new Date().toISOString(),
-              sha256,
-              size_bytes,
-              meta: video.meta ?? {},
-            });
-          } catch (e) {
-            console.warn("[rabbitmq] Failed to publish clip.created:", e);
-          }
+          // try {
+          //   await publishClipEvent("clip.created", {
+          //     event: "clip.created",
+          //     clip_id: video.clipId,
+          //     client_id: video.clientId,
+          //     venue_id: video.venueId,
+          //     contract_type: video.contract,
+          //     storage_path: video.storagePath,
+          //     duration_sec: video.durationSec,
+          //     captured_at: video.capturedAt?.toISOString?.() ?? new Date().toISOString(),
+          //     sha256,
+          //     size_bytes,
+          //     meta: video.meta ?? {},
+          //   });
+          // } catch (e) {
+          //   console.warn("[rabbitmq] Failed to publish clip.created:", e);
+          // }
 
           // 6) Return JSON
           res.json({
