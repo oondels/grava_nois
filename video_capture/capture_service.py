@@ -34,10 +34,10 @@ class ProcessingWorker:
         scan_interval: float = 1.5,  # varredura a cada 1.5s
         max_attempts: int = 3,
         wm_margin: int = 24,
-        wm_opacity: float = 0.6,
-        wm_rel_width: float = 0.2,
+        wm_opacity: float = 0.4,
+        wm_rel_width: float = 0.1,
         *,
-        light_mode: bool = False,
+        light_mode: bool = True, # Ativa o Light Mode (MVP)
     ):
         self.queue_dir = queue_dir
         self.out_wm_dir = out_wm_dir
@@ -415,24 +415,27 @@ def main() -> int:
     base = Path(__file__).resolve().parent
 
     # Modo leve (pula watermark/thumbnail) por env GN_LIGHT_MODE=1/true/yes
-    def _env_bool(name: str, default: bool = False) -> bool:
-        v = os.getenv(name)
-        if v is None:
-            return default
-        return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
+    # def _env_bool(name: str, default: bool = False) -> bool:
+    #     v = os.getenv(name)
+    #     if v is None:
+    #         return default
+    #     return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
 
-    light_mode = _env_bool("GN_LIGHT_MODE", False)
+    # light_mode = _env_bool("GN_LIGHT_MODE", False)
+    light_mode = True
     cfg = CaptureConfig(
         buffer_dir=Path("/tmp/recorded_videos"),
         clips_dir=base / "recorded_clips",
         queue_dir=base / "queue_raw",
         device="/dev/video0",
         seg_time=1,
-        pre_seconds=40,
-        post_seconds=10,
+        pre_seconds=25,
+        post_seconds=5,
         scan_interval=0.5,
         max_buffer_seconds=60,
     )
+    
+    # Verifica a existencia de todos os arquivos necessários
     cfg.ensure_dirs()
 
     # pastas do worker
@@ -491,7 +494,7 @@ def main() -> int:
     stdin_t = threading.Thread(target=_stdin_listener, daemon=True)
     stdin_t.start()
 
-    # GPIO opcional: habilita se GN_GPIO_PIN ou GPIO_PIN estiver definido.
+    # abilita se GN_GPIO_PIN ou GPIO_PIN estiver definido.
     gpio_pin_env = os.getenv("GN_GPIO_PIN") or os.getenv("GPIO_PIN")
     pi = None
     cb = None
@@ -564,31 +567,44 @@ def main() -> int:
     print(prompt)
 
     try:
-        while not stop_evt.is_set():
+        while not stop_evt.is_set(): # Verifica se o evento foi acionado (Botao)
             try:
-                _ = trigger_q.get(timeout=0.2)
+                _ = trigger_q.get(timeout=0.3) # Procura triggers 
             except queue.Empty:
                 continue
-            out = build_highlight(cfg, segbuf)
+            out = build_highlight(cfg, segbuf) # Constroi o clipe a partir dos seguimentos
             if out:
-                enqueue_clip(cfg, out)  # move p/ queue_raw + salva metadados
+                enqueue_clip(cfg, out)
+                
     except KeyboardInterrupt:
         print("\nEncerrando…")
     finally:
+        # Sinaliza para todos os loops/threads que devem encerrar.
         stop_evt.set()
         try:
             if cb is not None:
+                # Cancela o callback do GPIO (para de receber eventos do botão).
                 cb.cancel()
         except Exception:
+            # Ignora falhas durante o desligamento.
             pass
         try:
             if pi is not None:
+                # Fecha a conexão com o daemon pigpio (não mata o pigpiod).
                 pi.stop()
         except Exception:
+            # Ignora falhas durante o desligamento.
             pass
+        # Para a thread do SegmentBuffer e espera até 2s para concluir.
         segbuf.stop(join_timeout=2)
         try:
+            # Solicita término do processo ffmpeg (libera o dispositivo de vídeo).
             proc.terminate()
+        except Exception:
+            # Ignora falhas durante o desligamento.
+            pass
+        try:
+            worker.stop()
         except Exception:
             pass
 

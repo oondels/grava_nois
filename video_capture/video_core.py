@@ -26,7 +26,7 @@ class CaptureConfig:
     pre_seconds: int = 25
     post_seconds: int = 5
     scan_interval: float = 0.5
-    max_buffer_seconds: int = 80
+    max_buffer_seconds: int = 40
 
     @property
     def max_segments(self) -> int:
@@ -56,39 +56,13 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
     # Old -> Camera do notebook
-    # ffmpeg_cmd = [
-    #     "ffmpeg",
-    #     "-nostdin",
-    #     "-f",
-    #     "v4l2",
-    #     "-i",
-    #     cfg.device,
-    #     "-c:v",
-    #     "libx264",
-    #     "-preset",
-    #     "ultrafast",
-    #     "-tune",
-    #     "zerolatency",
-    #     "-force_key_frames",
-    #     f"expr:gte(t,n_forced*{cfg.seg_time})",
-    #     "-f",
-    #     "segment",
-    #     "-segment_time",
-    #     str(cfg.seg_time),
-    #     "-segment_start_number",
-    #     str(start_num),
-    #     "-reset_timestamps",
-    #     "1",
-    #     out_pattern,
-    # ]
-
-    # Camera Dedicada
     ffmpeg_cmd = [
         "ffmpeg",
-        "-rtsp_transport",
-        "tcp",
+        "-nostdin",
+        "-f",
+        "v4l2",
         "-i",
-        "rtsp://admin:wa0i4Ochu@192.168.68.104:554/cam/realmonitor?channel=1&subtype=0",
+        cfg.device,
         "-c:v",
         "libx264",
         "-preset",
@@ -96,11 +70,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "-tune",
         "zerolatency",
         "-force_key_frames",
-        "expr:gte(t,n_forced*1)",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "96k",  # audio
+        f"expr:gte(t,n_forced*{cfg.seg_time})",
         "-f",
         "segment",
         "-segment_time",
@@ -111,6 +81,36 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "1",
         out_pattern,
     ]
+
+    # Camera Dedicada
+    # ffmpeg_cmd = [
+    #     "ffmpeg",
+    #     "-rtsp_transport",
+    #     "tcp",
+    #     "-i",
+    #     "rtsp://admin:wa0i4Ochu@192.168.68.104:554/cam/realmonitor?channel=1&subtype=0",
+    #     "-c:v",
+    #     "libx264",
+    #     "-preset",
+    #     "ultrafast",
+    #     "-tune",
+    #     "zerolatency",
+    #     "-force_key_frames",
+    #     "expr:gte(t,n_forced*1)",
+    #     "-c:a",
+    #     "aac",
+    #     "-b:a",
+    #     "96k",  # audio
+    #     "-f",
+    #     "segment",
+    #     "-segment_time",
+    #     str(cfg.seg_time),
+    #     "-segment_start_number",
+    #     str(start_num),
+    #     "-reset_timestamps",
+    #     "1",
+    #     out_pattern,
+    # ]
 
     return subprocess.Popen(
         ffmpeg_cmd,
@@ -161,11 +161,11 @@ class SegmentBuffer:
             self._stop.wait(self.cfg.scan_interval)
 
 
-# ---- Highlight builder ------------------------------------------------------
+# ---- Constroi clip após usuarios clicar no botao ------------------------------------------------------
 def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]:
     click_ts = time.time()
     print("Botão apertado! Aguardando pós-buffer…")
-    time.sleep(max(0, cfg.post_seconds) + 0.25)
+    time.sleep(max(0, cfg.post_seconds) + 0.30)
 
     need = max(1, int(round((cfg.pre_seconds + cfg.post_seconds) / cfg.seg_time)))
     selected = segbuf.snapshot_last(need)
@@ -271,6 +271,7 @@ def enqueue_clip(cfg: CaptureConfig, clip_path: Path) -> Path:
         "y",
         "on",
     }
+    
     sha256 = None if light_mode else _sha256_file(clip_path)
     meta = ffprobe_metadata(clip_path)
     payload = {
