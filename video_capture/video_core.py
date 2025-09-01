@@ -174,7 +174,7 @@ def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]
         return None
 
     # Move os segmentos correspondentes para a pasta dedicada e limpa o buffer
-    target_dir = Path("/buffered_seguiments_post_clique")
+    target_dir = Path(__file__).resolve().parent / "buffered_seguiments_post_clique"
     target_dir.mkdir(parents=True, exist_ok=True)
 
     moved_paths: List[Path] = []

@@ -681,7 +681,7 @@ AppDataSource.initialize()
 
           const { data: items, error: listErr } = await supabase.storage
             .from(bucket)
-            .list(prefix, { limit, offset, sortBy: { column: "name", order } });
+            .list(prefix, { offset, sortBy: { column: "name" } });
 
           if (listErr) {
             return res.status(502).json({ error: "Failed to list files", details: listErr.message });
