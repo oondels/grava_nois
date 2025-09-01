@@ -32,6 +32,13 @@ python3 capture_service.py            # ENTER ou botão no BCM 17 dispara
 
 Detalhes completos estão nas seções “Como rodar” e “GPIO (botão físico)” abaixo.
 
+Modo leve (recomendado no Raspberry Pi 3B/1GB):
+
+```
+export GN_LIGHT_MODE=1               # pular watermark/thumbnail, upload direto
+python3 capture_service.py
+```
+
 ## 1) Visão Geral do Fluxo
 
 ```
@@ -224,7 +231,7 @@ Executa `ffprobe` para extrair `codec`, `width`, `height`, `fps`, `duration_sec`
 
 ### `enqueue_clip(cfg, clip_path) -> Path`
 
-Move o highlight para `queue_dir` e cria sidecar JSON com metadados e `status="queued"`. Retorna o destino na fila.
+Move o highlight para `queue_dir` e cria sidecar JSON com metadados e `status="queued"`. Em modo leve (`GN_LIGHT_MODE=1`), não calcula SHA-256 aqui (para poupar CPU); o hash é calculado apenas no momento do upload. Retorna o destino na fila.
 
 ### `add_image_watermark(input_path, watermark_path, output_path, margin=24, opacity=0.6, rel_width=0.2, codec="libx264", crf=20, preset="medium")`
 
@@ -244,12 +251,12 @@ Gera uma imagem `.jpg` (meio do vídeo ou tempo específico) usando ffmpeg (`-ss
 
 ### `ProcessingWorker`
 
-Worker de varredura de diretório para aplicar watermark e gerar thumbnail.
+Worker de varredura de diretório para aplicar watermark e gerar thumbnail. Em modo leve, faz upload direto do vídeo sem pós-processamento.
 
-**`__init__(queue_dir, out_wm_dir, failed_dir, watermark_path, scan_interval=1.5, max_attempts=3, wm_margin=24, wm_opacity=0.6, wm_rel_width=0.2)`**
+**`__init__(queue_dir, out_wm_dir, failed_dir, watermark_path, scan_interval=1.5, max_attempts=3, wm_margin=24, wm_opacity=0.6, wm_rel_width=0.2, *, light_mode=False)`**
 
 - **queue_dir**: pasta de entrada (`queue_raw/`).
-- **out_wm_dir**: pasta de saída com watermark (`20_highlights_wm/`).
+- **out_wm_dir**: pasta de saída com watermark (`20_highlights_wm/`). Ignorada quando `light_mode=True`.
 - **failed_dir**: pasta para falhas definitivas (`90_failed/`).
 - **watermark_path**: caminho do PNG da logo.
 - **scan_interval**: período da varredura.
@@ -269,11 +276,8 @@ Worker de varredura de diretório para aplicar watermark e gerar thumbnail.
 
 **`_process_one(mp4, meta_path)`**:
 
-- Idempotência: se arquivo final e thumbnail já existem → apenas atualiza JSON e remove entrada da fila.
-- Aplica watermark (canto inferior direito) para `tmp` e faz `replace()` atômico.
-- Gera thumbnail no meio do vídeo.
-- Atualiza sidecar (`status="watermarked"`, caminhos e `meta_wm`).
-- Remove o `mp4` da fila (o JSON permanece na fila como histórico ou pode ser movido para a saída conforme necessidade).
+- Modo normal: aplica watermark (canto inferior direito) e gera thumbnail; atualiza sidecar (`status="watermarked"`, caminhos e `meta_wm`).
+- Modo leve: atualiza sidecar para `status="ready_for_upload"` e faz upload diretamente do `mp4` da fila (sem reencode/thumbnail). Após sucesso, notifica o backend e remove o arquivo da fila.
 
 **`_handle_failure(mp4, meta_path, err)`**:
 
