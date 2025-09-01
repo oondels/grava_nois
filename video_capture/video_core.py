@@ -23,8 +23,8 @@ class CaptureConfig:
     queue_dir: Path  # fila para tratamento posterior (raw)
     device: str = "/dev/video0"
     seg_time: int = 1
-    pre_seconds: int = 40
-    post_seconds: int = 10
+    pre_seconds: int = 25
+    post_seconds: int = 5
     scan_interval: float = 0.5
     max_buffer_seconds: int = 80
 
@@ -263,7 +263,15 @@ def enqueue_clip(cfg: CaptureConfig, clip_path: Path) -> Path:
     """
     clip_path = clip_path.resolve()
     size_bytes = clip_path.stat().st_size
-    sha256 = _sha256_file(clip_path)
+    # Em modo leve, evitamos hash caro neste momento
+    light_mode = (os.getenv("GN_LIGHT_MODE") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "y",
+        "on",
+    }
+    sha256 = None if light_mode else _sha256_file(clip_path)
     meta = ffprobe_metadata(clip_path)
     payload = {
         "type": "highlight_raw",
