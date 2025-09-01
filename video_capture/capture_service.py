@@ -36,6 +36,8 @@ class ProcessingWorker:
         wm_margin: int = 24,
         wm_opacity: float = 0.6,
         wm_rel_width: float = 0.2,
+        *,
+        light_mode: bool = False,
     ):
         self.queue_dir = queue_dir
         self.out_wm_dir = out_wm_dir
@@ -46,11 +48,13 @@ class ProcessingWorker:
         self.wm_margin = wm_margin
         self.wm_opacity = wm_opacity
         self.wm_rel_width = wm_rel_width
+        self.light_mode = light_mode
 
         self._stop = threading.Event()
         self._t = None
 
-        self.out_wm_dir.mkdir(parents=True, exist_ok=True)
+        if not self.light_mode:
+            self.out_wm_dir.mkdir(parents=True, exist_ok=True)
         self.failed_dir.mkdir(parents=True, exist_ok=True)
 
     def start(self):
@@ -120,56 +124,75 @@ class ProcessingWorker:
         meta = json.loads(meta_path.read_text())
         attempts = int(meta.get("attempts", 0))
 
-        # idempotência simples: se já existe saída final, não refazer
-        out_mp4 = self.out_wm_dir / mp4.name
-        thumb_jpg = self.out_wm_dir / (mp4.stem + ".jpg")
-        if out_mp4.exists() and thumb_jpg.exists():
+        # idempotência e pré-processamento conforme modo
+        upload_target = mp4
+        out_mp4 = None
+        thumb_jpg = None
+
+        if not self.light_mode:
+            # idempotência simples: se já existe saída final, não refazer
+            out_mp4 = self.out_wm_dir / mp4.name
+            thumb_jpg = self.out_wm_dir / (mp4.stem + ".jpg")
+            if out_mp4.exists() and thumb_jpg.exists():
+                meta.update(
+                    {
+                        "status": "watermarked",
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "wm_path": str(out_mp4),
+                        "thumbnail_path": str(thumb_jpg),
+                    }
+                )
+                meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+                # remove o original da fila
+                try:
+                    mp4.unlink()
+                except FileNotFoundError:
+                    pass
+                return
+
+            # 1) watermark canto inferior direito
+            tmp_out = self.out_wm_dir / f"{mp4.stem}.wm_tmp.mp4"
+            add_image_watermark(
+                input_path=str(mp4),
+                watermark_path=str(self.watermark_path),
+                output_path=str(tmp_out),
+                margin=self.wm_margin,
+                opacity=self.wm_opacity,
+                rel_width=self.wm_rel_width,
+                codec="libx264",
+                crf=20,
+                preset="ultrafast",  # Pi agradece
+            )
+            tmp_out.replace(out_mp4)  # atomic move
+
+            # 2) thumbnail (meio do vídeo)
+            generate_thumbnail(out_mp4, thumb_jpg, at_sec=None)
+
+            # 3) atualiza sidecar
             meta.update(
                 {
                     "status": "watermarked",
+                    "attempts": attempts,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                     "wm_path": str(out_mp4),
                     "thumbnail_path": str(thumb_jpg),
+                    "meta_wm": ffprobe_metadata(out_mp4),
                 }
             )
             meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
-            # remove o original da fila
-            try:
-                mp4.unlink()
-            except FileNotFoundError:
-                pass
-            return
 
-        # 1) watermark canto inferior direito
-        tmp_out = self.out_wm_dir / f"{mp4.stem}.wm_tmp.mp4"
-        add_image_watermark(
-            input_path=str(mp4),
-            watermark_path=str(self.watermark_path),
-            output_path=str(tmp_out),
-            margin=self.wm_margin,
-            opacity=self.wm_opacity,
-            rel_width=self.wm_rel_width,
-            codec="libx264",
-            crf=20,
-            preset="ultrafast",  # Pi agradece
-        )
-        tmp_out.replace(out_mp4)  # atomic move
-
-        # 2) thumbnail (meio do vídeo)
-        generate_thumbnail(out_mp4, thumb_jpg, at_sec=None)
-
-        # 3) atualiza sidecar
-        meta.update(
-            {
-                "status": "watermarked",
-                "attempts": attempts,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-                "wm_path": str(out_mp4),
-                "thumbnail_path": str(thumb_jpg),
-                "meta_wm": ffprobe_metadata(out_mp4),
-            }
-        )
-        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+            upload_target = out_mp4
+        else:
+            # Modo leve: sem watermark/thumbnail — upload do arquivo da fila
+            meta.update(
+                {
+                    "status": "ready_for_upload",
+                    "attempts": attempts,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "meta_raw": meta.get("meta") or ffprobe_metadata(mp4),
+                }
+            )
+            meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
 
         # 3.1) registra intenção de upload no backend (POST /api/videos/metadados)
         api_base = os.getenv("GN_API_BASE") or os.getenv("API_BASE_URL")
@@ -178,14 +201,15 @@ class ProcessingWorker:
         venue_id = os.getenv("GN_VENUE_ID") or os.getenv("VENUE_ID")
         if api_base:
             try:
-                size_wm = out_mp4.stat().st_size
-                sha256_wm = _sha256_file(out_mp4)
+                size_upload = upload_target.stat().st_size
+                sha256_upload = _sha256_file(upload_target)
+                meta_up = ffprobe_metadata(upload_target)
                 payload = {
                     "venue_id": venue_id,
-                    "duration_sec": 15,  # TODO: Fix this, put the real duration seconds
+                    "duration_sec": float(meta_up.get("duration_sec") or 0.0),
                     "captured_at": meta.get("created_at"),
-                    "meta": meta.get("meta_wm") or {},
-                    "sha256": sha256_wm,
+                    "meta": meta_up,
+                    "sha256": sha256_upload,
                 }
                 print("[worker] Enviando registro de metadados ao backend…")
                 resp = register_clip_metadados(
@@ -212,7 +236,7 @@ class ProcessingWorker:
                     try:
                         status_code, reason, resp_headers = upload_file_to_signed_url(
                             upload_url,
-                            out_mp4,
+                            upload_target,
                             content_type="video/mp4",
                             extra_headers=None,
                             timeout=180.0,
@@ -228,7 +252,7 @@ class ProcessingWorker:
                                 "reason": reason,
                                 "attempted_at": datetime.now(timezone.utc).isoformat(),
                                 "duration_ms": dt_ms,
-                                "file_size": size_wm,
+                                "file_size": size_upload,
                             }
                         )
                         meta_path.write_text(
@@ -255,8 +279,8 @@ class ProcessingWorker:
                                     fin = finalize_clip_uploaded(
                                         api_base,
                                         clip_id=clip_id,
-                                        size_bytes=size_wm,
-                                        sha256=sha256_wm,
+                                        size_bytes=size_upload,
+                                        sha256=sha256_upload,
                                         etag=etag,
                                         token=api_token,
                                         timeout=20.0,
@@ -303,7 +327,7 @@ class ProcessingWorker:
                                 "error": str(e),
                                 "attempted_at": datetime.now(timezone.utc).isoformat(),
                                 "duration_ms": dt_ms,
-                                "file_size": size_wm,
+                                "file_size": size_upload,
                             }
                         )
                         meta_path.write_text(
@@ -382,6 +406,14 @@ class ProcessingWorker:
 
 def main() -> int:
     base = Path(__file__).resolve().parent
+    # Modo leve (pula watermark/thumbnail) por env GN_LIGHT_MODE=1/true/yes
+    def _env_bool(name: str, default: bool = False) -> bool:
+        v = os.getenv(name)
+        if v is None:
+            return default
+        return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+    light_mode = _env_bool("GN_LIGHT_MODE", False)
     cfg = CaptureConfig(
         buffer_dir=Path("/tmp/recorded_videos"),
         clips_dir=base / "recorded_clips",
@@ -398,7 +430,8 @@ def main() -> int:
     # pastas do worker
     out_wm_dir = base / "20_highlights_wm"
     failed_dir = base / "90_failed"
-    out_wm_dir.mkdir(parents=True, exist_ok=True)
+    if not light_mode:
+        out_wm_dir.mkdir(parents=True, exist_ok=True)
     failed_dir.mkdir(parents=True, exist_ok=True)
 
     watermark_path = base / "files" / "grava-nois.png"
@@ -418,6 +451,7 @@ def main() -> int:
         wm_margin=24,
         wm_opacity=0.6,
         wm_rel_width=0.2,
+        light_mode=light_mode,
     )
     worker.start()
 
