@@ -42,12 +42,20 @@
       </RouterLink>
 
       <div
-        v-if="auth.isAuthenticated"
+        v-if="!auth.isAuthenticated"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition cursor-not-allowed opacity-50"
         aria-disabled="true"
       >
         <Bell />
       </div>
+
+      <RouterLink
+        to="/reportar-erro"
+        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
+        aria-label="iS PARA hOME"
+      >
+        <BadgeAlert />
+      </RouterLink>
 
       <!-- Trigger abre menu -->
       <button
@@ -151,14 +159,14 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   Home,
-  HelpCircle,
+  BadgeAlertIcon,
   LogInIcon,
   MenuIcon,
   ClapperboardIcon,
   XIcon,
-  PlusCircleIcon,
   UserPlus2Icon,
   Bell,
+  BadgeAlert,
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
@@ -185,8 +193,8 @@ const navigationItems: NavItem[] = [
   },
   { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false },
   { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false },
-  { label: "Instalar em meu campo", to: "/contato", icon: PlusCircleIcon, disabled: false },
-  { label: "Suporte", to: "/suporte", icon: HelpCircle, disabled: true },
+  // { label: "Instalar em meu campo", to: "/contato", icon: PlusCircleIcon, disabled: false },
+  { label: "Reportar", to: "/reportar-erro", icon: BadgeAlertIcon, disabled: false },
 ];
 
 const visibleItems = computed(() => navigationItems);
