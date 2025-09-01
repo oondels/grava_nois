@@ -368,11 +368,88 @@ class ProcessingWorker:
             )
             meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
 
-        # 4) remove o original da fila
+        # 4) pós-processamento local conforme sucesso/fracasso de upload
+        #    - Se upload OK: remove o original da fila
+        #    - Se upload NÃO OK (falhou, sem URL, sem API): move para pasta de pendências
         try:
-            mp4.unlink()
-        except FileNotFoundError:
-            pass
+            meta = json.loads(meta_path.read_text())
+        except Exception:
+            meta = {}
+
+        uploaded_ok = (
+            isinstance(meta.get("remote_upload"), dict)
+            and meta["remote_upload"].get("status") == "uploaded"
+        )
+
+        if uploaded_ok:
+            try:
+                mp4.unlink()
+            except FileNotFoundError:
+                pass
+        else:
+            # Cria pasta para pendências de upload dentro de 90_failed/
+            pend_dir = self.failed_dir / "upload_failed"
+            pend_dir.mkdir(parents=True, exist_ok=True)
+
+            # Determina motivo para log/sidecar
+            reason = "unknown"
+            if not (os.getenv("GN_API_BASE") or os.getenv("API_BASE_URL")):
+                reason = "no_api_configured"
+            elif isinstance(meta.get("remote_registration"), dict) and meta["remote_registration"].get("status") != "registered":
+                reason = "registration_failed"
+            elif not isinstance(meta.get("remote_upload"), dict):
+                reason = "no_upload_url"
+            else:
+                reason = meta.get("remote_upload", {}).get("status") or "upload_failed"
+
+            # Atualiza sidecar com status de pendência
+            try:
+                meta.setdefault("local_fallback", {})
+                meta["local_fallback"].update(
+                    {
+                        "status": "upload_pending",
+                        "reason": reason,
+                        "moved_at": datetime.now(timezone.utc).isoformat(),
+                        "dest_dir": str(pend_dir),
+                    }
+                )
+                meta["status"] = "upload_pending"
+                meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+            except Exception:
+                pass
+
+            # Decide qual arquivo preservar: prioriza o arquivo realmente usado no upload
+            file_to_preserve = None
+            try:
+                # Se existiu arquivo processado (watermarked) use-o, senão o da fila
+                if not self.light_mode:
+                    cand = self.out_wm_dir / mp4.name
+                    if cand.exists():
+                        file_to_preserve = cand
+                if file_to_preserve is None:
+                    file_to_preserve = mp4
+            except Exception:
+                file_to_preserve = mp4
+
+            # Move o vídeo preservado e o sidecar para a pasta de pendências
+            try:
+                dst_vid = pend_dir / file_to_preserve.name
+                if file_to_preserve.resolve() != dst_vid.resolve():
+                    file_to_preserve.replace(dst_vid)
+            except Exception:
+                print(f"[worker] aviso: falha ao mover vídeo para pendências: {file_to_preserve}")
+            try:
+                dst_json = pend_dir / meta_path.name
+                if meta_path.resolve() != dst_json.resolve():
+                    meta_path.replace(dst_json)
+            except Exception:
+                print(f"[worker] aviso: falha ao mover sidecar para pendências: {meta_path}")
+            # Garante limpeza da fila para não reprocessar
+            try:
+                if mp4.exists():
+                    mp4.unlink()
+            except Exception:
+                pass
 
     def _handle_failure(self, mp4: Path, meta_path: Path, err: Exception):
         # incrementa tentativas e decide o que fazer
