@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, re, json, time, hashlib, subprocess, threading
+import os, re, json, time, hashlib, subprocess, threading, platform
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,7 +26,7 @@ class CaptureConfig:
     pre_seconds: int = 25
     post_seconds: int = 5
     scan_interval: float = 0.5
-    max_buffer_seconds: int = 80
+    max_buffer_seconds: int = 40
 
     @property
     def max_segments(self) -> int:
@@ -55,52 +55,76 @@ def _calc_start_number(buffer_dir: Path) -> int:
 def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
-    # Old -> Camera do notebook
-    # ffmpeg_cmd = [
-    #     "ffmpeg",
-    #     "-nostdin",
-    #     "-f",
-    #     "v4l2",
-    #     "-i",
-    #     cfg.device,
-    #     "-c:v",
-    #     "libx264",
-    #     "-preset",
-    #     "ultrafast",
-    #     "-tune",
-    #     "zerolatency",
-    #     "-force_key_frames",
-    #     f"expr:gte(t,n_forced*{cfg.seg_time})",
-    #     "-f",
-    #     "segment",
-    #     "-segment_time",
-    #     str(cfg.seg_time),
-    #     "-segment_start_number",
-    #     str(start_num),
-    #     "-reset_timestamps",
-    #     "1",
-    #     out_pattern,
-    # ]
 
-    # Camera Dedicada
+    # Leitura de configurações via ENV
+    env_fps = (os.getenv("GN_INPUT_FRAMERATE") or "").strip()
+    env_size = (os.getenv("GN_VIDEO_SIZE") or "").strip()  # Ex: 1280x720
+    env_encoder = (os.getenv("GN_ENCODER") or "").strip()
+
+    # Heurística simples para Raspberry Pi
+    def _is_raspberry_pi() -> bool:
+        try:
+            with open("/proc/device-tree/model", "r") as f:
+                m = f.read()
+                if "Raspberry Pi" in m:
+                    return True
+        except Exception:
+            pass
+        try:
+            mach = platform.machine().lower()
+            if mach.startswith("arm") or "aarch64" in mach:
+                # Não garante que é Pi, mas indica ARM
+                # Sem confirmação, não forçamos encoder específico
+                return False
+        except Exception:
+            pass
+        return False
+
+    # Escolha do encoder
+    if env_encoder:
+        encoder = env_encoder
+    else:
+        encoder = "h264_v4l2m2m" if _is_raspberry_pi() else "libx264"
+
+    # Montagem do comando (v4l2)
     ffmpeg_cmd = [
         "ffmpeg",
-        "-rtsp_transport",
-        "tcp",
+        "-nostdin",
+        "-f",
+        "v4l2",
+    ]
+    # Aplica framerate e video_size na entrada se fornecidos
+    if env_fps:
+        ffmpeg_cmd += ["-framerate", env_fps]
+    if env_size:
+        ffmpeg_cmd += ["-video_size", env_size]
+
+    # Calcula GOP (-g) se fps fornecido; alinha keyframes a cada seg_time
+    gop_val: str | None = None
+    try:
+        if env_fps:
+            fps_float = float(env_fps)
+            if fps_float > 0 and cfg.seg_time > 0:
+                gop = max(1, int(round(fps_float * float(cfg.seg_time))))
+                gop_val = str(gop)
+    except Exception:
+        gop_val = None
+
+    ffmpeg_cmd += [
         "-i",
-        "rtsp://admin:wa0i4Ochu@192.168.68.104:554/cam/realmonitor?channel=1&subtype=0",
+        cfg.device,
         "-c:v",
-        "libx264",
+        encoder,
         "-preset",
         "ultrafast",
         "-tune",
         "zerolatency",
+    ]
+    if gop_val:
+        ffmpeg_cmd += ["-g", gop_val]
+    ffmpeg_cmd += [
         "-force_key_frames",
-        "expr:gte(t,n_forced*1)",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "96k",  # audio
+        f"expr:gte(t,n_forced*{cfg.seg_time})",
         "-f",
         "segment",
         "-segment_time",
@@ -111,6 +135,40 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "1",
         out_pattern,
     ]
+
+    print(
+        f"[rec] device={cfg.device} encoder={encoder} fps={env_fps or 'default'} size={env_size or 'default'} seg_time={cfg.seg_time}s gop={gop_val or 'auto'}"
+    )
+
+    # Camera Dedicada
+    # ffmpeg_cmd = [
+    #     "ffmpeg",
+    #     "-rtsp_transport",
+    #     "tcp",
+    #     "-i",
+    #     "rtsp://admin:wa0i4Ochu@192.168.68.104:554/cam/realmonitor?channel=1&subtype=0",
+    #     "-c:v",
+    #     "libx264",
+    #     "-preset",
+    #     "ultrafast",
+    #     "-tune",
+    #     "zerolatency",
+    #     "-force_key_frames",
+    #     "expr:gte(t,n_forced*1)",
+    #     "-c:a",
+    #     "aac",
+    #     "-b:a",
+    #     "96k",  # audio
+    #     "-f",
+    #     "segment",
+    #     "-segment_time",
+    #     str(cfg.seg_time),
+    #     "-segment_start_number",
+    #     str(start_num),
+    #     "-reset_timestamps",
+    #     "1",
+    #     out_pattern,
+    # ]
 
     return subprocess.Popen(
         ffmpeg_cmd,
@@ -161,11 +219,11 @@ class SegmentBuffer:
             self._stop.wait(self.cfg.scan_interval)
 
 
-# ---- Highlight builder ------------------------------------------------------
+# ---- Constroi clip após usuarios clicar no botao ------------------------------------------------------
 def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]:
     click_ts = time.time()
     print("Botão apertado! Aguardando pós-buffer…")
-    time.sleep(max(0, cfg.post_seconds) + 0.25)
+    time.sleep(max(0, cfg.post_seconds) + 0.30)
 
     need = max(1, int(round((cfg.pre_seconds + cfg.post_seconds) / cfg.seg_time)))
     selected = segbuf.snapshot_last(need)
@@ -173,38 +231,85 @@ def build_highlight(cfg: CaptureConfig, segbuf: SegmentBuffer) -> Optional[Path]
         print("Nenhum segmento disponível — encerrando.")
         return None
 
-    list_txt = cfg.buffer_dir / f"to_concat_{int(click_ts)}.txt"
+    # Move os segmentos correspondentes para a pasta dedicada e limpa o buffer
+    target_dir = Path(__file__).resolve().parent / "buffered_seguiments_post_clique"
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    moved_paths: List[Path] = []
+    for seg in selected:
+        src = Path(seg)
+        if not src.exists():
+            continue
+        dst = target_dir / src.name
+        try:
+            src.replace(dst)  # move (substitui se já existir)
+            moved_paths.append(dst)
+        except Exception:
+            # Falha ao mover este segmento — segue para o próximo
+            pass
+
+    # Exclui todos os arquivos do diretório de buffer original (/tmp/recorded_videos)
+    try:
+        for p in cfg.buffer_dir.glob("*"):
+            try:
+                if p.is_file():
+                    p.unlink()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    if not moved_paths:
+        print("Nenhum segmento movido — encerrando.")
+        return None
+
+    # Cria a lista de concat a partir dos arquivos movidos
+    list_txt = target_dir / f"to_concat_{int(click_ts)}.txt"
     with open(list_txt, "w") as f:
-        for seg in selected:
-            f.write(f"file '{seg}'\n")
+        for p in moved_paths:
+            f.write(f"file '{str(p)}'\n")
 
     out = (
         cfg.clips_dir
         / f"highlight_{datetime.fromtimestamp(click_ts, tz=timezone.utc).strftime('%Y%m%d-%H%M%SZ')}.mp4"
     )
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-nostdin",
-            "-f",
-            "concat",
-            "-safe",
-            "0",
-            "-i",
-            str(list_txt),
-            "-c",
-            "copy",
-            str(out),
-        ],
-        check=True,
-    )
     try:
-        list_txt.unlink()
-    except FileNotFoundError:
-        pass
-
-    print(f"Saved {out}")
-    return out
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-nostdin",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                str(list_txt),
+                "-c",
+                "copy",
+                str(out),
+            ],
+            check=True,
+        )
+        print(f"Saved {out}")
+        return out
+    finally:
+        # Limpa arquivos temporários: lista de concat e segmentos movidos
+        try:
+            list_txt.unlink()
+        except FileNotFoundError:
+            pass
+        except Exception:
+            pass
+        try:
+            for p in moved_paths:
+                try:
+                    p.unlink()
+                except FileNotFoundError:
+                    pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
 
 # ---- Queueing & metadata ----------------------------------------------------
@@ -271,6 +376,7 @@ def enqueue_clip(cfg: CaptureConfig, clip_path: Path) -> Path:
         "y",
         "on",
     }
+    
     sha256 = None if light_mode else _sha256_file(clip_path)
     meta = ffprobe_metadata(clip_path)
     payload = {

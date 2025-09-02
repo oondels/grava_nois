@@ -666,71 +666,60 @@ AppDataSource.initialize()
             100
           );
 
-          const offset = Math.max(
-            0,
-            Number.isFinite(+req.query.offset!) ? parseInt(req.query.offset as string, 10) : 0
-          );
-
+          const offset = Math.max(0, Number.isFinite(+req.query.offset!) ? parseInt(req.query.offset as string, 10) : 0);
           const order: "asc" | "desc" = req.query.order === "asc" ? "asc" : "desc";
 
-          const ttlSec = clamp(
-            Number.isFinite(+req.query.ttl!) ? parseInt(req.query.ttl as string, 10) : 3600,
-            60,
-            60 * 60 * 24
-          );
-          // =================================
-
+          // IMPORTANTE: aplicar limit, offset e order na listagem
+          // Ordenar por data de atualização para que os mais recentes venham primeiro
           const { data: items, error: listErr } = await supabase.storage
             .from(bucket)
-            .list(prefix, { limit, offset, sortBy: { column: "name", order } });
+            .list(prefix, { limit, offset, sortBy: { column: "updated_at", order } });
 
-          if (listErr) {
-            return res.status(502).json({ error: "Failed to list files", details: listErr.message });
-          }
+          if (listErr) return res.status(502).json({ error: "Failed to list files", details: listErr.message });
 
-          // Somente arquivos (pasta não tem metadata.size)
           const files = (items ?? []).filter((it: any) => it?.metadata && typeof it.metadata.size === "number");
-
-          const paths = files.map((f: any) => (prefix ? `${prefix}/${f.name}` : f.name));
-
-          if (paths.length === 0) {
-            return res.json({ bucket, prefix, count: 0, files: [] });
-          }
-
-          const { data: signedView, error: signViewErr } = await supabase.storage
-            .from(bucket)
-            .createSignedUrls(paths, ttlSec);
-
-          if (signViewErr) {
-            return res.status(502).json({ error: "Failed to create signed view URLs", details: signViewErr.message });
-          }
-
-          const { data: signedDownload, error: signDownErr } = await supabase.storage
-            .from(bucket)
-            .createSignedUrls(paths, ttlSec, { download: true });
-
-          if (signDownErr) {
-            return res
-              .status(502)
-              .json({ error: "Failed to create signed download URLs", details: signDownErr.message });
-          }
-
-          const result = files.map((f: any, i: number) => ({
+          const result = files.map((f: any) => ({
             name: f.name,
-            path: paths[i],
+            path: prefix ? `${prefix}/${f.name}` : f.name,
             bucket,
             size: f.metadata?.size ?? null,
             last_modified: f.updated_at ?? f.created_at ?? null,
-            preview_url: signedView?.[i]?.signedUrl ?? null,
-            download_url: signedDownload?.[i]?.signedUrl ?? null,
           }));
 
-          return res.json({ bucket, prefix, count: result.length, files: result });
+          // paginação simples pelo tamanho retornado
+          const hasMore = files.length === limit;
+          const nextOffset = offset + files.length;
+
+          // cache curtinho da lista (não das URLs assinadas)
+          res.setHeader("Cache-Control", "private, max-age=15");
+          return res.json({ bucket, prefix, count: result.length, files: result, hasMore, nextOffset });
         } catch (err: any) {
-          if (err?.message === "invalid_prefix") {
-            return res.status(400).json({ error: "Invalid prefix" });
-          }
           console.error("Error listing videos:", err);
+          return res.status(500).json({ error: "Internal server error" });
+        }
+      });
+
+      // Assinar sob demanda (preview ou download)
+      app.get("/api/videos/sign", async (req: Request, res: Response) => {
+        try {
+          const bucket = typeof req.query.bucket === "string" ? req.query.bucket : "temp";
+          const path = typeof req.query.path === "string" ? req.query.path : "";
+          const kind = req.query.kind === "download" ? "download" : "preview";
+          const ttlSec = clamp(Number.parseInt(String(req.query.ttl ?? "3600"), 10) || 3600, 60, 86400);
+
+          if (!ALLOWED_BUCKETS.has(bucket)) return res.status(400).json({ error: "Invalid bucket" });
+          if (!path || path.includes("..")) return res.status(400).json({ error: "Invalid path" });
+
+          const { data, error } = await supabase.storage
+            .from(bucket)
+            .createSignedUrl(path, ttlSec, { download: kind === "download" });
+
+          if (error) return res.status(502).json({ error: "Failed to sign URL", details: error.message });
+
+          // TTL menor no cache do JSON para evitar re-play storm
+          res.setHeader("Cache-Control", "private, max-age=5");
+          return res.json({ url: data?.signedUrl ?? null });
+        } catch (e) {
           return res.status(500).json({ error: "Internal server error" });
         }
       });

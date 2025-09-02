@@ -31,13 +31,13 @@ class ProcessingWorker:
         out_wm_dir: Path,  # 20_highlights_wm/
         failed_dir: Path,  # 90_failed/
         watermark_path: Path,  # assets/logo.png
-        scan_interval: float = 1.5,  # varredura a cada 1.5s
+        scan_interval: float = 1,  # varredura a cada 1.5s
         max_attempts: int = 3,
         wm_margin: int = 24,
-        wm_opacity: float = 0.6,
-        wm_rel_width: float = 0.2,
+        wm_opacity: float = 0.4,
+        wm_rel_width: float = 0.1,
         *,
-        light_mode: bool = False,
+        light_mode: bool = True, # Ativa o Light Mode (MVP)
     ):
         self.queue_dir = queue_dir
         self.out_wm_dir = out_wm_dir
@@ -200,7 +200,7 @@ class ProcessingWorker:
         client_id = os.getenv("GN_CLIENT_ID") or os.getenv("CLIENT_ID")
         venue_id = os.getenv("GN_VENUE_ID") or os.getenv("VENUE_ID")
         if api_base:
-            try:
+            try: # Tenta fazer o registro com o servidor
                 size_upload = upload_target.stat().st_size
                 sha256_upload = _sha256_file(upload_target)
                 meta_up = ffprobe_metadata(upload_target)
@@ -222,6 +222,8 @@ class ProcessingWorker:
                 resp = register_clip_metadados(
                     api_base, payload, token=api_token, timeout=15.0
                 )
+                
+                # Aguarda Resposta do Backend
                 print(f"[worker] Resposta do backend: {json.dumps(resp)[:300]}")
                 meta.setdefault("remote_registration", {})
                 meta["remote_registration"].update(
@@ -353,7 +355,7 @@ class ProcessingWorker:
                     }
                 )
                 meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
-                print(f"[worker] registro remoto falhou: {e}")
+                print(f"[worker] Registro remoto falhou: {e}")
         else:
             print("Sem api url configurada, pulando registro")
             # sem configuração de API, apenas registra um hint no sidecar
@@ -366,11 +368,88 @@ class ProcessingWorker:
             )
             meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
 
-        # 4) remove o original da fila
+        # 4) pós-processamento local conforme sucesso/fracasso de upload
+        #    - Se upload OK: remove o original da fila
+        #    - Se upload NÃO OK (falhou, sem URL, sem API): move para pasta de pendências
         try:
-            mp4.unlink()
-        except FileNotFoundError:
-            pass
+            meta = json.loads(meta_path.read_text())
+        except Exception:
+            meta = {}
+
+        uploaded_ok = (
+            isinstance(meta.get("remote_upload"), dict)
+            and meta["remote_upload"].get("status") == "uploaded"
+        )
+
+        if uploaded_ok:
+            try:
+                mp4.unlink()
+            except FileNotFoundError:
+                pass
+        else:
+            # Cria pasta para pendências de upload dentro de 90_failed/
+            pend_dir = self.failed_dir / "upload_failed"
+            pend_dir.mkdir(parents=True, exist_ok=True)
+
+            # Determina motivo para log/sidecar
+            reason = "unknown"
+            if not (os.getenv("GN_API_BASE") or os.getenv("API_BASE_URL")):
+                reason = "no_api_configured"
+            elif isinstance(meta.get("remote_registration"), dict) and meta["remote_registration"].get("status") != "registered":
+                reason = "registration_failed"
+            elif not isinstance(meta.get("remote_upload"), dict):
+                reason = "no_upload_url"
+            else:
+                reason = meta.get("remote_upload", {}).get("status") or "upload_failed"
+
+            # Atualiza sidecar com status de pendência
+            try:
+                meta.setdefault("local_fallback", {})
+                meta["local_fallback"].update(
+                    {
+                        "status": "upload_pending",
+                        "reason": reason,
+                        "moved_at": datetime.now(timezone.utc).isoformat(),
+                        "dest_dir": str(pend_dir),
+                    }
+                )
+                meta["status"] = "upload_pending"
+                meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+            except Exception:
+                pass
+
+            # Decide qual arquivo preservar: prioriza o arquivo realmente usado no upload
+            file_to_preserve = None
+            try:
+                # Se existiu arquivo processado (watermarked) use-o, senão o da fila
+                if not self.light_mode:
+                    cand = self.out_wm_dir / mp4.name
+                    if cand.exists():
+                        file_to_preserve = cand
+                if file_to_preserve is None:
+                    file_to_preserve = mp4
+            except Exception:
+                file_to_preserve = mp4
+
+            # Move o vídeo preservado e o sidecar para a pasta de pendências
+            try:
+                dst_vid = pend_dir / file_to_preserve.name
+                if file_to_preserve.resolve() != dst_vid.resolve():
+                    file_to_preserve.replace(dst_vid)
+            except Exception:
+                print(f"[worker] aviso: falha ao mover vídeo para pendências: {file_to_preserve}")
+            try:
+                dst_json = pend_dir / meta_path.name
+                if meta_path.resolve() != dst_json.resolve():
+                    meta_path.replace(dst_json)
+            except Exception:
+                print(f"[worker] aviso: falha ao mover sidecar para pendências: {meta_path}")
+            # Garante limpeza da fila para não reprocessar
+            try:
+                if mp4.exists():
+                    mp4.unlink()
+            except Exception:
+                pass
 
     def _handle_failure(self, mp4: Path, meta_path: Path, err: Exception):
         # incrementa tentativas e decide o que fazer
@@ -415,24 +494,40 @@ def main() -> int:
     base = Path(__file__).resolve().parent
 
     # Modo leve (pula watermark/thumbnail) por env GN_LIGHT_MODE=1/true/yes
-    def _env_bool(name: str, default: bool = False) -> bool:
+    # def _env_bool(name: str, default: bool = False) -> bool:
+    #     v = os.getenv(name)
+    #     if v is None:
+    #         return default
+    #     return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+    # light_mode = _env_bool("GN_LIGHT_MODE", False)
+    light_mode = True
+
+    # Permite configurar seg_time via env GN_SEG_TIME
+    def _env_int(name: str, default: int) -> int:
         v = os.getenv(name)
         if v is None:
             return default
-        return str(v).strip().lower() in {"1", "true", "yes", "y", "on"}
+        try:
+            return max(1, int(float(v)))
+        except Exception:
+            return default
 
-    light_mode = _env_bool("GN_LIGHT_MODE", False)
+    seg_time_env = _env_int("GN_SEG_TIME", 1)
+
     cfg = CaptureConfig(
         buffer_dir=Path("/tmp/recorded_videos"),
         clips_dir=base / "recorded_clips",
         queue_dir=base / "queue_raw",
         device="/dev/video0",
-        seg_time=1,
-        pre_seconds=40,
+        seg_time=seg_time_env,
+        pre_seconds=25,
         post_seconds=10,
         scan_interval=0.5,
         max_buffer_seconds=60,
     )
+    
+    # Verifica a existencia de todos os arquivos necessários
     cfg.ensure_dirs()
 
     # pastas do worker
@@ -454,7 +549,7 @@ def main() -> int:
         out_wm_dir=out_wm_dir,
         failed_dir=failed_dir,
         watermark_path=watermark_path,
-        scan_interval=1.5,
+        scan_interval=1,
         max_attempts=3,
         wm_margin=24,
         wm_opacity=0.6,
@@ -491,7 +586,7 @@ def main() -> int:
     stdin_t = threading.Thread(target=_stdin_listener, daemon=True)
     stdin_t.start()
 
-    # GPIO opcional: habilita se GN_GPIO_PIN ou GPIO_PIN estiver definido.
+    # abilita se GN_GPIO_PIN ou GPIO_PIN estiver definido.
     gpio_pin_env = os.getenv("GN_GPIO_PIN") or os.getenv("GPIO_PIN")
     pi = None
     cb = None
@@ -564,31 +659,44 @@ def main() -> int:
     print(prompt)
 
     try:
-        while not stop_evt.is_set():
+        while not stop_evt.is_set(): # Verifica se o evento foi acionado (Botao)
             try:
-                _ = trigger_q.get(timeout=0.2)
+                _ = trigger_q.get(timeout=0.3) # Procura triggers 
             except queue.Empty:
                 continue
-            out = build_highlight(cfg, segbuf)
+            out = build_highlight(cfg, segbuf) # Constroi o clipe a partir dos seguimentos
             if out:
-                enqueue_clip(cfg, out)  # move p/ queue_raw + salva metadados
+                enqueue_clip(cfg, out)
+                
     except KeyboardInterrupt:
         print("\nEncerrando…")
     finally:
+        # Sinaliza para todos os loops/threads que devem encerrar.
         stop_evt.set()
         try:
             if cb is not None:
+                # Cancela o callback do GPIO (para de receber eventos do botão).
                 cb.cancel()
         except Exception:
+            # Ignora falhas durante o desligamento.
             pass
         try:
             if pi is not None:
+                # Fecha a conexão com o daemon pigpio (não mata o pigpiod).
                 pi.stop()
         except Exception:
+            # Ignora falhas durante o desligamento.
             pass
+        # Para a thread do SegmentBuffer e espera até 2s para concluir.
         segbuf.stop(join_timeout=2)
         try:
+            # Solicita término do processo ffmpeg (libera o dispositivo de vídeo).
             proc.terminate()
+        except Exception:
+            # Ignora falhas durante o desligamento.
+            pass
+        try:
+            worker.stop()
         except Exception:
             pass
 
