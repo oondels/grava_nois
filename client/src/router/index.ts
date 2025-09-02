@@ -9,7 +9,7 @@ const routes = [
   {
     path: "/lances-gravanois",
     name: "Lances GravaNois",
-    component: () => import("@/pages/VideosPage.vue"),
+    component: () => import("@/pages/ManutencaoAviso.vue"),
     meta: { requiresAuth: false },
   },
   {

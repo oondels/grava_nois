@@ -15,7 +15,7 @@
     </v-main>
 
     <!-- Botão flutuante de Aviso -->
-    <v-btn
+    <!-- <v-btn
       color="warning"
       variant="elevated"
       size="large"
@@ -26,10 +26,10 @@
       @click="maintenanceDialog = true"
     >
       Aviso
-    </v-btn>
+    </v-btn> -->
 
     <!-- Diálogo de manutenção -->
-    <v-dialog v-model="maintenanceDialog" max-width="480">
+    <!-- <v-dialog v-model="maintenanceDialog" max-width="480">
       <v-card class="rounded-xl" elevation="12">
         <v-card-title class="text-h6 d-flex align-center">
           <v-icon icon="mdi-alert" color="warning" class="me-2" />
@@ -41,7 +41,7 @@
           <v-btn variant="text" @click="maintenanceDialog = false">Fechar</v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-dialog> -->
 
     <!-- Mobile Bottom Nav (visível apenas em dispositivos móveis) -->
 
