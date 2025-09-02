@@ -669,9 +669,10 @@ AppDataSource.initialize()
           const order: "asc" | "desc" = req.query.order === "asc" ? "asc" : "desc";
 
           // IMPORTANTE: aplicar limit, offset e order na listagem
+          // Ordenar por data de atualização para que os mais recentes venham primeiro
           const { data: items, error: listErr } = await supabase.storage
             .from(bucket)
-            .list(prefix, { limit, offset, sortBy: { column: "name", order } });
+            .list(prefix, { limit, offset, sortBy: { column: "updated_at", order } });
 
           if (listErr) return res.status(502).json({ error: "Failed to list files", details: listErr.message });
 
