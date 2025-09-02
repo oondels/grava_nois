@@ -564,6 +564,9 @@ def main() -> int:
 
     trigger_q: queue.Queue[str] = queue.Queue()
     stop_evt = threading.Event()
+    # Cooldown de botão GPIO: ignora novos disparos por 120s após um válido
+    gpio_cooldown_sec = float(os.getenv("GN_GPIO_COOLDOWN_SEC", "120"))
+    last_gpio_ok_ts = 0.0
 
     def _stdin_listener():
         # Bloqueia em input(); cada ENTER gera um trigger.
@@ -661,13 +664,24 @@ def main() -> int:
     try:
         while not stop_evt.is_set(): # Verifica se o evento foi acionado (Botao)
             try:
-                _ = trigger_q.get(timeout=0.3) # Procura triggers 
+                trig = trigger_q.get(timeout=0.3) # Procura triggers 
             except queue.Empty:
                 continue
+
+            # Aplica cooldown apenas para o botão GPIO
+            if trig == "gpio":
+                now = time.time()
+                elapsed = now - last_gpio_ok_ts
+                if elapsed < gpio_cooldown_sec:
+                    restante = int(gpio_cooldown_sec - elapsed)
+                    print(f"[gpio] Ignorado: cooldown ativo ({restante}s restantes)")
+                    continue
+                last_gpio_ok_ts = now
+
             out = build_highlight(cfg, segbuf) # Constroi o clipe a partir dos seguimentos
             if out:
                 enqueue_clip(cfg, out)
-                
+
     except KeyboardInterrupt:
         print("\nEncerrando…")
     finally:

@@ -310,6 +310,8 @@ O disparo por botão físico no Raspberry Pi está disponível e usa exclusivame
 - Defina o pino BCM via variável de ambiente: `GN_GPIO_PIN` (ou `GPIO_PIN`).
 - Conexão: habilite pull-up interno; conecte o botão entre o pino e GND.
 - Borda considerada: FALLING (pressionado). Debounce padrão de 300 ms.
+- Cooldown: após um disparo válido via GPIO, novos pressionamentos são ignorados por 120s
+  (configurável via `GN_GPIO_COOLDOWN_SEC`).
 - Requisito: daemon `pigpiod` em execução. Se não estiver ativo, rode `pigpiod` em outro terminal/serviço antes de iniciar o script.
 
 Exemplo (bash):
@@ -318,6 +320,7 @@ Exemplo (bash):
 pigpiod                        # inicia o daemon (sem sudo)
 export GN_GPIO_PIN=17          # pino BCM
 export GN_GPIO_DEBOUNCE_MS=300 # opcional
+export GN_GPIO_COOLDOWN_SEC=120 # opcional; padrão 120
 python3 capture_service.py
 ```
 
