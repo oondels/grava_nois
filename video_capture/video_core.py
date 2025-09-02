@@ -97,10 +97,7 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "zerolatency",
         "-force_key_frames",
         "expr:gte(t,n_forced*1)",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "96k",  # audio
+        "-an",
         "-f",
         "segment",
         "-segment_time",
