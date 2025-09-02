@@ -502,12 +502,25 @@ def main() -> int:
 
     # light_mode = _env_bool("GN_LIGHT_MODE", False)
     light_mode = True
+
+    # Permite configurar seg_time via env GN_SEG_TIME
+    def _env_int(name: str, default: int) -> int:
+        v = os.getenv(name)
+        if v is None:
+            return default
+        try:
+            return max(1, int(float(v)))
+        except Exception:
+            return default
+
+    seg_time_env = _env_int("GN_SEG_TIME", 1)
+
     cfg = CaptureConfig(
         buffer_dir=Path("/tmp/recorded_videos"),
         clips_dir=base / "recorded_clips",
         queue_dir=base / "queue_raw",
         device="/dev/video0",
-        seg_time=1,
+        seg_time=seg_time_env,
         pre_seconds=25,
         post_seconds=10,
         scan_interval=0.5,

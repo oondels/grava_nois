@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, re, json, time, hashlib, subprocess, threading
+import os, re, json, time, hashlib, subprocess, threading, platform
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -55,20 +55,74 @@ def _calc_start_number(buffer_dir: Path) -> int:
 def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
     start_num = _calc_start_number(cfg.buffer_dir)
     out_pattern = str(cfg.buffer_dir / "buffer%06d.mp4")
-    # Old -> Camera do notebook
+
+    # Leitura de configurações via ENV
+    env_fps = (os.getenv("GN_INPUT_FRAMERATE") or "").strip()
+    env_size = (os.getenv("GN_VIDEO_SIZE") or "").strip()  # Ex: 1280x720
+    env_encoder = (os.getenv("GN_ENCODER") or "").strip()
+
+    # Heurística simples para Raspberry Pi
+    def _is_raspberry_pi() -> bool:
+        try:
+            with open("/proc/device-tree/model", "r") as f:
+                m = f.read()
+                if "Raspberry Pi" in m:
+                    return True
+        except Exception:
+            pass
+        try:
+            mach = platform.machine().lower()
+            if mach.startswith("arm") or "aarch64" in mach:
+                # Não garante que é Pi, mas indica ARM
+                # Sem confirmação, não forçamos encoder específico
+                return False
+        except Exception:
+            pass
+        return False
+
+    # Escolha do encoder
+    if env_encoder:
+        encoder = env_encoder
+    else:
+        encoder = "h264_v4l2m2m" if _is_raspberry_pi() else "libx264"
+
+    # Montagem do comando (v4l2)
     ffmpeg_cmd = [
         "ffmpeg",
         "-nostdin",
         "-f",
         "v4l2",
+    ]
+    # Aplica framerate e video_size na entrada se fornecidos
+    if env_fps:
+        ffmpeg_cmd += ["-framerate", env_fps]
+    if env_size:
+        ffmpeg_cmd += ["-video_size", env_size]
+
+    # Calcula GOP (-g) se fps fornecido; alinha keyframes a cada seg_time
+    gop_val: str | None = None
+    try:
+        if env_fps:
+            fps_float = float(env_fps)
+            if fps_float > 0 and cfg.seg_time > 0:
+                gop = max(1, int(round(fps_float * float(cfg.seg_time))))
+                gop_val = str(gop)
+    except Exception:
+        gop_val = None
+
+    ffmpeg_cmd += [
         "-i",
         cfg.device,
         "-c:v",
-        "libx264",
+        encoder,
         "-preset",
         "ultrafast",
         "-tune",
         "zerolatency",
+    ]
+    if gop_val:
+        ffmpeg_cmd += ["-g", gop_val]
+    ffmpeg_cmd += [
         "-force_key_frames",
         f"expr:gte(t,n_forced*{cfg.seg_time})",
         "-f",
@@ -81,6 +135,10 @@ def start_ffmpeg(cfg: CaptureConfig) -> subprocess.Popen:
         "1",
         out_pattern,
     ]
+
+    print(
+        f"[rec] device={cfg.device} encoder={encoder} fps={env_fps or 'default'} size={env_size or 'default'} seg_time={cfg.seg_time}s gop={gop_val or 'auto'}"
+    )
 
     # Camera Dedicada
     # ffmpeg_cmd = [
