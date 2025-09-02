@@ -11,6 +11,7 @@ export const supabaseClient = createClient(
       flowType: 'pkce',
       persistSession: true,
       storage: localStorage,           // ou sessionStorage
+      storageKey: 'grn-auth',
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },

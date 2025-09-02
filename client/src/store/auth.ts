@@ -11,6 +11,11 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(true)
 
   const user = computed<UserT | null>(() => session.value?.user ?? null)
+  const safeUser = computed(() =>
+    user.value
+      ? { id: user.value.id, email: user.value.email, name: user.value.user_metadata?.full_name, avatar_url: user.value.user_metadata?.avatar_url }
+      : null
+  )
   const isAuthenticated = computed(() => !!session.value)
 
   async function init() {
@@ -37,14 +42,14 @@ export const useAuthStore = defineStore('auth', () => {
       }
     })
 
-     if (error) {
-       
-       const msg = error.message?.toLowerCase() ?? ''
+    if (error) {
+
+      const msg = error.message?.toLowerCase() ?? ''
       if (msg.includes('anonymous sign-ins')) {
         throw new Error('Preencha todos os campos!.')
       }
     }
-    
+
     return data
   }
 
