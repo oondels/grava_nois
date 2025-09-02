@@ -80,19 +80,9 @@
       <!-- Lista -->
       <div v-else class="px-4 pb-4">
         <v-row>
-          <v-col
-            v-for="file in state.items"
-            :key="file.path"
-            cols="12"
-            sm="6"
-            md="4"
-            lg="3"
-          >
+          <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
             <v-card rounded="xl" elevation="3" class="result-card">
-              <div
-                class="thumb-wrapper"
-                v-intersect="() => ensurePreview(file.path, file.bucket)"
-              >
+              <div class="thumb-wrapper" v-intersect="() => ensurePreview(file.path, file.bucket)">
                 <div class="thumb-video">
                   <v-chip size="small" color="grey-darken-1" class="date-badge mb-2" variant="outlined">
                     {{ formatLastModified(file.last_modified) }}
@@ -148,10 +138,16 @@
         <!-- Infinite scroll sentinel -->
         <div ref="sentinel" style="height: 1px"></div>
 
-        <div class="d-flex align-center justify-center py-4 text-medium-emphasis" v-if="state.loading && state.items.length">
+        <div
+          class="d-flex align-center justify-center py-4 text-medium-emphasis"
+          v-if="state.loading && state.items.length"
+        >
           Carregando mais…
         </div>
-        <div class="d-flex align-center justify-center py-2 text-disabled" v-else-if="!state.hasMore && state.items.length">
+        <div
+          class="d-flex align-center justify-center py-2 text-disabled"
+          v-else-if="!state.hasMore && state.items.length"
+        >
           Fim da lista
         </div>
       </div>
@@ -253,13 +249,13 @@ async function fetchPage(reset = false) {
       state.offset = 0;
       state.hasMore = true;
       // limpa mapas de preview/download
-      Object.keys(previewMap).forEach(k => delete previewMap[k]);
-      Object.keys(downloadMap).forEach(k => delete downloadMap[k]);
+      Object.keys(previewMap).forEach((k) => delete previewMap[k]);
+      Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
     }
 
     state.items.push(...data.files);
     state.hasMore = data.hasMore;
-    state.offset = data.nextOffset ?? (state.offset + data.files.length);
+    state.offset = data.nextOffset ?? state.offset + data.files.length;
   } catch (e: any) {
     state.error = e?.message ?? "Erro ao carregar vídeos";
   } finally {
@@ -276,7 +272,7 @@ async function ensurePreview(path: string, bucket = "temp") {
   if (previewMap[path] !== undefined) return; // já buscado (sucesso ou falha)
   previewMap[path] = null; // marca como em progresso
   try {
-    const base = "http://localhost:3000";
+    const base = getApiBase();
     const url = new URL(`${base}/api/videos/sign`);
     url.searchParams.set("bucket", bucket);
     url.searchParams.set("path", path);
@@ -319,13 +315,16 @@ onMounted(() => {
   refresh();
 
   // Infinite scroll real (liga no sentinel)
-  observer = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (e.isIntersecting && state.hasMore && !state.loading) {
-        fetchPage(false);
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting && state.hasMore && !state.loading) {
+          fetchPage(false);
+        }
       }
-    }
-  }, { rootMargin: "600px" }); // carrega antes de chegar no fim
+    },
+    { rootMargin: "600px" }
+  ); // carrega antes de chegar no fim
   if (sentinel.value) observer.observe(sentinel.value);
 });
 
@@ -351,6 +350,8 @@ onBeforeUnmount(() => {
 }
 
 @media (min-width: 600px) {
-  :root { --gn-sticky-top: 64px; }
+  :root {
+    --gn-sticky-top: 64px;
+  }
 }
 </style>
