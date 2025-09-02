@@ -41,6 +41,14 @@
         <Home />
       </RouterLink>
 
+      <RouterLink
+        to="/lances-gravanois"
+        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
+        aria-label="Meus Lances"
+      >
+        <ClapperboardIcon />
+      </RouterLink>
+
       <div
         v-if="auth.isAuthenticated"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition cursor-not-allowed opacity-50"
@@ -48,14 +56,14 @@
       >
         <Bell />
       </div>
-
+<!-- 
       <RouterLink
         to="/reportar-erro"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
         aria-label="iS PARA hOME"
       >
         <BadgeAlert />
-      </RouterLink>
+      </RouterLink> -->
 
       <!-- Trigger abre menu -->
       <button
