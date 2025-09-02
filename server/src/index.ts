@@ -666,7 +666,10 @@ AppDataSource.initialize()
             100
           );
 
-          const offset = Math.max(0, Number.isFinite(+req.query.offset!) ? parseInt(req.query.offset as string, 10) : 0);
+          const offset = Math.max(
+            0,
+            Number.isFinite(+req.query.offset!) ? parseInt(req.query.offset as string, 10) : 0
+          );
           const order: "asc" | "desc" = req.query.order === "asc" ? "asc" : "desc";
 
           // IMPORTANTE: aplicar limit, offset e order na listagem
@@ -761,12 +764,7 @@ AppDataSource.initialize()
           const bodySchema = z.object({
             venue_id: z.string().uuid(),
             captured_at: z.string(),
-            meta: z.object({
-              codec: z.string(),
-              fps: z.number().int().positive(),
-              width: z.number().int().positive(),
-              height: z.number().int().positive(),
-            }),
+
             sha256: z.string().regex(/^[a-f0-9]{64}$/i),
           });
 
@@ -776,7 +774,7 @@ AppDataSource.initialize()
             res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
             return;
           }
-          const { captured_at, meta, sha256 } = parsed.data;
+          const { captured_at, sha256 } = parsed.data;
           // const { duration_sec, captured_at, meta, sha256 } = parsed.data;
 
           // Validate Client ID
@@ -826,7 +824,6 @@ AppDataSource.initialize()
             venueId: venueId,
             capturedAt: capturedAtDate,
             contract: contractType,
-            meta,
             sha256,
             status: "queued",
             storagePath,
