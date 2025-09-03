@@ -1,111 +1,122 @@
-// stores/auth.ts (frontend, server-first)
+// stores/auth.ts
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { supabaseClient } from '@/lib/supabaseAuth'
 
-type SafeUser = { id: string; email: string; name?: string | null; avatar_url?: string | null }
+type SessionT = Awaited<ReturnType<typeof supabaseClient.auth.getSession>>['data']['session']
+type UserT = NonNullable<SessionT>['user']
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: null as SafeUser | null,
-    loading: true,
-  }),
+export const useAuthStore = defineStore('auth', () => {
+  const session = ref<SessionT>(null)
+  const loading = ref(true)
 
-  getters: {
-    isAuthenticated: (s) => !!s.user,
-  },
+  const user = computed<UserT | null>(() => session.value?.user ?? null)
+  const safeUser = computed(() =>
+    user.value
+      ? { id: user.value.id, email: user.value.email, name: user.value.user_metadata?.full_name, avatar_url: user.value.user_metadata?.avatar_url }
+      : null
+  )
+  const isAuthenticated = computed(() => !!session.value)
 
-  actions: {
-    async init() {
-      // carrega o usuário a partir dos cookies HttpOnly da API
-      this.loading = true
-      try {
-        const r = await fetch(`${import.meta.env.VITE_API_BASE}/auth/me`, {
-          credentials: 'include',
-        })
-        if (!r.ok) {
-          this.user = null
-        } else {
-          const { user } = await r.json()
-          this.user = {
-            id: user.id,
-            email: user.email,
-            name: user.user_metadata?.full_name ?? null,
-            avatar_url: user.user_metadata?.avatar_url ?? null,
-          }
-        }
-      } finally {
-        this.loading = false
+  async function init() {
+    // 1) pick up existing session from storage or URL (PKCE)
+    const { data: { session: s }, error } = await supabaseClient.auth.getSession()
+    if (error) console.error('getSession error', error)
+    session.value = s
+    loading.value = false
 
-        console.log("User data:", this.user);
+    // 2) keep Pinia in sync with Supabase
+    supabaseClient.auth.onAuthStateChange((_event, newSession) => {
+      session.value = newSession
+    })
+  }
+
+  // Register New User
+  async function signUpNewUser(email: string, pass: string, metadata?: Record<string, any>) {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email,
+      password: pass,
+      options: {
+        data: metadata,
+        emailRedirectTo: `${window.location.origin}/login`
       }
-    },
+    })
 
-    // Inicia o fluxo Google no SERVIDOR (redirecionamento hard, fora do SPA)
-    signInWithGoogle() {
-      const next = '/lances-gravanois'
-      const api = import.meta.env.VITE_API_BASE
-      window.location.href = `${api}/auth/login/google?next=${encodeURIComponent(next)}`
-    },
+    if (error) {
 
-    // Login por email/senha no SERVIDOR
-    async signInWithEmail(email: string, password: string) {
-      const r = await fetch(`${import.meta.env.VITE_API_BASE}/sign-in`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      })
-      if (!r.ok) {
-        const { error } = await r.json().catch(() => ({ error: 'login_failed' }))
-        throw new Error(error || 'login_failed')
+      const msg = error.message?.toLowerCase() ?? ''
+      if (msg.includes('anonymous sign-ins')) {
+        throw new Error('Preencha todos os campos!.')
       }
-      // Após sign-in, recarrega o estado do usuário
-      await this.init()
-    },
+    }
 
-    // Registro no SERVIDOR (com emailRedirectTo -> /auth/callback configurado no backend)
-    async signUpNewUser(email: string, pass: string, metadata?: Record<string, any>) {
-      const r = await fetch(`${import.meta.env.VITE_API_BASE}/sign-up`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password: pass, metadata }),
-      })
-      const data = await r.json().catch(() => ({}))
-      if (!r.ok) {
-        throw new Error((data as any)?.error || 'signup_failed')
+    return data
+  }
+
+  async function signInWithGoogle() {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/lances-gravanois`,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
+      },
+    })
+    if (error) throw error
+  }
+
+  //! Verificar redirecionamento apos login
+  async function signInWithEmail(email: string, password: string) {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email, password,
+    })
+
+    if (error) {
+      const msg = error.message?.toLowerCase() ?? ''
+      if (msg.includes('email not confirmed')) {
+        throw new Error('Confirme seu e-mail antes de entrar. Você pode reenviar o link.')
       }
-      return data // ex.: { status: "check_email" }
-    },
+      if (msg.includes('invalid login credentials')) {
+        // Could be wrong creds OR a Google-only account without a password set
+        throw new Error('Credenciais inválidas.')
+      }
+    }
 
-    async sendReset(email: string) {
-      // se você expôs rota própria de reset no backend:
-      const r = await fetch(`${import.meta.env.VITE_API_BASE}/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email }),
-      })
-      if (!r.ok) throw new Error('reset_failed')
-    },
+    // Ensure the UI is immediately in sync even if onAuthStateChange hasn't fired yet
+    session.value = data.session
+    return data.user
+  }
 
-    async updatePassword(newPassword: string) {
-      // idem: rota no backend que chama supabase.auth.updateUser
-      const r = await fetch(`${import.meta.env.VITE_API_BASE}/auth/update-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ newPassword }),
-      })
-      if (!r.ok) throw new Error('update_password_failed')
-    },
+  //! TODO: em manutencao
+  // Rquest para torca de senha
+  async function sendReset(email: string) {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/update-password`,
+    })
+    if (error) throw error
+  }
 
-    async signOut() {
-      const r = await fetch(`${import.meta.env.VITE_API_BASE}/sign-out`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      if (!r.ok) throw new Error('logout_failed')
-      this.user = null
-    },
-  },
+  //! TODO: em manutencao
+  // Troca de senha
+  async function updatePassword(newPassword: string) {
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword })
+    if (error) throw error
+    // pronto: próximo login por email+senha funcionará
+  }
+
+  // (once, keep your listener to track future changes)
+  supabaseClient.auth.onAuthStateChange((event, newSession) => {
+    // optional: instrument for debugging:
+    console.log('[auth] event:', event)
+    session.value = newSession
+  })
+
+  async function signOut() {
+    const { error } = await supabaseClient.auth.signOut()
+    if (error) throw error
+  }
+
+  return {
+    session, user, isAuthenticated, loading, init,
+    signInWithGoogle, signInWithEmail, signOut, sendReset, updatePassword, signUpNewUser
+  }
 })
