@@ -131,7 +131,7 @@ AppDataSource.initialize()
         return res.status(204).end();
       });
 
-      // TODO: Fazer busca de dados do usuario na tabela grn_auth.profiles
+      // TODO: Fazer busca de dados do usuario na tabela
       app.get("/auth/me", async (req, res) => {
         const supabase = makeSupabase(req, res);
         const {
@@ -154,15 +154,12 @@ AppDataSource.initialize()
         const nextUrl = typeof req.query.next === 'string' ? req.query.next : '/'
         const supabase = makeSupabase(req, res)
 
-        console.log(req.query);
-
-        console.log(nextUrl);
-
-
+        const base = config.BACKEND_PUBLIC_URL!   // <= usa ENV, não req.protocol
+        const url_callback = `${base}/auth/callback`
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${req.protocol}://${req.get('host')}/auth/callback`, // backend callback
+            redirectTo: url_callback, // backend callback
             queryParams: { access_type: 'offline', prompt: 'consent' },
           },
         })
