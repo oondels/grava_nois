@@ -228,7 +228,8 @@ AppDataSource.initialize()
       }
 
       app.get("/auth/callback", async (req: Request, res: Response) => {
-        const { error, error_description } = req.query as any
+        try {
+          const { error, error_description } = req.query as any
         if (error) {
           return res.redirect(303, `/login?e=${encodeURIComponent(error_description || error)}`)
         }
@@ -251,6 +252,9 @@ AppDataSource.initialize()
         const finalUrl = buildFinalRedirect(nextCookie)
 
         return res.redirect(303, finalUrl)
+        } catch (error) {
+          console.error("Callback error: ", error);
+        }
       });
 
       app.get("/videos-clips", async (req: Request, res: Response) => {
