@@ -98,7 +98,7 @@ AppDataSource.initialize()
                   path: "/",
                   httpOnly: true,
                   secure: IS_PROD ? true : false,
-                  sameSite: IS_PROD ? ('none' as const) : ('lax' as const),
+                  sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
                   ...options,
                 };
 
@@ -181,7 +181,7 @@ AppDataSource.initialize()
           path: '/',
           httpOnly: true,
           secure: IS_PROD ? true : false,
-          sameSite: IS_PROD ? ('none' as const) : ('lax' as const),
+          sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
           maxAge: 5 * 60 * 1000,
         })
 
