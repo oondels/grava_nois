@@ -15,7 +15,7 @@
     "@mdi/js": "^7.4.47",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
-    "@supabase/supabase-js": "^2.56.0",
+    "@supabase/supabase-js": "^2.57.0",
     "axios": "^1.11.0",
     "lucide-vue-next": "^0.539.0",
     "pinia": "^2.1.7",
