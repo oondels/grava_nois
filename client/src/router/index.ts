@@ -42,6 +42,7 @@ const routes = [
     component: () => import("@/pages/ContactPage.vue"),
     meta: { requiresAuth: false },
   },
+  { path: '/auth/callback', component: () => import('@/pages/auth/AuthCallback.vue') },
   {
     path: "/reportar-erro",
     name: "Reportar Erro",
