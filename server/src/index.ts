@@ -83,18 +83,25 @@ AppDataSource.initialize()
             getAll() {
               const parsed = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
               const arr = Object.entries(parsed).map(([name, value]) => ({ name, value: String(value ?? "") }));
+
+              if (!arr.length) {
+                console.error("No cookies found in request");
+              }
+
               return arr.length ? arr : null;
             },
             setAll(cookies) {
               cookies.forEach(({ name, value, options }) => {
+
+                const IS_PROD = config.env === "production"
                 const final = {
                   path: "/",
-                  sameSite: 'none' as const, //! Continuar daqui, testar se funcinou o callback
-                  // sameSite: (config.cookie_same_site as any) ?? 'lax',
                   httpOnly: true,
-                  secure: process.env.NODE_ENV === "production",
+                  secure: IS_PROD ? true : false,
+                  sameSite: IS_PROD ? ('none' as const) : ('lax' as const),
                   ...options,
                 };
+
                 res.append("Set-Cookie", serializeCookie(name, value, final));
               });
             },
@@ -135,18 +142,19 @@ AppDataSource.initialize()
 
       // TODO: Fazer busca de dados do usuario na tabela
       app.get("/auth/me", async (req, res) => {
+        console.log('auth me');
+
         const supabase = makeSupabase(req, res);
         const {
           data: { user },
           error,
         } = await supabase.auth.getUser();
         if (error || !user) return res.status(401).json({ error: "unauthorized" });
-        console.log(user.id);
-        
+
         const { data: profile } = await supabase.from("grn_auth.profiles").select("*").eq("id", user.id).single();
-        
+
         return res.json({
-          user: { id: user.id, email: user.email,  app_metadata: user.app_metadata },
+          user: { id: user.id, email: user.email, app_metadata: user.app_metadata },
           profile
         });
       });

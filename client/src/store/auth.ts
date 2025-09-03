@@ -1,5 +1,5 @@
-// stores/auth.ts (frontend, server-first)
 import { defineStore } from 'pinia'
+import axios from "axios"
 
 type SafeUser = { id: string; email: string; name?: string | null; avatar_url?: string | null }
 
@@ -18,24 +18,22 @@ export const useAuthStore = defineStore('auth', {
       // carrega o usuário a partir dos cookies HttpOnly da API
       this.loading = true
       try {
-        const r = await fetch(`${import.meta.env.VITE_API_BASE}/auth/me`, {
-          credentials: 'include',
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE}/auth/me`, {
+          withCredentials: true,
         })
-        if (!r.ok) {
-          this.user = null
-        } else {
-          const { user } = await r.json()
-          this.user = {
-            id: user.id,
-            email: user.email,
-            name: user.user_metadata?.full_name ?? null,
-            avatar_url: user.user_metadata?.avatar_url ?? null,
-          }
+        
+        const { user } = response.data
+        this.user = {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.full_name ?? null,
+          avatar_url: user.user_metadata?.avatar_url ?? null,
         }
+      } catch (error) {
+        console.error('Auth initialization failed:', error)
+        this.user = null
       } finally {
         this.loading = false
-
-        console.log("User data:", this.user);
       }
     },
 

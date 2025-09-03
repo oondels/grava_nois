@@ -16,6 +16,7 @@ const REQUIRED_ENV_VARS: string[] = [
   // E-mail (transporter)
   'EMAIL_USER',
   'EMAIL_PASS',
+  'COOKIE_SAME_SITE'
 ];
 
 // Em produção, exige também DB e RabbitMQ
@@ -62,7 +63,7 @@ export const config = {
   rabbitmqUrl: process.env.RABBITMQ_URL || '',
 
   backend_public_url: process.env.BACKEND_PUBLIC_URL || '',
-  cookie_same_site: true,
+  cookie_same_site: process.env.COOKIE_SAME_SITE || 'lax',
 
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
