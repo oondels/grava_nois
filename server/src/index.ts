@@ -93,7 +93,8 @@ AppDataSource.initialize()
             },
             setAll(cookies) {
               cookies.forEach(({ name, value, options }) => {
-
+                
+                //! CONTINUAR CORRIGINDO ERRO DE COOKIES EM ORIGINS DIFERENTES
                 const IS_PROD = config.env === "production"
                 const final = IS_PROD ? {
                   path: "/",
