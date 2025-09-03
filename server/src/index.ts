@@ -67,7 +67,8 @@ AppDataSource.initialize()
           },
           credentials: true,
           methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-          allowedHeaders: ["Content-Type", "Authorization", "apikey", "accept-profile"],
+          allowedHeaders: "*",
+          exposedHeaders: ['Set-Cookie'],
         })
       );
 
