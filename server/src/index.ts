@@ -9,6 +9,7 @@ import cors from "cors";
 import { publishClipEvent } from "./rabbitmq/publisher";
 import nodeMailer from "nodemailer";
 import { config } from "./config/dotenv";
+import cookieParser from "cookie-parser"
 
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import { serialize as serializeCookie, parse as parseCookie } from "cookie";
@@ -43,26 +44,28 @@ AppDataSource.initialize()
         },
       });
 
-      const ALLOWED_ORIGINS = new Set([
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "https://gravanois.com.br",
-        "https://www.gravanois.com.br",
-      ]);
+      app.use(cookieParser())
 
       app.use((req, res, next) => {
         next();
       });
 
+      const ALLOWED_ORIGINS = new Set([
+        "https://www.gravanois.com.br",
+        "https://gravanois.com.br",
+        "http://localhost:5173",
+        "http://localhost:5174",
+      ]);
+
+
       app.use(
         cors({
           origin(origin, cb) {
-            // allow same-origin/no-origin (ex.: curl, healthchecks)
             if (!origin) return cb(null, true);
             if (ALLOWED_ORIGINS.has(origin)) return cb(null, true);
             return cb(new Error(`CORS: origin não permitido: ${origin}`));
           },
-          credentials: true, // use true só se você REALMENTE usa cookies
+          credentials: true,
           methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
           allowedHeaders: ["Content-Type", "Authorization", "apikey", "accept-profile"],
         })
@@ -85,7 +88,7 @@ AppDataSource.initialize()
               cookies.forEach(({ name, value, options }) => {
                 const final = {
                   path: "/",
-                  sameSite: "lax" as const,
+                  sameSite: (process.env.COOKIE_SAMESITE as any) ?? 'lax',
                   httpOnly: true,
                   secure: process.env.NODE_ENV === "production",
                   ...options,
@@ -128,6 +131,7 @@ AppDataSource.initialize()
         return res.status(204).end();
       });
 
+      // TODO: Fazer busca de dados do usuario na tabela grn_auth.profiles
       app.get("/auth/me", async (req, res) => {
         const supabase = makeSupabase(req, res);
         const {
@@ -135,54 +139,92 @@ AppDataSource.initialize()
           error,
         } = await supabase.auth.getUser();
         if (error || !user) return res.status(401).json({ error: "unauthorized" });
-
-        // Ex.: buscar perfil
-        const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-        return res.json({ user: { id: user.id, email: user.email, app_metadata: user.app_metadata }, profile });
+        console.log(user.id);
+        
+        const { data: profile } = await supabase.from("grn_auth.profiles").select("*").eq("id", user.id).single();
+        
+        return res.json({
+          user: { id: user.id, email: user.email,  app_metadata: user.app_metadata },
+          profile
+        });
       });
 
       // google login
+      app.get("/auth/login/google", async (req: Request, res: Response, next: NextFunction) => {
+        const nextUrl = typeof req.query.next === 'string' ? req.query.next : '/'
+        const supabase = makeSupabase(req, res)
+
+        console.log(req.query);
+
+        console.log(nextUrl);
+
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${req.protocol}://${req.get('host')}/auth/callback`, // backend callback
+            queryParams: { access_type: 'offline', prompt: 'consent' },
+          },
+        })
+        if (error) return res.status(500).json({ error: error.message })
+
+        // Guarde o pós-login em cookie curto para evitar open redirect por query
+        res.cookie('post_auth_next', nextUrl, {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: (process.env.COOKIE_SAMESITE as any) ?? 'lax',
+          maxAge: 5 * 60 * 1000,
+        })
+
+        return res.redirect(302, data.url) // leva o usuário ao Google
+      })
+
+      function buildFinalRedirect(nextRaw: string | undefined | null) {
+        // fallback
+        let next = typeof nextRaw === 'string' ? nextRaw : '/'
+
+        try {
+          // caso absoluto (http/https)
+          if (/^https?:\/\//i.test(next)) {
+            const url = new URL(next)
+            if (ALLOWED_ORIGINS.has(`${url.protocol}//${url.host}`)) {
+              // absoluto permitido
+              return url.toString()
+            }
+            // origem não permitida → cai para fallback
+            next = '/'
+          }
+        } catch {
+          next = '/'
+        }
+
+        // caso relativo → prefixa com FRONTEND_ORIGIN
+        if (!next.startsWith('/')) next = '/'
+        const base = Array.from(ALLOWED_ORIGINS)[0] || 'http://localhost:5173'
+        return `${config.env === 'production' ? base : 'http://localhost:5173'}${next}`
+      }
+
       app.get("/auth/callback", async (req: Request, res: Response) => {
-        const code = req.query.code;
-        const nextRaw = req.query.next ?? "/";
-
-        if (code) {
-          const supabase = createServerClient(config.supabaseUrl, config.supabasePublishableKey, {
-            cookies: {
-              getAll() {
-                const parsed = req.headers.cookie ? parseCookie(req.headers.cookie) : {};
-                const entries = Object.entries(parsed).map(([name, value]) => ({
-                  name,
-                  value: String(value ?? ""), // ensure non-optional string
-                }));
-                return entries.length ? entries : null;
-              },
-              setAll(cookies) {
-                cookies.forEach(({ name, value, options }) => {
-                  // You can tweak defaults if you want:
-                  // const final = { path: "/", sameSite: "lax", ...options };
-                  const final = options ?? { path: "/" };
-                  res.append("Set-Cookie", serializeCookie(name, value, final));
-                });
-              },
-            },
-          });
-
-          await supabase.auth.exchangeCodeForSession(code as string);
+        const { error, error_description } = req.query as any
+        if (error) {
+          return res.redirect(303, `/login?e=${encodeURIComponent(error_description || error)}`)
         }
 
-        // Prevent open-redirects & normalize path
-        let safeNext = nextRaw as string;
-        // reject absolute URLs and protocol-relative URLs
-        if (/^https?:\/\//i.test(safeNext) || /^\/\//.test(safeNext)) {
-          safeNext = "/";
-        }
-        // ensure single leading slash, strip query/fragment if you want only paths
-        safeNext = "/" + safeNext.replace(/^\/+/, "");
-        // optional: keep querystring if you expect it; otherwise strip:
-        // safeNext = safeNext.split("?")[0].split("#")[0];
+        const code = String(req.query.code || '')
+        if (!code) return res.redirect(303, '/login?e=missing_code')
 
-        return res.redirect(303, safeNext);
+        const supabase = makeSupabase(req, res)
+
+        const { error: exErr } = await supabase.auth.exchangeCodeForSession(code)
+        if (exErr) return res.redirect(303, `/login?e=exchange_failed`)
+
+        const nextCookie = (req.cookies?.post_auth_next as string) || '/'
+        res.clearCookie('post_auth_next', { path: '/' })
+
+        const finalUrl = buildFinalRedirect(nextCookie)
+
+        return res.redirect(303, finalUrl)
       });
 
       app.get("/videos-clips", async (req: Request, res: Response) => {
@@ -270,26 +312,26 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Estabelecimento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  estabelecimento
-                )}</td></tr>
+          estabelecimento
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CNPJ/CPF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  cnpjCpf
-                )}</td></tr>
+          cnpjCpf
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Segmento</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  segmento
-                )}</td></tr>
+          segmento
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Qtd. Câmeras</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  cameras
-                )}</td></tr>
+          cameras
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Endereço</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  endereco
-                )}</td></tr>
+          endereco
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Cidade/UF</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  loc
-                )}</td></tr>
+          loc
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">CEP</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  cep
-                )}</td></tr>
+          cep
+        )}</td></tr>
               </tbody>
             </table>
 
@@ -297,14 +339,14 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:40%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  nome
-                )}</td></tr>
+          nome
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Telefone</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  telefone
-                )}</td></tr>
+          telefone
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  email
-                )}</td></tr>
+          email
+        )}</td></tr>
               </tbody>
             </table>
 
@@ -406,17 +448,17 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Título</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  title
-                )}</td></tr>
+          title
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Severidade</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  String(severity)
-                )}</td></tr>
+          String(severity)
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Página</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  page
-                )}</td></tr>
+          page
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">URL</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  url
-                )}</td></tr>
+          url
+        )}</td></tr>
               </tbody>
             </table>
 
@@ -425,27 +467,26 @@ AppDataSource.initialize()
               ${safe(description)}
             </div>
 
-            ${
-              steps?.trim()
-                ? `<h3 style="color:#333; font-size:16px; margin:16px 0 8px;">Passos para reproduzir</h3>
+            ${steps?.trim()
+            ? `<h3 style="color:#333; font-size:16px; margin:16px 0 8px;">Passos para reproduzir</h3>
                  <div style=\"font-size:15px; color:#555; background:#f7f7f7; padding:12px; border-radius:8px; border:1px solid #eee; white-space:pre-wrap;\">${safe(
-                   steps
-                 )}</div>`
-                : ""
-            }
+              steps
+            )}</div>`
+            : ""
+          }
 
             <h2 style="color:#0056b3; font-size:18px; margin:20px 0 12px;">Contato</h2>
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  name
-                )}</td></tr>
+            name
+          )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  email
-                )}</td></tr>
+            email
+          )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">User-Agent</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  userAgent
-                )}</td></tr>
+            userAgent
+          )}</td></tr>
               </tbody>
             </table>
           </div>
@@ -526,17 +567,17 @@ AppDataSource.initialize()
             <table cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse;">
               <tbody>
                 <tr><td style="width:35%; font-weight:bold; border-bottom:1px solid #f0f0f0;">Nome</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  name
-                )}</td></tr>
+          name
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">E-mail</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  email
-                )}</td></tr>
+          email
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">Página</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  page
-                )}</td></tr>
+          page
+        )}</td></tr>
                 <tr><td style="font-weight:bold; border-bottom:1px solid #f0f0f0;">URL</td><td style="border-bottom:1px solid #f0f0f0;">${safe(
-                  url
-                )}</td></tr>
+          url
+        )}</td></tr>
               </tbody>
             </table>
           </div>
