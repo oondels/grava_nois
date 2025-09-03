@@ -78,6 +78,16 @@ AppDataSource.initialize()
       // Initialize Supabase client with service role key (secure, only on server)
       const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
 
+      // Acumula cookies que o @supabase/ssr deseja setar e envia antes de finalizar a resposta
+      function flushSupabaseCookies(res: Response) {
+        const pending = (res.locals._sb_cookies as { name: string; value: string; options: any }[]) || [];
+        if (!pending.length) return;
+        pending.forEach(({ name, value, options }) => {
+          res.append('Set-Cookie', serializeCookie(name, value, options));
+        });
+        res.locals._sb_cookies = [];
+      }
+
       function makeSupabase(req: Request, res: Response) {
         return createServerClient(config.supabaseUrl!, config.supabasePublishableKey!, {
           cookies: {
@@ -92,23 +102,21 @@ AppDataSource.initialize()
               return arr.length ? arr : null;
             },
             setAll(cookies) {
-              cookies.forEach(({ name, value, options }) => {
-
-                // Ajuste seguro de cookies para fluxo OAuth entre origens
-                // - SameSite: usa configuração (.env -> COOKIE_SAME_SITE), padrão 'lax'
-                // - Secure: true em produção
-                // - Removido 'Partitioned' para compatibilidade ampla
-                const sameSiteOpt = (config.cookie_same_site?.toLowerCase?.() as any) || 'lax';
-                const final = {
+              const sameSiteOpt = (config.cookie_same_site?.toLowerCase?.() as any) || 'lax';
+              const normalized = cookies.map(({ name, value, options }) => ({
+                name,
+                value,
+                options: {
                   path: '/',
                   httpOnly: true,
                   secure: config.env === 'production',
                   sameSite: sameSiteOpt,
                   ...options,
-                } as any
-
-                res.append('Set-Cookie', serializeCookie(name, value, final));
-              });
+                } as any,
+              }));
+              res.locals._sb_cookies = (
+                (res.locals._sb_cookies as any[]) || []
+              ).concat(normalized);
             },
           },
         });
@@ -123,7 +131,8 @@ AppDataSource.initialize()
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) return res.status(401).json({ error: error.message });
 
-        // Cookies HttpOnly já foram setados pelo @supabase/ssr via setAll()
+        // Envia cookies antes de finalizar
+        flushSupabaseCookies(res)
         return res.status(204).end();
       });
 
@@ -142,6 +151,7 @@ AppDataSource.initialize()
       app.post("/sign-out", async (req, res) => {
         const supabase = makeSupabase(req, res);
         await supabase.auth.signOut(); // limpa os cookies
+        flushSupabaseCookies(res)
         return res.status(204).end();
       });
 
@@ -189,6 +199,9 @@ AppDataSource.initialize()
           sameSite: sameSiteOpt,
           maxAge: 5 * 60 * 1000,
         })
+
+        // Envia cookies do Supabase antes do redirect
+        flushSupabaseCookies(res)
 
         return res.redirect(302, data.url) // leva o usuário ao Google
       })
@@ -241,6 +254,9 @@ AppDataSource.initialize()
           res.clearCookie('post_auth_next', { path: '/' })
 
           const finalUrl = buildFinalRedirect(nextCookie)
+
+          // Garante envio de cookies de sessão antes do redirect
+          flushSupabaseCookies(res)
 
           return res.redirect(303, finalUrl)
         } catch (error) {
