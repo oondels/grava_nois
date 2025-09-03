@@ -17,14 +17,14 @@ const showPassword = ref(false);
 const newPassword = ref("");
 
 const submitLogin = async () => {
-  loadingAuth.value = true;
-  try {
-    await auth.updatePassword(newPassword.value);
-  } catch (error: any) {
-    console.error('signIn error:', error)
-  } finally {
-    loadingAuth.value = false;
-  }
+  // loadingAuth.value = true;
+  // try {
+  //   // await auth.updatePassword(newPassword.value);
+  // } catch (error: any) {
+  //   console.error('signIn error:', error)
+  // } finally {
+  //   loadingAuth.value = false;
+  // }
 };
 </script>
 
