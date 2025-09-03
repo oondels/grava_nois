@@ -96,20 +96,14 @@ AppDataSource.initialize()
 
                 //! CONTINUAR CORRIGINDO ERRO DE COOKIES EM ORIGINS DIFERENTES
                 const IS_PROD = config.env === "production"
-                const final = IS_PROD ? {
+                const final = {
                   path: "/",
                   httpOnly: true,
                   secure: true,                 // HTTPS obrigatório em prod
-                  sameSite: 'none' as const,    // cross-site
+                  sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
                   partitioned: true as any,     // CHIPS (evita bloqueio de 3rd-party)
                   ...options,
-                } : {
-                  path: "/",
-                  httpOnly: true,
-                  secure: false,                // dev http://
-                  sameSite: 'lax' as const,     // dev same-site
-                  ...options,
-                };
+                }
 
                 res.append("Set-Cookie", serializeCookie(name, value, final));
               });
@@ -184,18 +178,11 @@ AppDataSource.initialize()
 
         // Guarde o pós-login em cookie curto para evitar open redirect por query
         const IS_PROD = config.env === "production"
-        res.cookie('post_auth_next', nextUrl, IS_PROD ? {
+        res.cookie('post_auth_next', nextUrl, {
           path: '/',
           httpOnly: true,
-          secure: true,
-          sameSite: 'none',
-          partitioned: true as any,
-          maxAge: 5 * 60 * 1000,
-        } : {
-          path: '/',
-          httpOnly: true,
-          secure: false,
-          sameSite: 'lax',
+          secure: config.env === "production",
+          sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
           maxAge: 5 * 60 * 1000,
         })
 
@@ -230,28 +217,28 @@ AppDataSource.initialize()
       app.get("/auth/callback", async (req: Request, res: Response) => {
         try {
           const { error, error_description } = req.query as any
-        if (error) {
-          return res.redirect(303, `/login?e=${encodeURIComponent(error_description || error)}`)
-        }
+          if (error) {
+            return res.redirect(303, `/login?e=${encodeURIComponent(error_description || error)}`)
+          }
 
-        const code = String(req.query.code || '')
-        if (!code) return res.redirect(303, '/login?e=missing_code')
+          const code = String(req.query.code || '')
+          if (!code) return res.redirect(303, '/login?e=missing_code')
 
-        const supabase = makeSupabase(req, res)
+          const supabase = makeSupabase(req, res)
 
-        try {
-          await supabase.auth.exchangeCodeForSession(code)
+          try {
+            await supabase.auth.exchangeCodeForSession(code)
 
-        } catch (error: any) {
-          return res.redirect(303, `/login?e=exchange_failed`)
-        }
+          } catch (error: any) {
+            return res.redirect(303, `/login?e=exchange_failed`)
+          }
 
-        const nextCookie = (req.cookies?.post_auth_next as string) || '/'
-        res.clearCookie('post_auth_next', { path: '/' })
+          const nextCookie = (req.cookies?.post_auth_next as string) || '/'
+          res.clearCookie('post_auth_next', { path: '/' })
 
-        const finalUrl = buildFinalRedirect(nextCookie)
+          const finalUrl = buildFinalRedirect(nextCookie)
 
-        return res.redirect(303, finalUrl)
+          return res.redirect(303, finalUrl)
         } catch (error) {
           console.error("Callback error: ", error);
         }

@@ -69,3 +69,6 @@ export const config = {
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
   supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || ''
 }
+
+console.log("Modo de operação: ", config.env);
+
