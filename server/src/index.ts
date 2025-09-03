@@ -94,18 +94,20 @@ AppDataSource.initialize()
             setAll(cookies) {
               cookies.forEach(({ name, value, options }) => {
 
-                //! CONTINUAR CORRIGINDO ERRO DE COOKIES EM ORIGINS DIFERENTES
-                const IS_PROD = config.env === "production"
+                // Ajuste seguro de cookies para fluxo OAuth entre origens
+                // - SameSite: usa configuração (.env -> COOKIE_SAME_SITE), padrão 'lax'
+                // - Secure: true em produção
+                // - Removido 'Partitioned' para compatibilidade ampla
+                const sameSiteOpt = (config.cookie_same_site?.toLowerCase?.() as any) || 'lax';
                 const final = {
-                  path: "/",
+                  path: '/',
                   httpOnly: true,
-                  secure: true,                 // HTTPS obrigatório em prod
-                  sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
-                  partitioned: true as any,     // CHIPS (evita bloqueio de 3rd-party)
+                  secure: config.env === 'production',
+                  sameSite: sameSiteOpt,
                   ...options,
-                }
+                } as any
 
-                res.append("Set-Cookie", serializeCookie(name, value, final));
+                res.append('Set-Cookie', serializeCookie(name, value, final));
               });
             },
           },
@@ -165,7 +167,9 @@ AppDataSource.initialize()
         const nextUrl = typeof req.query.next === 'string' ? req.query.next : '/'
         const supabase = makeSupabase(req, res)
 
-        const base = config.backend_public_url   // <= usa ENV, não req.protocol
+        // Usa BACKEND_PUBLIC_URL, com fallback dinâmico a partir do host atual
+        const dynamicBase = `${req.protocol}://${req.get('host')}`
+        const base = config.backend_public_url || dynamicBase
         const url_callback = `${base}/auth/callback`
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
@@ -177,12 +181,12 @@ AppDataSource.initialize()
         if (error) return res.status(500).json({ error: error.message })
 
         // Guarde o pós-login em cookie curto para evitar open redirect por query
-        const IS_PROD = config.env === "production"
+        const sameSiteOpt = (config.cookie_same_site?.toLowerCase?.() as any) || 'lax'
         res.cookie('post_auth_next', nextUrl, {
           path: '/',
           httpOnly: true,
-          secure: config.env === "production",
-          sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
+          secure: config.env === 'production',
+          sameSite: sameSiteOpt,
           maxAge: 5 * 60 * 1000,
         })
 
