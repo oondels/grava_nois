@@ -57,6 +57,7 @@ AppDataSource.initialize()
         "http://localhost:5174",
       ]);
 
+      app.set('trust proxy', 1)
 
       app.use(
         cors({
@@ -94,11 +95,18 @@ AppDataSource.initialize()
               cookies.forEach(({ name, value, options }) => {
 
                 const IS_PROD = config.env === "production"
-                const final = {
+                const final = IS_PROD ? {
                   path: "/",
                   httpOnly: true,
-                  secure: IS_PROD ? true : false,
-                  sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
+                  secure: true,                 // HTTPS obrigatório em prod
+                  sameSite: 'none' as const,    // cross-site
+                  partitioned: true as any,     // CHIPS (evita bloqueio de 3rd-party)
+                  ...options,
+                } : {
+                  path: "/",
+                  httpOnly: true,
+                  secure: false,                // dev http://
+                  sameSite: 'lax' as const,     // dev same-site
                   ...options,
                 };
 
@@ -177,11 +185,18 @@ AppDataSource.initialize()
 
         // Guarde o pós-login em cookie curto para evitar open redirect por query
         const IS_PROD = config.env === "production"
-        res.cookie('post_auth_next', nextUrl, {
+        res.cookie('post_auth_next', nextUrl, IS_PROD ? {
           path: '/',
           httpOnly: true,
-          secure: IS_PROD ? true : false,
-          sameSite: IS_PROD ? ('strict' as const) : ('lax' as const),
+          secure: true,
+          sameSite: 'none',
+          partitioned: true as any,
+          maxAge: 5 * 60 * 1000,
+        } : {
+          path: '/',
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax',
           maxAge: 5 * 60 * 1000,
         })
 
