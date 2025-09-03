@@ -1,8 +1,50 @@
 import dotenv from 'dotenv';
 
-dotenv.config({
-  path: process.env.NODE_ENV === 'development' ? '.env' : '.env.production'
-})
+// Carrega o arquivo .env apropriado conforme o ambiente
+const CURRENT_ENV = process.env.NODE_ENV || 'development';
+const ENV_FILE = CURRENT_ENV === 'development' ? '.env' : '.env.production';
+
+dotenv.config({ path: ENV_FILE });
+
+// Falha rápida: valida variáveis obrigatórias e mostra quais faltam
+const REQUIRED_ENV_VARS: string[] = [
+  // URLs e chaves de serviços externos
+  'BACKEND_PUBLIC_URL',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_KEY',
+  'SUPABASE_PUBLISHABLE_KEY',
+  // E-mail (transporter)
+  'EMAIL_USER',
+  'EMAIL_PASS',
+];
+
+// Em produção, exige também DB e RabbitMQ
+if (CURRENT_ENV === 'production') {
+  REQUIRED_ENV_VARS.push(
+    'DB_HOST',
+    'DB_PORT',
+    'DB_USER',
+    'DB_PASSWORD',
+    'DB_NAME',
+    'RABBITMQ_URL',
+  );
+}
+
+const missing: string[] = REQUIRED_ENV_VARS.filter((key) => {
+  const v = process.env[key];
+  return v === undefined || String(v).trim() === '';
+});
+
+if (missing.length) {
+  const list = missing.join(', ');
+  const msg = [
+    'Variáveis de ambiente ausentes:',
+    list,
+    `(arquivo carregado: ${ENV_FILE}, NODE_ENV=${CURRENT_ENV})`,
+    'Defina-as no ambiente ou no arquivo correspondente para evitar erros silenciosos.'
+  ].join(' ');
+  throw new Error(msg);
+}
 
 export const config = {
   database: {
@@ -20,6 +62,7 @@ export const config = {
   rabbitmqUrl: process.env.RABBITMQ_URL || '',
 
   backend_public_url: process.env.BACKEND_PUBLIC_URL || '',
+  cookie_same_site: true,
 
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',

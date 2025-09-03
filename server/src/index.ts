@@ -88,7 +88,8 @@ AppDataSource.initialize()
               cookies.forEach(({ name, value, options }) => {
                 const final = {
                   path: "/",
-                  sameSite: (process.env.COOKIE_SAMESITE as any) ?? 'lax',
+                  sameSite: 'none' as const, //! Continuar daqui, testar se funcinou o callback
+                  // sameSite: (config.cookie_same_site as any) ?? 'lax',
                   httpOnly: true,
                   secure: process.env.NODE_ENV === "production",
                   ...options,

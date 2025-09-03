@@ -1,6 +1,6 @@
 <template>
 
-  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${VolleyBall})` }">
+  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${HeroBG})` }">
 
     <div class="hero__container">
       <!-- Top-centered symbol-only logo -->
@@ -78,9 +78,9 @@
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
 
-// import HeroBG from "@/assets/images/soccer_bg.jpg";
+import HeroBG from "@/assets/bak/HeroBG.webp";
 // import BasketBall from "@/assets/bak/basket_ball.png";
-import VolleyBall from "@/assets/bak/volleysvg.svg";
+// import VolleyBall from "@/assets/bak/volleysvg.svg";
 
 import { ChevronsDown } from "lucide-vue-next";
 
@@ -626,7 +626,7 @@ onBeforeUnmount(() => {
 .hero__title {
   margin: 0;
   font-family: var(--font-heading);
-  color:rgba(0, 0, 0, 1);
+  color:rgb(228, 224, 4);
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.1;
