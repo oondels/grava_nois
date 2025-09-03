@@ -154,7 +154,7 @@ AppDataSource.initialize()
         const nextUrl = typeof req.query.next === 'string' ? req.query.next : '/'
         const supabase = makeSupabase(req, res)
 
-        const base = config.BACKEND_PUBLIC_URL!   // <= usa ENV, não req.protocol
+        const base = config.backend_public_url   // <= usa ENV, não req.protocol
         const url_callback = `${base}/auth/callback`
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
