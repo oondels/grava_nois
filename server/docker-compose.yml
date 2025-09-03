@@ -8,3 +8,5 @@ services:
       - .env.production
     environment:
       - NODE_ENV=production
+    restart:
+      on-failure

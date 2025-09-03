@@ -93,7 +93,7 @@ AppDataSource.initialize()
             },
             setAll(cookies) {
               cookies.forEach(({ name, value, options }) => {
-                
+
                 //! CONTINUAR CORRIGINDO ERRO DE COOKIES EM ORIGINS DIFERENTES
                 const IS_PROD = config.env === "production"
                 const final = IS_PROD ? {
@@ -151,8 +151,6 @@ AppDataSource.initialize()
 
       // TODO: Fazer busca de dados do usuario na tabela
       app.get("/auth/me", async (req, res) => {
-        console.log('auth me');
-
         const supabase = makeSupabase(req, res);
         const {
           data: { user },
@@ -240,8 +238,12 @@ AppDataSource.initialize()
 
         const supabase = makeSupabase(req, res)
 
-        const { error: exErr } = await supabase.auth.exchangeCodeForSession(code)
-        if (exErr) return res.redirect(303, `/login?e=exchange_failed`)
+        try {
+          await supabase.auth.exchangeCodeForSession(code)
+
+        } catch (error: any) {
+          return res.redirect(303, `/login?e=exchange_failed`)
+        }
 
         const nextCookie = (req.cookies?.post_auth_next as string) || '/'
         res.clearCookie('post_auth_next', { path: '/' })
