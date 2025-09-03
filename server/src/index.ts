@@ -176,11 +176,12 @@ AppDataSource.initialize()
         if (error) return res.status(500).json({ error: error.message })
 
         // Guarde o pós-login em cookie curto para evitar open redirect por query
+        const IS_PROD = config.env === "production"
         res.cookie('post_auth_next', nextUrl, {
           path: '/',
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: (process.env.COOKIE_SAMESITE as any) ?? 'lax',
+          secure: IS_PROD ? true : false,
+          sameSite: IS_PROD ? ('none' as const) : ('lax' as const),
           maxAge: 5 * 60 * 1000,
         })
 
