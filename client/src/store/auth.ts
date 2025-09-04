@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/lances-gravanois`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     })

@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 text-center">Signing you in…</div>
+  <div class="p-6 text-center">Realizando Login...</div>
 </template>
 
 <script setup lang="ts">
