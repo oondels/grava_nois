@@ -2,53 +2,51 @@
   <div class="w-full overflow-hidden py-6 select-none">
     <h1 class="section-title mb-5">Patrocinadores e Apoiadores</h1>
 
-    <!-- Container com fundo sutil para melhorar a legibilidade do efeito -->
     <div
       class="relative w-full overflow-hidden rounded-xl px-6 py-4 backdrop-blur-sm ring-1 bg-[#556b2f]/40 ring-[#556b2f]/30"
     >
-      <div
-        class="marquee flex items-center gap-12"
-        :class="{ 'is-paused': dialogOpen }"
-        style="--marquee-duration: 30s"
-      >
-        <!-- Bloco A -->
-        <ul class="flex items-center gap-12 shrink-0">
-          <li
-            v-for="(sponsor, i) in sponsors"
-            :key="`a-${sponsor.id}`"
-            class="h-12 w-max opacity-90 hover:opacity-100 transition cursor-pointer"
-            role="button"
-            tabindex="0"
-            @click="openSponsor(sponsor)"
-            @keyup.enter="openSponsor(sponsor)"
-          >
-            <img
-              :src="sponsor.logoUrl"
-              :alt="`Patrocinador: ${sponsor.name}`"
-              class="h-12 w-auto object-contain"
-              draggable="false"
-            />
-          </li>
-        </ul>
+      <div class="marquee-container">
+        <div
+          class="marquee flex items-center gap-12"
+          :class="{ 'is-paused': dialogOpen }"
+          style="--marquee-duration: 30s"
+        >
+          <ul class="flex items-center gap-12 shrink-0">
+            <li
+              v-for="(sponsor, i) in sponsors"
+              :key="`a-${sponsor.id}`"
+              class="h-12 w-max opacity-90 hover:opacity-100 transition cursor-pointer"
+              role="button"
+              tabindex="0"
+              @click="openSponsor(sponsor)"
+              @keyup.enter="openSponsor(sponsor)"
+            >
+              <img
+                :src="sponsor.logoUrl"
+                :alt="`Patrocinador: ${sponsor.name}`"
+                class="h-12 w-auto object-contain"
+                draggable="false"
+              />
+            </li>
+          </ul>
 
-        <!-- Bloco B (duplicado para efeito infinito) -->
-        <ul class="flex items-center gap-12 shrink-0" aria-hidden="true">
-          <li
-            v-for="(sponsor, i) in sponsors"
-            :key="`b-${sponsor.id}`"
-            class="h-12 w-max opacity-90 hover:opacity-100 transition cursor-pointer"
-            role="button"
-            tabindex="0"
-            @click="openSponsor(sponsor)"
-            @keyup.enter="openSponsor(sponsor)"
-          >
-            <img :src="sponsor.logoUrl" alt="" class="h-12 w-auto object-contain" draggable="false" />
-          </li>
-        </ul>
+          <ul class="flex items-center gap-12 shrink-0" aria-hidden="true">
+            <li
+              v-for="(sponsor, i) in sponsors"
+              :key="`b-${sponsor.id}`"
+              class="h-12 w-max opacity-90 hover:opacity-100 transition cursor-pointer"
+              role="button"
+              tabindex="0"
+              @click="openSponsor(sponsor)"
+              @keyup.enter="openSponsor(sponsor)"
+            >
+              <img :src="sponsor.logoUrl" alt="" class="h-12 w-auto object-contain" draggable="false" />
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
 
-    <!-- Dialog de Patrocinador (vazio por enquanto) -->
     <v-dialog v-model="dialogOpen" max-width="720">
       <v-card class="rounded-xl" elevation="12">
         <v-card-title class="text-h6">
@@ -146,6 +144,7 @@ type Socials = {
   facebook?: string | null;
   youtube?: string | null;
   linkedin?: string | null;
+  whatsapp?: string | null;
 };
 
 type Sponsor = {
@@ -159,7 +158,6 @@ type Sponsor = {
   services?: string[] | null;
 };
 
-// Carrega todas as imagens em src/assets/patrocinadores
 const modules = import.meta.glob("../assets/patrocinadores/*.{png,jpg,jpeg,webp,svg}", {
   eager: true,
   import: "default",
@@ -240,6 +238,7 @@ const socialList = [
   { key: "facebook" as const, label: "Facebook", icon: "mdi-facebook" },
   { key: "youtube" as const, label: "YouTube", icon: "mdi-youtube" },
   { key: "linkedin" as const, label: "LinkedIn", icon: "mdi-linkedin" },
+  { key: "whatsapp" as const, label: "WhatsApp", icon: "mdi-whatsapp" },
 ];
 
 function normalizeUrl(url: string): string {
@@ -253,6 +252,7 @@ function normalizeUrl(url: string): string {
   width: max-content;
   animation: marquee var(--marquee-duration, 30s) linear infinite;
 }
+
 .marquee:hover {
   animation-play-state: paused;
 }
@@ -266,6 +266,23 @@ function normalizeUrl(url: string): string {
   font-weight: 800;
   letter-spacing: -0.02em;
   margin: 0 0 1rem;
+}
+
+.marquee-container {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
 }
 
 @keyframes marquee {

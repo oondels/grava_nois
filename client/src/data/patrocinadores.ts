@@ -7,6 +7,7 @@ export type Socials = {
   facebook?: string | null;
   youtube?: string | null;
   linkedin?: string | null;
+  whatsapp?: string | null;
 };
 
 export type SponsorOverride = {
@@ -30,14 +31,28 @@ export const sponsorOverrides: Record<string, SponsorOverride> = {
 
   "eletro-solution": {
     description:
-      "Descrição do patrocinador Eletro Solution. Edite este texto com os principais serviços/produtos e o papel no apoio ao projeto.",
-    services: ["Serviços elétricos", "Manutenção", "Consultoria"],
+      "A Eletro-Solution oferece soluções completas em eletricidade e automação para residências, edifícios e indústrias. Nossos serviços incluem desde a instalação e manutenção de sistemas elétricos e de iluminação até projetos avançados de automação residencial e industrial, com foco em segurança, eficiência e tecnologia.",
+    services: [
+      "Instalações e manutenção elétrica (residencial e predial)",
+      "Automação residencial e industrial",
+      "Sistemas de segurança e controle",
+      "Projetos e dimensionamento elétrico"
+    ],
+    socials: {
+      instagram: "https://www.instagram.com/eletro_solutions/",
+      whatsapp: "https://wa.me/75998209295"
+    }
   },
 
   "posto-saocaetano": {
-    description:
-      "Descrição do Posto São Caetano. Informe diferenciais, localização e benefícios oferecidos aos atletas/torcedores.",
-    services: ["Abastecimento", "Troca de óleo", "Loja de conveniência"],
+    "description": "O Posto São Caetano é o seu destino principal para abastecimento e conveniência. Oferecemos combustíveis de alta qualidade, uma loja de conveniência completa e serviços de manutenção automotiva, tudo para garantir uma parada rápida e eficiente para você e seu veículo.",
+    "services": [
+      "Combustíveis BR de alta qualidade (gasolina, etanol, diesel)",
+      "Loja de conveniência BR Mania",
+      "Serviços de calibração de pneus e troca de óleo",
+      "Lavagem de carros",
+      "Pagamento com cartão de crédito e débito"
+    ]
   },
 
   star: {
