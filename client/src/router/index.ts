@@ -6,10 +6,16 @@ const routes = [
     path: "/",
     component: () => import("@/pages/HomePage.vue"),
   },
+  // {
+  //   path: "/videos-test",
+  //   name: "videos-test",
+  //   component: () => import("@/pages/VideosPage.vue"),
+  //   meta: { requiresAuth: false },
+  // },
   {
     path: "/lances-gravanois",
     name: "Lances GravaNois",
-    component: () => import("@/pages/ManutencaoAviso.vue"),
+    component: () => import("@/pages/VideosPage.vue"),
     meta: { requiresAuth: false },
   },
   {
