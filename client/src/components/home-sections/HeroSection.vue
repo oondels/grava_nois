@@ -37,6 +37,8 @@
 
           <div class="hero__ctas">
             <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"> Veja como funciona </a>
+
+            <RouterLink to="/lances-gravanois" class="btn btn--primary" role="button" aria-label="View pricing"> <ClapperboardIcon/> Meus Lances </RouterLink>
             <!-- <a href="/pricing" class="btn btn--primary" role="button" aria-label="View pricing"> Contrate </a> -->
 
           </div>
@@ -82,7 +84,7 @@ import HeroBG from "@/assets/bak/HeroBG.webp";
 // import BasketBall from "@/assets/bak/basket_ball.png";
 // import VolleyBall from "@/assets/bak/volleysvg.svg";
 
-import { ChevronsDown } from "lucide-vue-next";
+import { ChevronsDown, ClapperboardIcon } from "lucide-vue-next";
 
 import { onMounted, onBeforeUnmount, ref, computed } from "vue";
 
@@ -626,7 +628,7 @@ onBeforeUnmount(() => {
 .hero__title {
   margin: 0;
   font-family: var(--font-heading);
-  color:rgb(228, 224, 4);
+  color:rgba(212, 209, 12, 0.808);
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -783,10 +785,10 @@ onBeforeUnmount(() => {
   pointer-events: none;
   background: radial-gradient(
     var(--spot-w, 520px) var(--spot-h, 520px) at var(--px, 50%) var(--py, 50%),
-    rgba(255, 255, 255, 0.16),
-    transparent 65%
+    rgba(255, 255, 255, 0.02),
+    transparent 70%
   );
-  opacity: 0.85;
+  opacity: 0.02;
   transition: opacity 0.2s ease;
   z-index: 0;
 }
@@ -801,8 +803,8 @@ onBeforeUnmount(() => {
     520px 520px at var(--px, 50%) var(--py, 50%),
     rgba(0, 0, 0, 0) 0%,
     rgba(0, 0, 0, 0) 40%,
-    rgba(0, 0, 0, 0.55) 62%,
-    rgba(0, 0, 0, 0.78) 100%
+    rgba(0, 0, 0, 0.45) 62%,
+    rgba(0, 0, 0, 0.65) 100%
   );
   z-index: 0;
 }

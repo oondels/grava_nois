@@ -1,7 +1,8 @@
 <template>
   <!-- Bottom bar (trigger) -->
   <nav
-    class="fixed bottom-3 left-3 right-3 z-40 border-t border-black/10 dark:border-white/10 backdrop-blur-md bg-white/90 dark:bg-neutral-900/70 rounded-xl shadow-sm"
+    class="fixed bottom-3 left-3 right-3 z-40 border-t border-black/10 dark:border-white/10 backdrop-blur-md bg-white/90 dark:bg-neutral-900/70 rounded-xl shadow-sm transition-all duration-500 ease-in-out"
+    :class="navHidden ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'"
     role="navigation"
     aria-label="Navegação inferior"
   >
@@ -18,7 +19,7 @@
 
       <RouterLink
         v-if="!isUserPage"
-        :to="auth.isAuthenticated ? '/user-page' : '/'"
+        :to="auth.isAuthenticated ? '/user-page' : '/login'"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
         aria-label="Ir para página do usuário"
       >
@@ -29,7 +30,20 @@
           >
             Perfil
           </span>
-          <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="drop-shadow-sm w-6 h-6" />
+
+          <CircleUserIcon 
+            v-if="auth.isAuthenticated" 
+            role="button" 
+            class="w-6 h-6 text-white drop-shadow-sm"
+          />
+          
+          <LogInIcon 
+            v-else 
+            role="button" 
+            class="w-6 h-6 text-white drop-shadow-sm"
+          />
+          
+          <!-- <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="drop-shadow-sm w-6 h-6" /> -->
         </div>
       </RouterLink>
 
@@ -163,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   Home,
@@ -174,7 +188,7 @@ import {
   XIcon,
   UserPlus2Icon,
   Bell,
-  BadgeAlert,
+  CircleUserIcon,
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
@@ -229,6 +243,36 @@ const isUserPage = computed(() => route.path === "/user-page");
 function goBack() {
   router.back();
 }
+
+// Esconder/mostrar a bottom nav conforme rolagem
+const isHidden = ref(false);
+const navHidden = computed(() => !isOpen.value && isHidden.value);
+let lastY = 0;
+const DELTA = 8; // sensibilidade para evitar flicker
+
+function onScroll() {
+  const y = window.scrollY || 0;
+  const diff = y - lastY;
+
+  if (Math.abs(diff) > DELTA) {
+    // Esconde ao descer, mostra ao subir
+    if (diff > 0 && y > 0) {
+      isHidden.value = true;
+    } else {
+      isHidden.value = false;
+    }
+    lastY = y;
+  }
+}
+
+onMounted(() => {
+  lastY = window.scrollY || 0;
+  window.addEventListener("scroll", onScroll, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", onScroll as any);
+});
 </script>
 
 <style scoped>
