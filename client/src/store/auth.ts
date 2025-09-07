@@ -26,7 +26,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = false
 
     // 2) keep Pinia in sync with Supabase
-    supabaseClient.auth.onAuthStateChange((_event, newSession) => {
+    supabaseClient.auth.onAuthStateChange((event, newSession) => {
+      console.log('[auth] event:', event)
       session.value = newSession
     })
   }
@@ -103,12 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
     // pronto: próximo login por email+senha funcionará
   }
 
-  // (once, keep your listener to track future changes)
-  supabaseClient.auth.onAuthStateChange((event, newSession) => {
-    // optional: instrument for debugging:
-    console.log('[auth] event:', event)
-    session.value = newSession
-  })
+  // listener já registrado no init(); evitar duplicação
 
   async function signOut() {
     const { error } = await supabaseClient.auth.signOut()
