@@ -58,10 +58,22 @@
     </v-btn>
 
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
-      <div class="d-flex align-center justify-space-between px-4 py-3">
+      <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
         <div class="text-caption text-medium-emphasis">
-          {{ state.items.length }} itens
+          {{ state.items.length }} clipes nesta página
           <span v-if="state.loading && !state.items.length">• carregando…</span>
+        </div>
+
+        <div class="d-flex align-center ga-2 ms-auto">
+          <span class="text-caption text-medium-emphasis">Clipes por página</span>
+          <v-select
+            :model-value="state.pageSize"
+            :items="[5, 10, 15]"
+            density="compact"
+            variant="outlined"
+            style="max-width: 110px"
+            @update:model-value="onChangePageSize"
+          />
         </div>
       </div>
 
@@ -135,20 +147,11 @@
           </v-col>
         </v-row>
 
-        <!-- Infinite scroll sentinel -->
-        <div ref="sentinel" style="height: 1px"></div>
-
-        <div
-          class="d-flex align-center justify-center py-4 text-medium-emphasis"
-          v-if="state.loading && state.items.length"
-        >
-          Carregando mais…
-        </div>
-        <div
-          class="d-flex align-center justify-center py-2 text-disabled"
-          v-else-if="!state.hasMore && state.items.length"
-        >
-          Fim da lista
+        <!-- Pagination controls -->
+        <div class="d-flex align-center justify-space-between mt-2 px-1">
+          <v-btn variant="outlined" :disabled="state.page === 1 || state.loading" @click="prevPage"> Anterior </v-btn>
+          <div class="text-caption text-medium-emphasis">Página {{ state.page }}</div>
+          <v-btn variant="outlined" :disabled="!state.hasMore || state.loading" @click="nextPage"> Próxima </v-btn>
         </div>
       </div>
     </v-sheet>
@@ -156,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onMounted, onBeforeUnmount } from "vue";
+import { reactive, ref, onMounted } from "vue";
 // import { useClipsStore } from "@/store/clips";
 import { getSportIcon } from "@/utils/formatters";
 // import { customIcons } from "@/utils/icons";
@@ -191,23 +194,21 @@ const state = reactive({
   loading: false,
   error: null as string | null,
   hasMore: true,
-  offset: 0,
-  pageSize: 24,
+  page: 1,
+  pageSize: 10,
 });
 
 // Mapas de URLs assinadas (lazy)
 const previewMap = reactive<Record<string, string | null | undefined>>({});
 const downloadMap = reactive<Record<string, string | null | undefined>>({});
 
-// Sentinel para infinite scroll
-const sentinel = ref<HTMLElement | null>(null);
-let observer: IntersectionObserver | null = null;
+// Paginação explícita (sem infinite scroll)
 
 /** ================= Utils ================= */
 function getApiBase() {
   const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
   if (envBase) return envBase.replace(/\/$/, "");
-  return "https://api.gravanois-api.com.br"; // fallback
+  return "https://api.gravanois-api.com.br";
 }
 
 function formatLastModified(dateString: any) {
@@ -222,7 +223,7 @@ function formatLastModified(dateString: any) {
 }
 
 /** ================= Data Fetch ================= */
-async function fetchPage(reset = false) {
+async function fetchPage() {
   if (state.loading) return;
   state.loading = true;
   state.error = null;
@@ -236,26 +237,16 @@ async function fetchPage(reset = false) {
     url.searchParams.set("bucket", "temp");
     url.searchParams.set("prefix", `temp/${clientId}/${venueId}`);
     url.searchParams.set("limit", String(state.pageSize));
-    url.searchParams.set("offset", String(reset ? 0 : state.offset));
+    const offset = (state.page - 1) * state.pageSize;
+    url.searchParams.set("offset", String(offset));
     url.searchParams.set("order", "desc");
     url.searchParams.set("ttl", "3600");
 
     const res = await fetch(url, { credentials: "include" });
     if (!res.ok) throw new Error(`Falha ao listar vídeos: ${res.status}`);
     const data = (await res.json()) as VideosListResponse;
-
-    if (reset) {
-      state.items = [];
-      state.offset = 0;
-      state.hasMore = true;
-      // limpa mapas de preview/download
-      Object.keys(previewMap).forEach((k) => delete previewMap[k]);
-      Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
-    }
-
-    state.items.push(...data.files);
+    state.items = data.files;
     state.hasMore = data.hasMore;
-    state.offset = data.nextOffset ?? state.offset + data.files.length;
   } catch (e: any) {
     state.error = e?.message ?? "Erro ao carregar vídeos";
   } finally {
@@ -264,7 +255,35 @@ async function fetchPage(reset = false) {
 }
 
 function refresh() {
-  return fetchPage(true);
+  state.page = 1;
+  Object.keys(previewMap).forEach((k) => delete previewMap[k]);
+  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  return fetchPage();
+}
+
+function nextPage() {
+  if (state.loading || !state.hasMore) return;
+  state.page += 1;
+  Object.keys(previewMap).forEach((k) => delete previewMap[k]);
+  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  fetchPage();
+}
+
+function prevPage() {
+  if (state.loading || state.page <= 1) return;
+  state.page -= 1;
+  Object.keys(previewMap).forEach((k) => delete previewMap[k]);
+  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  fetchPage();
+}
+
+function onChangePageSize(size: number) {
+  if (!size || size === state.pageSize) return;
+  state.pageSize = size;
+  state.page = 1;
+  Object.keys(previewMap).forEach((k) => delete previewMap[k]);
+  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  fetchPage();
 }
 
 /** ================= Assinatura sob demanda ================= */
@@ -313,23 +332,6 @@ async function onDownload(file: VideoFile) {
 onMounted(() => {
   // Carrega a primeira página
   refresh();
-
-  // Infinite scroll real (liga no sentinel)
-  observer = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting && state.hasMore && !state.loading) {
-          fetchPage(false);
-        }
-      }
-    },
-    { rootMargin: "600px" }
-  ); // carrega antes de chegar no fim
-  if (sentinel.value) observer.observe(sentinel.value);
-});
-
-onBeforeUnmount(() => {
-  observer?.disconnect();
 });
 </script>
 

@@ -33,7 +33,9 @@
           </span>
 
           <div class="hero__ctas">
-            <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"> Veja como funciona </a>
+            <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"
+              ><ChevronsDown class="my-2" /> Veja como funciona
+            </a>
 
             <RouterLink to="/lances-gravanois" class="btn btn--primary" role="button" aria-label="View pricing">
               <span class="d-flex align-center justify-center" v-if="auth.isAuthenticated">
