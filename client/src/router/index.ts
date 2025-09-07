@@ -72,6 +72,11 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    try {
+      if (typeof window !== 'undefined' && to.fullPath) {
+        localStorage.setItem('postAuthRedirect', to.fullPath)
+      }
+    } catch {}
     next("/login");
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next("/videos");

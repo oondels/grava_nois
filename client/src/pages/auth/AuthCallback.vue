@@ -21,7 +21,10 @@ onMounted(async () => {
   // Se a sessão já existe (ex: usuário recarregou a página), apenas redireciona
   const { data: s1 } = await supabaseClient.auth.getSession();
   if (s1.session) {
-    return router.replace("/lances-gravanois");
+    const desired = (localStorage.getItem("postAuthRedirect") || "").trim();
+    const target = desired && desired.startsWith("/") ? desired : "/lances-gravanois";
+    localStorage.removeItem("postAuthRedirect");
+    return router.replace(target);
   }
 
   const code = String(route.query.code || "");
@@ -38,7 +41,8 @@ onMounted(async () => {
   }
 
   // Decide where to go after login
-  const target = "/lances-gravanois";
+  const desired = (localStorage.getItem("postAuthRedirect") || "").trim();
+  const target = desired && desired.startsWith("/") ? desired : "/lances-gravanois";
   localStorage.removeItem("postAuthRedirect");
   router.replace(target);
 });

@@ -114,7 +114,7 @@ import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const rules = {
   required: (value: string) => !!value || "Campo obrigatório",
@@ -125,6 +125,7 @@ const rules = {
 };
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore();
 
 const loadingAuth = ref(false);
@@ -139,12 +140,17 @@ const submitLogin = async () => {
   loadingAuth.value = true;
   try {
     await auth.signInWithEmail(loginData.email, loginData.password);
+
+    // Redirect after successful email login
+    const desired = (localStorage.getItem('postAuthRedirect') || '').trim()
+    const target = desired && desired.startsWith('/') ? desired : '/lances-gravanois'
+    localStorage.removeItem('postAuthRedirect')
+    router.replace(target)
   } catch (error: any) {
     showSnackbar(error.message, "error");
     console.error("signIn error:", error);
   } finally {
     loadingAuth.value = false;
-    router.push(`/lances-gravanois`)
   }
 };
 
