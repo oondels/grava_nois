@@ -6,17 +6,11 @@ const routes = [
     path: "/",
     component: () => import("@/pages/HomePage.vue"),
   },
-  // {
-  //   path: "/videos-test",
-  //   name: "videos-test",
-  //   component: () => import("@/pages/VideosPage.vue"),
-  //   meta: { requiresAuth: false },
-  // },
   {
     path: "/lances-gravanois",
     name: "Lances GravaNois",
     component: () => import("@/pages/VideosPage.vue"),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
   {
     path: "/login",
@@ -48,7 +42,7 @@ const routes = [
     component: () => import("@/pages/ContactPage.vue"),
     meta: { requiresAuth: false },
   },
-  { path: '/auth/callback', component: () => import('@/pages/auth/AuthCallback.vue') },
+  { path: "/auth/callback", component: () => import("@/pages/auth/AuthCallback.vue") },
   {
     path: "/reportar-erro",
     name: "Reportar Erro",
@@ -73,8 +67,8 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     try {
-      if (typeof window !== 'undefined' && to.fullPath) {
-        localStorage.setItem('postAuthRedirect', to.fullPath)
+      if (typeof window !== "undefined" && to.fullPath) {
+        localStorage.setItem("postAuthRedirect", to.fullPath);
       }
     } catch {}
     next("/login");

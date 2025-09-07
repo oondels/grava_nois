@@ -220,14 +220,7 @@
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar para feedback -->
-    <v-snackbar v-model="showSnackbar" :color="snackbarColor" :timeout="3000" location="bottom">
-      {{ snackbarMessage }}
-
-      <template v-slot:actions>
-        <v-btn @click="showSnackbar = false" variant="text" color="white"> Fechar </v-btn>
-      </template>
-    </v-snackbar>
+    <!-- Snackbar: agora global via AppLayout + useSnackbar() -->
   </div>
 </template>
 
@@ -255,6 +248,7 @@ import {
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { getSportColor, getSportLabel } from "@/utils/formatters";
+import { useSnackbar } from "@/composables/useSnackbar";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -276,10 +270,8 @@ const showContactSupport = ref(false);
 const savingProfile = ref(false);
 const savingLocation = ref(false);
 
-// Snackbar
-const showSnackbar = ref(false);
-const snackbarMessage = ref("");
-const snackbarColor = ref("success");
+// Snackbar global
+const { showSnackbar: notify } = useSnackbar();
 
 // Formulários
 const profileForm = reactive({
@@ -468,7 +460,7 @@ const handleItemClick = (item: any) => {
 const handleLogout = () => {
   authStore.signOut();
   router.push("/login");
-  showSnackbarMessage("Logout realizado com sucesso!", "success");
+  notify("Logout realizado com sucesso!", "success");
 };
 
 const saveProfile = async () => {
@@ -479,14 +471,14 @@ const saveProfile = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     showProfileEdit.value = false;
-    showSnackbarMessage("Perfil atualizado com sucesso!", "success");
+    notify("Perfil atualizado com sucesso!", "success");
 
     // Reset form
     profileForm.name = "";
     profileForm.email = "";
     profileForm.phone = "";
   } catch (error) {
-    showSnackbarMessage("Erro ao salvar perfil", "error");
+    notify("Erro ao salvar perfil", "error");
   } finally {
     savingProfile.value = false;
   }
@@ -500,7 +492,7 @@ const saveLocation = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     showLocationEdit.value = false;
-    showSnackbarMessage("Localização atualizada com sucesso!", "success");
+    notify("Localização atualizada com sucesso!", "success");
 
     // Reset form
     locationForm.cep = "";
@@ -508,7 +500,7 @@ const saveLocation = async () => {
     locationForm.city = "";
     locationForm.state = "";
   } catch (error) {
-    showSnackbarMessage("Erro ao salvar localização", "error");
+    notify("Erro ao salvar localização", "error");
   } finally {
     savingLocation.value = false;
   }
@@ -523,11 +515,7 @@ const autoFillAddress = () => {
   }
 };
 
-const showSnackbarMessage = (message: string, color: "success" | "error" | "warning" | "info" = "success") => {
-  snackbarMessage.value = message;
-  snackbarColor.value = color;
-  showSnackbar.value = true;
-};
+// Removido: snackbar local; padronizado para useSnackbar() global
 
 const goBack = () => {
   router.back();

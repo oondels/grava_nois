@@ -1,7 +1,5 @@
 <template>
-
   <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${HeroBG})` }">
-
     <div class="hero__container">
       <!-- Top-centered symbol-only logo -->
       <div class="hero__logo-wrap parallax parallax--logo">
@@ -30,17 +28,25 @@
 
           <span class="d-flex justify-center align-center">
             <a href="#how">
-
-              <ChevronsDown  role="button" class="my-2" :size="28" />
+              <ChevronsDown role="button" class="my-2" :size="28" />
             </a>
           </span>
 
           <div class="hero__ctas">
             <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"> Veja como funciona </a>
 
-            <RouterLink to="/lances-gravanois" class="btn btn--primary" role="button" aria-label="View pricing"> <ClapperboardIcon/> Meus Lances </RouterLink>
-            <!-- <a href="/pricing" class="btn btn--primary" role="button" aria-label="View pricing"> Contrate </a> -->
+            <RouterLink to="/lances-gravanois" class="btn btn--primary" role="button" aria-label="View pricing">
+              <span class="d-flex align-center justify-center" v-if="auth.isAuthenticated">
+                <ClapperboardIcon class="mr-2" />
+                Meus lances
+              </span>
 
+              <span class="d-flex align-center justify-center" v-else>
+                <LogIn class="mr-2" />
+                Entrar
+              </span>
+            </RouterLink>
+            <!-- <a href="/pricing" class="btn btn--primary" role="button" aria-label="View pricing"> Contrate </a> -->
           </div>
         </div>
 
@@ -63,20 +69,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * Melhorias implementadas:
- * - bgStyle computado c/ fallback e cache da imagem de fundo.
- * - Preload leve das imagens secundárias.
- * - Carrossel pausa fora de viewport (IntersectionObserver).
- * - Suporte de teclado (setas/WASD) para mover o foco/spotlight.
- * - DeviceOrientation permission flow robusto (iOS/Android).
- * - Damping de scroll só na zona visível da hero, com guards.
- * - Easing + inércia com clamps seguros e cancelamentos limpos.
- * - Handlers com passive flags corretas e cleanup completo.
- * - Menos jank: content-visibility, contain, will-change.
- * - Mantida a paridade funcional e ampliada a resiliência.
- */
-
+import { useAuthStore } from "@/store/auth";
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
 
@@ -84,7 +77,9 @@ import HeroBG from "@/assets/bak/HeroBG.webp";
 // import BasketBall from "@/assets/bak/basket_ball.png";
 // import VolleyBall from "@/assets/bak/volleysvg.svg";
 
-import { ChevronsDown, ClapperboardIcon } from "lucide-vue-next";
+const auth = useAuthStore();
+
+import { ChevronsDown, ClapperboardIcon, LogIn } from "lucide-vue-next";
 
 import { onMounted, onBeforeUnmount, ref, computed } from "vue";
 
@@ -408,8 +403,7 @@ async function enableGyro() {
   try {
     // iOS 13+: requestPermission se existir
     const hasDOE = typeof window !== "undefined" && typeof DeviceOrientationEvent !== "undefined";
-    const canRequest =
-      hasDOE && typeof (DeviceOrientationEvent as any).requestPermission === "function";
+    const canRequest = hasDOE && typeof (DeviceOrientationEvent as any).requestPermission === "function";
 
     if (canRequest) {
       const perm = await (DeviceOrientationEvent as any).requestPermission();
@@ -628,7 +622,7 @@ onBeforeUnmount(() => {
 .hero__title {
   margin: 0;
   font-family: var(--font-heading);
-  color:rgba(212, 209, 12, 0.808);
+  color: rgba(212, 209, 12, 0.808);
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -707,9 +701,9 @@ onBeforeUnmount(() => {
 .mockup-fader {
   position: relative;
   width: 100%;
-  height: 0 !important;        
-  min-height: 0 !important;    
-  overflow: hidden !important; 
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
 }
@@ -769,10 +763,13 @@ onBeforeUnmount(() => {
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .hero__logo, .btn, .fade-img {
+  .hero__logo,
+  .btn,
+  .fade-img {
     transition: none;
   }
-  .hero::before, .hero::after {
+  .hero::before,
+  .hero::after {
     display: none;
   }
 }
@@ -848,9 +845,15 @@ onBeforeUnmount(() => {
   letter-spacing: 0.01em;
 }
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
-  70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+  }
 }
 
 @media (max-width: 1023px) {
@@ -859,5 +862,4 @@ onBeforeUnmount(() => {
     --spot-h: 600px;
   }
 }
-
 </style>
