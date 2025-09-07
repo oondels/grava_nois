@@ -18,6 +18,12 @@ onMounted(async () => {
     return router.replace({ name: "login", query: { e: String(err) } });
   }
 
+  // Se a sessão já existe (ex: usuário recarregou a página), apenas redireciona
+  const { data: s1 } = await supabaseClient.auth.getSession();
+  if (s1.session) {
+    return router.replace("/lances-gravanois");
+  }
+
   const code = String(route.query.code || "");
   if (!code) {
     // No code → just bail to login

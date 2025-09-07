@@ -777,35 +777,29 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Interactive spotlight that follows pointer */
+/* Fundo da hero com blur sutil e camada escura (efeito estático) */
 .hero::before {
   content: "";
   position: absolute;
-  inset: -10%;
+  inset: 0;
   pointer-events: none;
-  background: radial-gradient(
-    var(--spot-w, 520px) var(--spot-h, 520px) at var(--px, 50%) var(--py, 50%),
-    rgba(255, 255, 255, 0.02),
-    transparent 70%
-  );
-  opacity: 0.02;
-  transition: opacity 0.2s ease;
+  /* replica o background do container para aplicar blur */
+  background-image: inherit;
+  background-size: inherit;
+  background-position: inherit;
+  background-repeat: inherit;
+  filter: blur(6px);
+  transform: scale(1.03);
   z-index: 0;
 }
 
-/* Dark layer that reveals the image under the pointer */
 .hero::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(
-    520px 520px at var(--px, 50%) var(--py, 50%),
-    rgba(0, 0, 0, 0) 0%,
-    rgba(0, 0, 0, 0) 40%,
-    rgba(0, 0, 0, 0.45) 62%,
-    rgba(0, 0, 0, 0.65) 100%
-  );
+  /* camada escura uniforme; ajuste a opacidade se quiser mais/menos escuro */
+  background: rgba(0, 0, 0, 0.38);
   z-index: 0;
 }
 
