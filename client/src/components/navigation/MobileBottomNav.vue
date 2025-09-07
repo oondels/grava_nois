@@ -14,7 +14,7 @@
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
         aria-label="Voltar"
       >
-        <XIcon class="w-6 h-6 text-white drop-shadow-sm" />
+        <XIcon class="w-6 h-6 text-red drop-shadow-sm" />
       </button>
 
       <RouterLink
@@ -31,33 +31,33 @@
             Perfil
           </span>
 
-          <CircleUserIcon 
-            v-if="auth.isAuthenticated" 
-            role="button" 
-            class="w-6 h-6 text-white drop-shadow-sm"
-          />
-          
-          <LogInIcon 
-            v-else 
-            role="button" 
-            class="w-6 h-6 text-white drop-shadow-sm"
-          />
-          
-          <!-- <img :src="LogoGravaNoisSimbol" alt="Símbolo Logo Grava Nóis" class="drop-shadow-sm w-6 h-6" /> -->
+          <CircleUserIcon v-if="auth.isAuthenticated" role="button" class="w-6 h-6 text-white drop-shadow-sm" />
+
+          <LogInIcon v-else role="button" class="w-6 h-6 text-white drop-shadow-sm" />
         </div>
       </RouterLink>
 
       <RouterLink
         to="/"
-        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
-        aria-label="iS PARA hOME"
+        :class="[
+          'w-12 h-12 rounded-xl flex items-center justify-center',
+          isActive('/')
+            ? 'bg-green-100/70 dark:bg-green-900/20 text-green-600 dark:text-green-500'
+            : 'bg-black/5 dark:bg-white/10',
+        ]"
+        aria-label="Ir para a página inicial"
       >
         <Home />
       </RouterLink>
 
       <RouterLink
         to="/lances-gravanois"
-        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
+        :class="[
+          'w-12 h-12 rounded-xl flex items-center justify-center',
+          isActive('/lances-gravanois')
+            ? 'bg-green-100/70 dark:bg-green-900/20 text-green-600 dark:text-green-500'
+            : 'bg-black/5 dark:bg-white/10',
+        ]"
         aria-label="Meus Lances"
       >
         <ClapperboardIcon />
@@ -70,16 +70,7 @@
       >
         <Bell />
       </div>
-<!-- 
-      <RouterLink
-        to="/reportar-erro"
-        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
-        aria-label="iS PARA hOME"
-      >
-        <BadgeAlert />
-      </RouterLink> -->
 
-      <!-- Trigger abre menu -->
       <button
         type="button"
         class="inline-flex items-center justify-center rounded-lg px-3 py-2 active:scale-[.98] hover:bg-black/5 dark:hover:bg-white/10 transition"
@@ -92,7 +83,7 @@
     </div>
   </nav>
 
-  <!-- Overlay deslizante com o menu de ícones -->
+  <!-- Menu Aberto -->
   <div
     id="mobile-menu-overlay"
     class="fixed inset-0 z-50 pointer-events-none"

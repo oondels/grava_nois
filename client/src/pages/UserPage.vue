@@ -11,7 +11,12 @@
     <div class="user-header">
       <div class="user-avatar-container">
         <img :src="LogoGravaNoisSimbol" alt="Foto de perfil" class="user-avatar" />
-        <button @click="showProfileEdit = true" class="edit-avatar-btn" aria-label="Editar foto de perfil">
+        <button
+          @click="showProfileEdit = true"
+          disabled="true"
+          class="edit-avatar-btn"
+          aria-label="Editar foto de perfil"
+        >
           <Edit3Icon class="edit-icon" />
         </button>
       </div>
