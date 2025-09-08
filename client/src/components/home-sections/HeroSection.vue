@@ -28,7 +28,7 @@
           <p id="hero-desc" class="hero__subtitle">Grava Nóis - Seu lance, nossa história.</p>
 
           <span class="d-flex justify-center align-center">
-            <a href="#how">
+            <a href="#how" class="pulse-waves" aria-label="Veja como funciona">
               <ChevronsDown role="button" class="my-2" :size="28" />
             </a>
           </span>
@@ -639,6 +639,7 @@ onBeforeUnmount(() => {
   color: var(--hero-muted);
   font-size: 18px;
   max-width: 38ch;
+  z-index: 1000 !important;
 }
 
 .hero__ctas {
@@ -693,6 +694,57 @@ onBeforeUnmount(() => {
 }
 .btn--secondary:focus-visible {
   outline-color: rgba(148, 163, 184, 0.55);
+}
+
+.pulse-waves {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease;
+  overflow: visible;
+}
+.pulse-waves:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+.pulse-waves:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 4px;
+}
+.pulse-waves::before,
+.pulse-waves::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.65);
+  transform: scale(0.7);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: pulse-ring 2.3s ease-out infinite;
+}
+.pulse-waves::after {
+  animation-delay: 0.9s;
+}
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  70% {
+    opacity: 0.18;
+  }
+  100% {
+    transform: scale(2.0);
+    opacity: 0;
+  }
 }
 
 .hero__mockup {
@@ -775,6 +827,10 @@ onBeforeUnmount(() => {
   .hero::before,
   .hero::after {
     display: none;
+  }
+  .pulse-waves::before,
+  .pulse-waves::after {
+    animation: none;
   }
 }
 
