@@ -73,7 +73,7 @@
           <div class="inner">
             <p class="badge">Dica</p>
             <h2>Inclua passos e capturas</h2>
-            <p class="muted">Quanto mais detalhes, mais rápido conseguimos corrigir.</p>
+            <p class="muted">Quanto mais detalhes, mais rápido conseguimos corrigir.</p>g
           </div>
         </div>
       </aside>
