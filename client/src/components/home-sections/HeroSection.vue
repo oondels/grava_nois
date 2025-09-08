@@ -23,7 +23,8 @@
           tabindex="0"
           aria-describedby="hero-desc"
         >
-          <h1 id="hero-title" class="hero__title">Grave seus melhores lances esportivos com um clique</h1>
+          <h1 id="hero-title" class="hero__title">Salve seus melhores lances esportivos</h1>
+          <h1 id="hero-title"  class="hero__title mt-2">Com um clique!</h1>
           <p id="hero-desc" class="hero__subtitle">Grava Nóis - Seu lance, nossa história.</p>
 
           <span class="d-flex justify-center align-center">
@@ -623,16 +624,16 @@ onBeforeUnmount(() => {
 
 .hero__title {
   margin: 0;
-  font-family: var(--font-heading);
-  color: rgba(212, 209, 12, 0.808);
-  font-weight: 700;
+  font-family: 'Bebas Neue', var(--font-heading);
+  color: rgba(212, 209, 12, 0.9);
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.1;
   font-size: clamp(var(--hero-title-size-mobile), 3.5vw, var(--hero-title-size-desktop));
 }
 
 .hero__subtitle {
-  margin: 12px auto 0;
+  margin: 30px auto 0;
   font-family: var(--font-body);
   font-weight: 450;
   color: var(--hero-muted);
@@ -758,7 +759,8 @@ onBeforeUnmount(() => {
     min-height: 100svh;
   }
   .hero__grid {
-    align-content: center;
+    margin-top: 50px;
+    align-content: flex-start;
     min-height: 100%;
   }
 }
