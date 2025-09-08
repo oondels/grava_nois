@@ -1,38 +1,32 @@
-import { ref } from 'vue'
+import { push } from 'notivue'
 
-interface SnackbarOptions {
-  text: string
-  color: 'success' | 'error' | 'warning' | 'info'
-  timeout?: number
-}
-
-const snackbar = ref<SnackbarOptions & { show: boolean }>({
-  show: false,
-  text: '',
-  color: 'info',
-  timeout: 4000
-})
+type Color = 'success' | 'error' | 'warning' | 'info'
 
 export const useSnackbar = () => {
   const showSnackbar = (
-    text: string, 
-    color: 'success' | 'error' | 'warning' | 'info' = 'info',
-    timeout: number = 4000
+    text: string,
+    color: Color = 'info',
+    timeout = 4000
   ) => {
-    snackbar.value = {
-      show: true,
-      text,
-      color,
-      timeout
+    // Normalize type mapping
+    const type: Color =
+      color === 'warning' ? 'warning' : color === 'error' ? 'error' : color === 'success' ? 'success' : 'info'
+
+    // Prefer typed helpers if available, otherwise generic push
+    // @ts-expect-error - runtime helpers may exist depending on notivue version
+    if (push[type]) {
+      // @ts-expect-error - dynamic helper call
+      push[type](text, { duration: timeout })
+    } else {
+      push(text, { type, duration: timeout })
     }
   }
 
   const hideSnackbar = () => {
-    snackbar.value.show = false
+    push.clearAll()
   }
 
   return {
-    snackbar,
     showSnackbar,
     hideSnackbar
   }

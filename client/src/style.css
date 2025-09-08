@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+.pop-in {
+  animation: pop-in-kf 250ms ease-out forwards;
+}
+
+.pop-out {
+  animation: pop-out-kf 250ms ease-in forwards;
+}
+
+.fade {
+  animation: fade-kf 1s ease-in-out forwards;
+}
+
+@keyframes pop-in-kf {
+  0% {
+    transform: translateX(100%); /* começa fora da tela à direita */
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pop-out-kf {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%); /* sai para a direita */
+    opacity: 0;
+  }
+}
+
+@keyframes fade-kf {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

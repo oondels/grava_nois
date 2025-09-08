@@ -12,6 +12,29 @@ import * as directives from "vuetify/directives";
 
 import { useAuthStore } from './store/auth'
 
+// Notivue styles for notifications
+import { createNotivue } from 'notivue'
+import 'notivue/notifications.css'
+// import 'notivue/animations.css' Removido para usar animacoes selecionadas
+import 'notivue/notification-progress.css'
+
+const notivue = createNotivue({
+  position: 'top-right',
+  limit: 5,
+  enqueue: true,
+  avoidDuplicates: true,
+  notifications: {
+    global: {
+      duration: 3000
+    }
+  },
+  animations: {
+    enter: 'pop-in',
+    leave: 'pop-out',
+    clearAll: 'fade'
+  }
+})
+
 const vuetify = createVuetify({
   components,
   directives,
@@ -26,10 +49,11 @@ const app = createApp(App);
 app.use(pinia);
 app.use(router);
 app.use(vuetify);
+app.use(notivue)
 
 const auth = useAuthStore()
 
-;(async () => {
-  await auth.init()      // await válido aqui, pois está dentro de uma função async
-  app.mount('#app')
-})()
+  ; (async () => {
+    await auth.init()      // await válido aqui, pois está dentro de uma função async
+    app.mount('#app')
+  })()
