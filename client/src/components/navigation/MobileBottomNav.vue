@@ -22,6 +22,12 @@
         :to="auth.isAuthenticated ? '/user-page' : '/login'"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
         aria-label="Ir para página do usuário"
+        :class="[
+          'w-12 h-12 rounded-xl flex items-center justify-center',
+          isActive(auth.isAuthenticated ? '/user-page' : '/login')
+            ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
+            : '',
+        ]"
       >
         <div>
           <span
@@ -31,9 +37,9 @@
             Perfil
           </span>
 
-          <CircleUserIcon v-if="auth.isAuthenticated" role="button" class="w-6 h-6 text-white drop-shadow-sm" />
+          <CircleUserIcon v-if="auth.isAuthenticated" role="button"  />
 
-          <LogInIcon v-else role="button" class="w-6 h-6 text-white drop-shadow-sm" />
+          <LogInIcon v-else role="button"  />
         </div>
       </RouterLink>
 
@@ -42,8 +48,8 @@
         :class="[
           'w-12 h-12 rounded-xl flex items-center justify-center',
           isActive('/')
-            ? 'bg-green-100/70 dark:bg-green-900/20 text-green-600 dark:text-green-500'
-            : 'bg-black/5 dark:bg-white/10',
+            ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
+            : '',
         ]"
         aria-label="Ir para a página inicial"
       >
@@ -55,8 +61,8 @@
         :class="[
           'w-12 h-12 rounded-xl flex items-center justify-center',
           isActive('/lances-gravanois')
-            ? 'bg-green-100/70 dark:bg-green-900/20 text-green-600 dark:text-green-500'
-            : 'bg-black/5 dark:bg-white/10',
+            ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
+            : '',
         ]"
         aria-label="Meus Lances"
       >
@@ -136,8 +142,8 @@
               :class="[
                 'w-12 h-12 rounded-xl flex items-center justify-center',
                 isActive(item.to)
-                  ? 'bg-green-100/70 dark:bg-green-900/20 text-green-600 dark:text-green-500'
-                  : 'bg-black/5 dark:bg-white/10',
+                  ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
+                  : '',
               ]"
             >
               <component :is="item.icon" class="w-6 h-6" aria-hidden="true" />
