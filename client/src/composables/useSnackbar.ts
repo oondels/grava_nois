@@ -13,12 +13,11 @@ export const useSnackbar = () => {
       color === 'warning' ? 'warning' : color === 'error' ? 'error' : color === 'success' ? 'success' : 'info'
 
     // Prefer typed helpers if available, otherwise generic push
-    // @ts-expect-error - runtime helpers may exist depending on notivue version
     if (push[type]) {
       // @ts-expect-error - dynamic helper call
       push[type](text, { duration: timeout })
     } else {
-      push(text, { type, duration: timeout })
+      // push(text, { type, duration: timeout })
     }
   }
 
