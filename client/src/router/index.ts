@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/store/auth";
+import { useSnackbar } from "@/composables/useSnackbar";
 
 const routes = [
   {
@@ -64,6 +65,7 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
+  const { showSnackbar } = useSnackbar();
   // Aguarda a inicialização do auth store para evitar falsos negativos em refresh direto
   await authStore.ensureReady?.();
 
@@ -74,6 +76,8 @@ router.beforeEach(async (to, from, next) => {
       }
     } catch {}
     console.log("usuario nao autenticado, redirecionando para /login");
+    // Notifica o usuário sobre a necessidade de login
+    showSnackbar("Faça login para acessar esta sessão", "warning", 3500);
 
     next("/login");
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
