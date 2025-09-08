@@ -62,8 +62,10 @@ const router = createRouter({
 });
 
 // Navigation guards
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
+  // Aguarda a inicialização do auth store para evitar falsos negativos em refresh direto
+  await authStore.ensureReady?.();
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     try {
@@ -71,9 +73,11 @@ router.beforeEach((to, from, next) => {
         localStorage.setItem("postAuthRedirect", to.fullPath);
       }
     } catch {}
+    console.log("usuario nao autenticado, redirecionando para /login");
+
     next("/login");
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next("/videos");
+    next("/lances-gravanois");
   } else {
     next();
   }

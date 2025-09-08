@@ -196,21 +196,21 @@ type NavItem = {
   disabled?: boolean;
 };
 
-const navigationItems: NavItem[] = [
+// Mantém os itens reativos ao estado de autenticação
+const navigationItems = computed<NavItem[]>(() => [
   { label: "Home", to: "/", icon: Home, disabled: false },
   {
-    label: auth.isAuthenticated ? "Logout" : "Login",
+    label: auth.isAuthenticated ? "Perfil" : "Login",
     to: auth.isAuthenticated ? "/user-page" : "/login",
     icon: LogInIcon,
     disabled: false,
   },
   { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false },
   { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false },
-  // { label: "Instalar em meu campo", to: "/contato", icon: PlusCircleIcon, disabled: false },
   { label: "Reportar", to: "/reportar-erro", icon: BadgeAlertIcon, disabled: false },
-];
+]);
 
-const visibleItems = computed(() => navigationItems);
+const visibleItems = computed(() => navigationItems.value);
 
 const isActive = (to: string) => {
   return route.path === to || route.path.startsWith(to + "/");
