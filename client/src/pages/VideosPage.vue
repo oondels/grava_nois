@@ -53,7 +53,7 @@
       </div>
     </v-alert>
 
-    <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="mb-3" @click="refresh">
+    <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="mb-7" @click="refresh">
       Atualizar Vídeos
     </v-btn>
 
@@ -86,7 +86,7 @@
 
       <!-- Erro -->
       <div v-else-if="state.error" class="px-4 pb-4">
-        <v-alert type="error" variant="tonal">{{ state.error }}</v-alert>
+        <v-alert type="error" variant="tonal">Erro ao carregadar conteúdo, verifique sua conexão!</v-alert>
       </div>
 
       <!-- Lista -->
@@ -96,7 +96,8 @@
             <v-card rounded="xl" elevation="3" class="result-card">
               <div class="thumb-wrapper">
                 <div class="thumb-video">
-                  <v-chip size="small" color="grey-darken-1" class="date-badge mb-2" variant="outlined">
+                  <!-- Data Vídeo -->
+                  <v-chip size="small" class="date-badge mb-2" variant="outlined">
                     {{ formatLastModified(file.last_modified) }}
                   </v-chip>
 
@@ -112,16 +113,18 @@
                     <div
                       v-if="previewMap[file.path] === null"
                       class="d-flex align-center justify-center"
-                      style="width: 100%; aspect-ratio: 16/9; background: #111; color: #ccc; border-radius: 12px 12px 0 0"
+                      style="
+                        width: 100%;
+                        aspect-ratio: 16/9;
+                        background: #111;
+                        color: #ccc;
+                        border-radius: 12px 12px 0 0;
+                      "
                     >
                       Carregando prévia…
                     </div>
-                    <div
-                      v-else
-                      class="d-flex align-center justify-center"
-                      style="width: 100%; aspect-ratio: 16/9; background: #111; color: #ccc; border-radius: 12px 12px 0 0"
-                    >
-                      Prévia não carregada. Clique em "Exibir".
+                    <div v-else class="thumb-placeholder">
+                      <img :src="thumbVideo" alt="Thumbnail genérico de vídeo" class="thumb-image" />
                     </div>
                   </div>
                 </div>
@@ -138,7 +141,7 @@
                   Exibir
                 </v-btn>
 
-                <v-btn
+                <!-- <v-btn
                   size="small"
                   variant="outlined"
                   :href="previewMap[file.path] || undefined"
@@ -147,7 +150,7 @@
                   :disabled="!previewMap[file.path]"
                 >
                   Abrir
-                </v-btn>
+                </v-btn> -->
 
                 <v-spacer />
 
@@ -179,10 +182,8 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from "vue";
-// import { useClipsStore } from "@/store/clips";
-import { getSportIcon } from "@/utils/formatters";
-// import { customIcons } from "@/utils/icons";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
+import thumbVideo from "@/assets/images/thumb-video.webp";
 
 type LocalLocation = { estado: string; cidade: string; quadra: string };
 
@@ -214,7 +215,7 @@ const state = reactive({
   error: null as string | null,
   hasMore: true,
   page: 1,
-  pageSize: 10,
+  pageSize: 5,
 });
 
 // Mapas de URLs assinadas (lazy)
@@ -373,6 +374,33 @@ onMounted(() => {
   z-index: 2;
   left: 8px;
   top: 8px;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+/* Placeholder do thumbnail quando a prévia ainda não está disponível */
+.thumb-placeholder {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #111;
+  color: #ccc;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+.thumb-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: blur(2px) brightness(0.7);
+  transition: filter 0.3s ease;
+}
+
+.thumb-placeholder:hover .thumb-image {
+  filter: blur(1px) brightness(0.8);
 }
 
 @media (min-width: 600px) {
