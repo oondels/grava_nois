@@ -94,31 +94,50 @@
         <v-row>
           <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
             <v-card rounded="xl" elevation="3" class="result-card">
-              <div class="thumb-wrapper" v-intersect="() => ensurePreview(file.path, file.bucket)">
+              <div class="thumb-wrapper">
                 <div class="thumb-video">
                   <v-chip size="small" color="grey-darken-1" class="date-badge mb-2" variant="outlined">
                     {{ formatLastModified(file.last_modified) }}
                   </v-chip>
 
                   <video
-                    v-if="previewMap[file.path]"
+                    v-if="typeof previewMap[file.path] === 'string'"
                     :src="previewMap[file.path]!"
                     controls
                     preload="none"
                     playsinline
                     style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px 12px 0 0"
                   />
-                  <div
-                    v-else
-                    class="d-flex align-center justify-center"
-                    style="width: 100%; aspect-ratio: 16/9; background: #111; color: #ccc; border-radius: 12px 12px 0 0"
-                  >
-                    Carregando prévia…
+                  <div v-else>
+                    <div
+                      v-if="previewMap[file.path] === null"
+                      class="d-flex align-center justify-center"
+                      style="width: 100%; aspect-ratio: 16/9; background: #111; color: #ccc; border-radius: 12px 12px 0 0"
+                    >
+                      Carregando prévia…
+                    </div>
+                    <div
+                      v-else
+                      class="d-flex align-center justify-center"
+                      style="width: 100%; aspect-ratio: 16/9; background: #111; color: #ccc; border-radius: 12px 12px 0 0"
+                    >
+                      Prévia não carregada. Clique em "Exibir".
+                    </div>
                   </div>
                 </div>
               </div>
 
               <v-card-actions class="pt-0">
+                <v-btn
+                  size="small"
+                  variant="outlined"
+                  prepend-icon="mdi mdi-eye"
+                  :disabled="state.loading || previewMap[file.path] === null"
+                  @click="onShow(file)"
+                >
+                  Exibir
+                </v-btn>
+
                 <v-btn
                   size="small"
                   variant="outlined"
@@ -326,6 +345,11 @@ async function signDownload(path: string, bucket = "temp") {
 async function onDownload(file: VideoFile) {
   const u = await signDownload(file.path, file.bucket);
   if (u) window.open(u, "_blank");
+}
+
+function onShow(file: VideoFile) {
+  // dispara o carregamento sob demanda da prévia
+  ensurePreview(file.path, file.bucket);
 }
 
 /** ================= Lifecycle ================= */
