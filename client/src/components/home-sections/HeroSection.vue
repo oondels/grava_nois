@@ -23,11 +23,11 @@
           tabindex="0"
           aria-describedby="hero-desc"
         >
-          <h1 id="hero-title" class="hero__title">Salve seus melhores lances esportivos</h1>
+          <h1 id="hero-title" class="hero__title">Grave seus melhores lances esportivos</h1>
           <h1 id="hero-title"  class="hero__title mt-2">Com um clique!</h1>
           <p id="hero-desc" class="hero__subtitle">Grava Nóis - Seu lance, nossa história.</p>
 
-          <span class="d-flex justify-center align-center">
+          <span class="d-flex justify-center align-center my-7">
             <a href="#how" class="pulse-waves" aria-label="Veja como funciona">
               <ChevronsDown role="button" class="my-2" :size="28" />
             </a>
