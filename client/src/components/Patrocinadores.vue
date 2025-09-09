@@ -79,12 +79,19 @@
               target="_blank"
               color="primary"
               variant="tonal"
-              prepend-icon="mdi-web"
               size="small"
             >
+              <template #prepend>
+                <Globe :size="16" />
+              </template>
               Site oficial
             </v-btn>
-            <v-btn v-else disabled variant="tonal" prepend-icon="mdi-web" size="small">Site em breve</v-btn>
+            <v-btn v-else disabled variant="tonal" size="small">
+              <template #prepend>
+                <Globe :size="16" />
+              </template>
+              Site em breve
+            </v-btn>
           </div>
 
           <div class="mt-3 flex items-center flex-wrap gap-2">
@@ -99,7 +106,7 @@
               color="primary"
               :aria-label="soc.label"
             >
-              <v-icon :icon="soc.icon" />
+              <component :is="soc.icon" :size="20" />
             </v-btn>
           </div>
 
@@ -232,13 +239,23 @@ function openSponsor(sponsor: Sponsor) {
   dialogOpen.value = true;
 }
 
+import {
+  Instagram,
+  Twitter,
+  Facebook,
+  Youtube,
+  Linkedin,
+  Globe,
+  MessageCircle,
+} from "lucide-vue-next";
+
 const socialList = [
-  { key: "instagram" as const, label: "Instagram", icon: "mdi-instagram" },
-  { key: "twitter" as const, label: "Twitter / X", icon: "mdi-twitter" },
-  { key: "facebook" as const, label: "Facebook", icon: "mdi-facebook" },
-  { key: "youtube" as const, label: "YouTube", icon: "mdi-youtube" },
-  { key: "linkedin" as const, label: "LinkedIn", icon: "mdi-linkedin" },
-  { key: "whatsapp" as const, label: "WhatsApp", icon: "mdi-whatsapp" },
+  { key: "instagram" as const, label: "Instagram", icon: Instagram },
+  { key: "twitter" as const, label: "Twitter / X", icon: Twitter },
+  { key: "facebook" as const, label: "Facebook", icon: Facebook },
+  { key: "youtube" as const, label: "YouTube", icon: Youtube },
+  { key: "linkedin" as const, label: "LinkedIn", icon: Linkedin },
+  { key: "whatsapp" as const, label: "WhatsApp", icon: MessageCircle },
 ];
 
 function normalizeUrl(url: string): string {

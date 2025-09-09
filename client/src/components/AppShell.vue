@@ -22,9 +22,10 @@
       position="fixed"
       class="ma-4 bottom-20"
       style="z-index: 1001"
-      prepend-icon="mdi-alert-circle-outline"
-      @click="maintenanceDialog = true"
     >
+      <template #prepend>
+        <AlertCircle />
+      </template>
       Aviso
     </v-btn> -->
 
@@ -32,7 +33,7 @@
     <!-- <v-dialog v-model="maintenanceDialog" max-width="480">
       <v-card class="rounded-xl" elevation="12">
         <v-card-title class="text-h6 d-flex align-center">
-          <v-icon icon="mdi-alert" color="warning" class="me-2" />
+          <AlertTriangle class="me-2" />
           Aviso de manutenção
         </v-card-title>
         <v-card-text> O sistema está em manutenção e já já estará de volta. </v-card-text>
@@ -57,6 +58,7 @@ import { useRoute } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
 import { useClipsStore } from "@/store/clips";
+// import { AlertCircle, AlertTriangle } from "lucide-vue-next";
 
 const showBottomNav = ref(true);
 const showBottom = () => {

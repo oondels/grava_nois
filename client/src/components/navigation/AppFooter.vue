@@ -8,19 +8,19 @@
 
         <div class="social-row" aria-label="Redes sociais">
           <a href="#" aria-label="Instagram" class="social-link" title="Instagram">
-            <v-icon icon="mdi-instagram" size="22" />
+            <Instagram :size="22" />
           </a>
           <a href="#" aria-label="YouTube" class="social-link" title="YouTube">
-            <v-icon icon="mdi-youtube" size="22" />
+            <Youtube :size="22" />
           </a>
           <a href="#" aria-label="Facebook" class="social-link" title="Facebook">
-            <v-icon icon="mdi-facebook" size="22" />
+            <Facebook :size="22" />
           </a>
           <a href="#" aria-label="X (Twitter)" class="social-link" title="X (Twitter)">
-            <v-icon icon="mdi-twitter" size="22" />
+            <Twitter :size="22" />
           </a>
           <a href="#" aria-label="LinkedIn" class="social-link" title="LinkedIn">
-            <v-icon icon="mdi-linkedin" size="22" />
+            <Linkedin :size="22" />
           </a>
         </div>
 
@@ -55,6 +55,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { Instagram, Youtube, Facebook, Twitter, Linkedin } from 'lucide-vue-next'
 const year = computed(() => new Date().getFullYear())
 </script>
 

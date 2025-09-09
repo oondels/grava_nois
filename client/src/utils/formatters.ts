@@ -1,4 +1,6 @@
 export const formatDuration = (seconds: number): string => {
+  console.log(`formatDuration called with seconds: ${seconds}`);
+  
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   
@@ -44,14 +46,15 @@ export const getSportColor = (sport: string): string => {
   return colors[sport as keyof typeof colors] || 'grey'
 }
 
+// Substituído: antes retornava nomes MDI; agora mantemos rótulos em componentes (ver usos)
 export const getSportIcon = (sport: string): string => {
   const icons = {
-    futebol: 'mdi-soccer',
-    basquete: 'mdi-basketball',
-    volei: 'mdi-volleyball',
-    futevolei: 'mdi-volleyball'
+    futebol: 'football',
+    basquete: 'basketball',
+    volei: 'volleyball',
+    futevolei: 'volleyball'
   }
-  return icons[sport as keyof typeof icons] || 'mdi-help-circle'
+  return icons[sport as keyof typeof icons] || 'help-circle'
 }
 
 export const getSportLabel = (sport: string): string => {

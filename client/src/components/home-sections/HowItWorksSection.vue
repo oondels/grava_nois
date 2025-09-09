@@ -17,7 +17,7 @@
 
         <li class="step-card">
           <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-            <span class="mdi mdi-gesture-tap-button fs-"></span>
+            <MousePointerClick />
           </div>
           <div class="step-icon" aria-hidden="true"></div>
           <h3>Botão do lance</h3>
@@ -122,7 +122,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useDisplay } from "vuetify";
-import { VideoIcon, ClockPlus, CloudDownload } from "lucide-vue-next";
+import { VideoIcon, ClockPlus, CloudDownload, MousePointerClick } from "lucide-vue-next";
 
 const showHowDialog = ref(false);
 const display = useDisplay();

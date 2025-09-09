@@ -1,7 +1,7 @@
 <template>
   <div class="maintenance-page">
     <div class="content" role="status" aria-live="polite">
-      <v-icon icon="mdi-alert" size="72" color="amber" class="mb-4" />
+      <AlertTriangle :size="72" color="#f59e0b" class="mb-4" />
 
       <h1 class="title">Serviço em manutenção</h1>
       <p class="subtitle">
@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
 // Página simples de aviso de manutenção
+import { AlertTriangle } from "lucide-vue-next";
 </script>
 
 <style scoped>
@@ -70,4 +71,3 @@
 .mt-4 { margin-top: 1rem; }
 .mt-6 { margin-top: 1.5rem; }
 </style>
-

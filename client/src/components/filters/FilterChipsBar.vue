@@ -43,7 +43,7 @@
             aria-label="Limpar estado"
             @click.stop="$emit('clear-estado')"
           >
-            <v-icon icon="mdi-close" size="14" />
+            <X :size="14" />
           </v-btn>
         </template>
       </v-chip>
@@ -66,7 +66,7 @@
             aria-label="Limpar cidade"
             @click.stop="$emit('clear-cidade')"
           >
-            <v-icon icon="mdi-close" size="14" />
+            <X :size="14" />
           </v-btn>
         </template>
       </v-chip>
@@ -89,7 +89,7 @@
             aria-label="Limpar quadra"
             @click.stop="$emit('clear-quadra')"
           >
-            <v-icon icon="mdi-close" size="14" />
+            <X :size="14" />
           </v-btn>
         </template>
       </v-chip>
@@ -116,6 +116,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { X } from "lucide-vue-next";
 
 interface ChipItem {
   label: string;
@@ -135,7 +136,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  filterIcon: "mdi-filter",
+  filterIcon: "",
 });
 
 const emit = defineEmits([

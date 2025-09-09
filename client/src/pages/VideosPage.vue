@@ -93,79 +93,12 @@
       <div v-else class="px-4 pb-4">
         <v-row>
           <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" elevation="3" class="result-card">
-              <div class="thumb-wrapper">
-                <div class="thumb-video">
-                  <!-- Data Vídeo -->
-                  <v-chip size="small" class="date-badge mb-2" variant="outlined">
-                    {{ formatLastModified(file.last_modified) }}
-                  </v-chip>
-
-                  <video
-                    v-if="typeof previewMap[file.path] === 'string'"
-                    :src="previewMap[file.path]!"
-                    controls
-                    preload="none"
-                    playsinline
-                    style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px 12px 0 0"
-                  />
-                  <div v-else>
-                    <div
-                      v-if="previewMap[file.path] === null"
-                      class="d-flex align-center justify-center"
-                      style="
-                        width: 100%;
-                        aspect-ratio: 16/9;
-                        background: #111;
-                        color: #ccc;
-                        border-radius: 12px 12px 0 0;
-                      "
-                    >
-                      Carregando prévia…
-                    </div>
-                    <div v-else class="thumb-placeholder">
-                      <img :src="thumbVideo" alt="Thumbnail genérico de vídeo" class="thumb-image" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <v-card-actions class="pt-0">
-                <v-btn
-                  size="small"
-                  variant="outlined"
-                  prepend-icon="mdi mdi-eye"
-                  :disabled="state.loading || previewMap[file.path] === null"
-                  @click="onShow(file)"
-                >
-                  Exibir
-                </v-btn>
-
-                <!-- <v-btn
-                  size="small"
-                  variant="outlined"
-                  :href="previewMap[file.path] || undefined"
-                  target="_blank"
-                  prepend-icon="mdi mdi-play"
-                  :disabled="!previewMap[file.path]"
-                >
-                  Abrir
-                </v-btn> -->
-
-                <v-spacer />
-
-                <v-btn
-                  size="small"
-                  color="green"
-                  variant="outlined"
-                  prepend-icon="mdi mdi-download"
-                  :disabled="!previewMap[file.path]"
-                  @click="onDownload(file)"
-                >
-                  Baixar
-                </v-btn>
-              </v-card-actions>
-            </v-card>
+            <VideoCard
+              :clip="toClip(file)"
+              :show-disabled="state.loading || previewMap[file.path] === null"
+              @show="() => onShow(file)"
+              @download="() => onDownload(file)"
+            />
           </v-col>
         </v-row>
 
@@ -184,6 +117,8 @@
 import { reactive, ref, onMounted } from "vue";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
+import VideoCard from "@/components/videos/VideoCard.vue";
+import type { SportClip } from "@/store/clips";
 
 type LocalLocation = { estado: string; cidade: string; quadra: string };
 
@@ -240,6 +175,23 @@ function formatLastModified(dateString: any) {
     .getMinutes()
     .toString()
     .padStart(2, "0")} - ${date.getDate()} ${months[date.getMonth()]} - ${date.getFullYear()}`;
+}
+
+function toClip(file: VideoFile): SportClip {
+  const recordedAt = file.last_modified || new Date().toISOString();
+  return {
+    id: file.path,
+    sport: "futebol",
+    durationSec: 10,
+    priceCents: 0,
+    purchased: true,
+    status: "pago",
+    recordedAt,
+    camera: "Cam-01",
+    venue: "Grava Nóis",
+    thumbUrl: thumbVideo as unknown as string,
+    videoUrl: previewMap[file.path] || "",
+  };
 }
 
 /** ================= Data Fetch ================= */
