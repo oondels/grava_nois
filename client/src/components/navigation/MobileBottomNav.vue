@@ -18,6 +18,17 @@
       </button>
 
       <RouterLink
+        to="/"
+        :class="[
+          'w-12 h-12 rounded-xl flex items-center justify-center',
+          isActive('/') ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400' : '',
+        ]"
+        aria-label="Ir para a página inicial"
+      >
+        <Home />
+      </RouterLink>
+
+      <RouterLink
         v-if="!isUserPage"
         :to="auth.isAuthenticated ? '/user-page' : '/login'"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
@@ -37,23 +48,10 @@
             Perfil
           </span>
 
-          <CircleUserIcon v-if="auth.isAuthenticated" role="button"  />
+          <CircleUserIcon v-if="auth.isAuthenticated" role="button" />
 
-          <LogInIcon v-else role="button"  />
+          <LogInIcon v-else role="button" />
         </div>
-      </RouterLink>
-
-      <RouterLink
-        to="/"
-        :class="[
-          'w-12 h-12 rounded-xl flex items-center justify-center',
-          isActive('/')
-            ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
-            : '',
-        ]"
-        aria-label="Ir para a página inicial"
-      >
-        <Home />
       </RouterLink>
 
       <RouterLink
@@ -141,9 +139,7 @@
             <div
               :class="[
                 'w-12 h-12 rounded-xl flex items-center justify-center',
-                isActive(item.to)
-                  ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
-                  : '',
+                isActive(item.to) ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400' : '',
               ]"
             >
               <component :is="item.icon" class="w-6 h-6" aria-hidden="true" />

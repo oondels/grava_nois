@@ -47,7 +47,7 @@
     
     <!-- Bottom nav mobile -->
     <MobileBottomNav />
-    <AppFooter v-if="route.path !== '/login'" />
+    <AppFooter v-if="showBottomNav" />
   </v-app>
 </template>
 
@@ -57,6 +57,14 @@ import { useRoute } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
 import { useClipsStore } from "@/store/clips";
+
+const showBottomNav = ref(true);
+const showBottom = () => {
+  if (route.path !== '/login' || route.path !== '/user-page') {
+    showBottomNav.value = false;
+  }
+  return true
+}
 
 // Importando os novos componentes de navegação
 import Header from "@/components/navigation/Header.vue";
@@ -77,7 +85,9 @@ const handleSearch = (value: string | null) => {
   clipsStore.updateFilters({ search: value || "" });
 };
 
-onMounted(() => {});
+onMounted(() => {
+  showBottom()
+});
 
 // Controle do diálogo de manutenção
 const maintenanceDialog = ref(false);
