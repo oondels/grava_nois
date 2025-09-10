@@ -12,15 +12,16 @@
       </template>
 
       <template v-else>
+        <!-- Foto pre carregada antes do clipe ser disponibiliado para assistir -->
         <v-img :src="clip.thumbUrl" :aspect-ratio="16 / 9" cover :eager="false" class="thumb-img">
           <template #placeholder>
             <div class="d-flex align-center justify-center h-100">
               <v-progress-circular indeterminate color="primary" />
             </div>
           </template>
-          
+
           <!-- Play Button Overlay -->
-          <div class="play-overlay" :class="{ 'show': hover || isTouchDevice }">
+          <div class="play-overlay" :class="{ show: hover || isTouchDevice }">
             <v-btn
               icon
               size="x-large"
@@ -36,28 +37,27 @@
         </v-img>
       </template>
 
-      <div class="thumb-gradient" />
+      <div class="thumb-gradient"></div>
 
-      <!-- Duração -->
-      <!-- <div class="badge duration" aria-label="Duração do clipe">
+      <!-- Funcionalidades futuras -->
+      <div>
+        <!-- <div class="badge duration" aria-label="Duração do clipe">
         {{ formatDuration(clip.durationSec) }}
-      </div> -->
+      </div>
 
-      <!-- Áudio opcional -->
-      <!-- <div v-if="hasAudio" class="badge audio" aria-label="Com áudio">
+      <div v-if="hasAudio" class="badge audio" aria-label="Com áudio">
         <v-icon icon="mdi-volume-high" size="16" />
-      </div> -->
+      </div>
 
-      <!-- Cadeado (pago) -->
-      <!-- <div v-if="isLocked" class="badge lock" aria-label="Conteúdo pago">
+      <div v-if="isLocked" class="badge lock" aria-label="Conteúdo pago">
         <v-icon icon="mdi-lock" size="16" />
-      </div> -->
+      </div>
 
-      <!-- Hover overlay / preview cue -->
-      <!-- <div class="hover-overlay" :class="{ show: hover }">
+      <div class="hover-overlay" :class="{ show: hover }">
         <v-icon icon="mdi-play" size="44" />
         <div class="text-caption text-medium-emphasis mt-2">Prévia</div>
       </div> -->
+      </div>
     </div>
 
     <v-card-text class="pt-3">
@@ -69,10 +69,16 @@
         </v-chip>
       </div> -->
 
-      <div class="d-flex align-center ga-3 text-medium-emphasis text-caption">
-        <!-- <span class="d-inline-flex align-center ga-1">{{ clip.camera }}</span> -->
-        <span class="d-inline-flex align-center ga-1">Horário • {{ formatDateTime(clip.recordedAt) }}</span>
-        <span class="d-inline-flex align-center ga-1"> • HD</span>
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <div class="flex items-center gap-1">
+          <v-icon icon="mdi-clock-outline" size="14" class="text-green-500" />
+          <span class="text-green-500">{{ formatDateTime(clip.recordedAt) }}</span>
+        </div>
+        <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
+        <div class="flex items-center gap-1">
+          <!-- <v-icon icon="mdi-high-definition" size="14" class="text-blue-500" /> -->
+          <span class="font-medium text-red-600">HD</span>
+        </div>
       </div>
 
       <!-- <div class="d-flex flex-wrap ga-2 mt-3">
@@ -88,7 +94,7 @@
       <div class="d-flex align-center justify-space-between w-100 pa-3">
         <!-- Action Buttons -->
         <div class="flex items-center gap-3">
-          <v-btn
+          <!-- <v-btn
             variant="elevated"
             color="primary"
             size="default"
@@ -99,17 +105,18 @@
           >
             <span class="hidden sm:inline">Assistir</span>
             <span class="sm:hidden">Play</span>
-          </v-btn>
+          </v-btn> -->
 
           <v-btn
             variant="outlined"
             color="secondary"
-            size="default"
+            size="small"
+            density="compact"
             prepend-icon="mdi-download"
             @click.stop="$emit('download', clip)"
             class="secondary-action-btn"
           >
-            <span class="hidden sm:inline">Baixar</span>
+            <span>Baixar</span>
             <!-- <v-icon class="sm:hidden">mdi-download</v-icon> -->
           </v-btn>
         </div>
@@ -165,7 +172,6 @@
 import { ref, computed, onMounted } from "vue";
 import { formatDateTime } from "@/utils/formatters";
 import type { SportClip } from "@/store/clips";
-import { Heart } from "lucide-vue-next";
 
 interface Location {
   estado: string;
@@ -192,7 +198,7 @@ const isLocked = computed(() => !props.clip.purchased && props.clip.priceCents >
 
 // Detecta se é um dispositivo touch
 onMounted(() => {
-  isTouchDevice.value = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  isTouchDevice.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 });
 
 function toggleFavorite() {
@@ -224,7 +230,7 @@ function toggleFavorite() {
     opacity: 0.7;
     background: rgba(0, 0, 0, 0.2);
   }
-  
+
   .play-overlay.show {
     opacity: 1;
     background: rgba(0, 0, 0, 0.3);

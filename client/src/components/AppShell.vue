@@ -45,34 +45,34 @@
     </v-dialog> -->
 
     <!-- Footer -->
-    
+
     <!-- Bottom nav mobile -->
     <MobileBottomNav />
-    <AppFooter v-if="showBottomNav" />
+    <AppFooter v-if="showFooter" />
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from "vue";
+import { onMounted, computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
 import { useClipsStore } from "@/store/clips";
 // import { AlertCircle, AlertTriangle } from "lucide-vue-next";
 
-const showBottomNav = ref(true);
-const showBottom = () => {
-  if (route.path !== '/login' || route.path !== '/user-page') {
-    showBottomNav.value = false;
+const showFooter = ref(true);
+const showFooterComponent = () => {
+  if (route.path === "/login" || route.path === "/user-page") {
+    showFooter.value = false;
+    return;
   }
-  return true
-}
+  showFooter.value = true;
+};
 
 // Importando os novos componentes de navegação
 import Header from "@/components/navigation/Header.vue";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav.vue";
 import AppFooter from "@/components/navigation/AppFooter.vue";
-
 
 const isMobile = computed(() => window.matchMedia("(max-width: 660px)").matches);
 
@@ -87,8 +87,16 @@ const handleSearch = (value: string | null) => {
   clipsStore.updateFilters({ search: value || "" });
 };
 
+watch(
+  () => route.path,
+  () => {
+    showFooterComponent();
+  },
+  { immediate: true }
+);
+
 onMounted(() => {
-  showBottom()
+  showFooterComponent();
 });
 
 // Controle do diálogo de manutenção

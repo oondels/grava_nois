@@ -6,55 +6,50 @@
     </div>
 
     <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">
-      <div>
-        <h1 class="text-h4 font-weight-bold mb-1">Replays e Lances</h1>
-        <p class="text-medium-emphasis mb-0">Resgate seus melhores lances</p>
+      <div class="d-flex align-center ga-3 flex-wrap justify-center">
+        <h1 class="text-h4 font-weight-bold mb-1 page-title">Replays e Lances</h1>
+
+        <!-- Aviso sutil: fase inicial (ao lado do título) -->
+        <v-dialog max-width="500">
+          <template v-slot:activator="{ props: activatorProps }">
+            <v-btn
+              v-bind="activatorProps"
+              class="title-alert-btn pulse"
+              color="warning"
+              variant="tonal"
+              size="small"
+              :rounded="true"
+              aria-label="Aviso importante"
+            >
+              <v-icon icon="mdi mdi-alert-decagram" size="20" />
+            </v-btn>
+          </template>
+
+          <template v-slot:default="{ isActive }">
+            <v-card title="Aviso" class="result-card" v-if="isActive">
+              <v-card-text>
+                <v-alert
+                  v-if="showEarlyNotice"
+                  type="warning"
+                  variant="tonal"
+                  border="start"
+                  rounded="lg"
+                  density="comfortable"
+                  class="mb-2"
+                >
+                  Em fase inicial: estamos liberando os replays aos poucos.
+                </v-alert>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-dialog>
+
+        <p class="text-medium-emphasis mb-0 w-100 text-center">Resgate seus melhores lances</p>
       </div>
     </div>
 
-    <!-- Aviso sutil: fase inicial -->
-    <v-alert
-      v-if="showEarlyNotice"
-      type="warning"
-      variant="tonal"
-      border="start"
-      rounded="lg"
-      density="comfortable"
-      class="mb-6"
-    >
-      <div class="d-flex align-center justify-space-between ga-3 position-relative">
-        <div class="text-body-2">
-          Este aplicativo está em fase inicial (beta). Pedimos um pouco de paciência e, por favor, reporte qualquer erro
-          que encontrar.
-        </div>
-
-        <div class="d-flex align-center ga-2 mt-4">
-          <v-btn
-            size="small"
-            variant="outlined"
-            color="red"
-            :to="{ path: '/reportar-erro', query: { page: 'Lances / Grava Nóis' } }"
-          >
-            Reportar
-          </v-btn>
-        </div>
-
-        <v-btn
-          class="position-absolute"
-          style="top: -10px; right: -10px"
-          size="small"
-          variant="text"
-          icon
-          @click="showEarlyNotice = false"
-          :aria-label="'Fechar aviso'"
-        >
-          <v-icon class="mdi mdi-close" />
-        </v-btn>
-      </div>
-    </v-alert>
-
     <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="mb-7" @click="refresh">
-      Atualizar Vídeos
+      Vídeos
     </v-btn>
 
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
@@ -358,6 +353,41 @@ onMounted(() => {
 @media (min-width: 600px) {
   :root {
     --gn-sticky-top: 64px;
+  }
+}
+
+/* Título + botão de aviso (chamativo, sem exagero) */
+.page-title {
+  display: inline-flex;
+  align-items: center;
+}
+
+.title-alert-btn {
+  /* Usa a cor de aviso global, com brilho sutil */
+  --pulse-base: var(--warning-color, #F59E0B);
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  backdrop-filter: saturate(1.1);
+}
+
+.title-alert-btn:hover {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35);
+}
+
+.pulse {
+  animation: pulseGlow 2.4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
   }
 }
 </style>

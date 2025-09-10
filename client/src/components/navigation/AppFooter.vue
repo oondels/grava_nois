@@ -4,39 +4,48 @@
       <!-- Brand / Intro -->
       <div class="brand-col">
         <h3 class="logo-text">Grava Nóis</h3>
-        <p class="tagline">Seu lance, sua história.</p>
+        <p class="tagline">Seu lance, nossa história.</p>
 
-        <div class="social-row" aria-label="Redes sociais">
-          <a href="#" aria-label="Instagram" class="social-link" title="Instagram">
-            <Instagram :size="22" />
+        <!-- Redes -->
+        <div class="social-row flex justify-center" aria-label="Redes sociais">
+          <a
+            href="https://www.instagram.com/grava_nois?igsh=MWhhczl3dGRpN25waw=="
+            target="_blank"
+            aria-label="Instagram"
+            class="social-link"
+            title="Instagram"
+          >
+            <Instagram color="magenta" :size="22" />
           </a>
-          <a href="#" aria-label="YouTube" class="social-link" title="YouTube">
-            <Youtube :size="22" />
-          </a>
-          <a href="#" aria-label="Facebook" class="social-link" title="Facebook">
-            <Facebook :size="22" />
-          </a>
-          <a href="#" aria-label="X (Twitter)" class="social-link" title="X (Twitter)">
-            <Twitter :size="22" />
-          </a>
-          <a href="#" aria-label="LinkedIn" class="social-link" title="LinkedIn">
-            <Linkedin :size="22" />
+
+          <span aria-label="Whatsapp" class="social-link disabled" title="Whatsapp (em breve)">
+            <MessageCircle color="grey" :size="22" />
+          </span>
+
+          <a
+            href="https://www.linkedin.com/in/hendriusfelix/"
+            target="_blank"
+            aria-label="LinkedIn"
+            class="social-link"
+            title="LinkedIn"
+          >
+            <Linkedin color="blue" :size="22" />
           </a>
         </div>
 
         <p class="copyright">© {{ year }} Grava Nóis. Todos os direitos reservados.</p>
       </div>
-      
+
       <!-- Suporte -->
       <nav class="links-col" aria-label="Suporte">
-        <h4>Suporte</h4>
         <ul>
-          <li><RouterLink to="/suporte">Central de Ajuda</RouterLink></li>
-          <li><RouterLink to="/contato">Instalar no meu campo</RouterLink></li>
-          <li><RouterLink to="/contato">Contato</RouterLink></li>
+          <!-- <li><RouterLink to="/suporte">Central de Ajuda</RouterLink></li> -->
+          <v-btn variant="outlined" color="success">
+            <RouterLink to="/contato">Instalar no meu campo</RouterLink>
+          </v-btn>
+          <!-- <li><RouterLink to="/contato">Contato</RouterLink></li> -->
         </ul>
       </nav>
-
     </div>
 
     <div class="legal">
@@ -49,14 +58,13 @@
       </small>
     </div>
   </footer>
-  
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
-import { Instagram, Youtube, Facebook, Twitter, Linkedin } from 'lucide-vue-next'
-const year = computed(() => new Date().getFullYear())
+import { computed } from "vue";
+import { RouterLink } from "vue-router";
+import { Instagram, Linkedin, MessageCircle } from "lucide-vue-next";
+const year = computed(() => new Date().getFullYear());
 </script>
 
 <style scoped>
