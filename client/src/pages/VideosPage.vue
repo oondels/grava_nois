@@ -52,6 +52,28 @@
       Vídeos
     </v-btn>
 
+    <!-- Callout: incentive to post and tag Instagram -->
+    <v-alert
+      type="info"
+      variant="tonal"
+      border="start"
+      rounded="lg"
+      class="mb-6 d-flex align-center ga-3"
+      density="comfortable"
+    >
+      <v-icon icon="mdi mdi-instagram" size="22" class="me-1" />
+      <div>
+        Curtiu seu vídeo? Publique e marque
+        <a
+          href="https://www.instagram.com/grava_nois?igsh=MWhhczl3dGRpN25waw=="
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-primary text-decoration-underline"
+        >@grava_nois</a>
+        para aparecer no nosso Insta!
+      </div>
+    </v-alert>
+
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
         <div class="text-caption text-medium-emphasis">
