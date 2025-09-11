@@ -37,7 +37,8 @@
                   density="comfortable"
                   class="mb-2"
                 >
-                  Em fase inicial: estamos liberando os replays aos poucos.
+                  Em fase inicial: Se encontrar um erro nos relate clicando
+                  <router-link to="/reportar-erro" class="text-primary">aqui</router-link>.
                 </v-alert>
               </v-card-text>
             </v-card>
@@ -53,26 +54,27 @@
     </v-btn>
 
     <!-- Callout: incentive to post and tag Instagram -->
-    <v-alert
+    <div
       type="info"
       variant="tonal"
       border="start"
       rounded="lg"
-      class="mb-6 d-flex align-center ga-3"
+      class="mb-6 d-flex align-center ga-3 bg-blue-lighten-2 pa-4 rounded-lg border-l-4 border-blue-700"
       density="comfortable"
     >
-      <v-icon icon="mdi mdi-instagram" size="22" class="me-1" />
       <div>
-        Curtiu seu vídeo? Publique e marque
-        <a
+        <v-icon icon="mdi mdi-instagram" size="22" class="me-1" />
+        Curtiu seu vídeo? Publique e marque para aparecer no nosso Insta!
+        <v-btn
           href="https://www.instagram.com/grava_nois?igsh=MWhhczl3dGRpN25waw=="
           target="_blank"
           rel="noopener noreferrer"
-          class="text-primary text-decoration-underline"
-        >@grava_nois</a>
-        para aparecer no nosso Insta!
+          density="compact"
+        >
+          @grava_nois
+        </v-btn>
       </div>
-    </v-alert>
+    </div>
 
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
@@ -386,7 +388,7 @@ onMounted(() => {
 
 .title-alert-btn {
   /* Usa a cor de aviso global, com brilho sutil */
-  --pulse-base: var(--warning-color, #F59E0B);
+  --pulse-base: var(--warning-color, #f59e0b);
   box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
   backdrop-filter: saturate(1.1);
