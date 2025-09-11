@@ -36,6 +36,17 @@ export const formatDateTime = (dateString: string): string => {
   })
 }
 
+export function formatLastModified(dateString: any) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${date.getHours().toString().padStart(2, "0")}:${date
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")} - ${date.getDate()} ${months[date.getMonth()]} - ${date.getFullYear()}`;
+}
+
 export const getSportColor = (sport: string): string => {
   const colors = {
     futebol: 'green',

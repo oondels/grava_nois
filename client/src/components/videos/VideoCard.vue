@@ -72,7 +72,7 @@
       <div class="flex items-center gap-2 text-sm text-gray-600">
         <div class="flex items-center gap-1">
           <v-icon icon="mdi-clock-outline" size="14" class="text-green-500" />
-          <span class="text-green-500">{{ formatDateTime(clip.recordedAt) }}</span>
+          <span class="text-green-500">{{ formatLastModified(clip.recordedAt) }}</span>
         </div>
         <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
         <div class="flex items-center gap-1">
@@ -170,7 +170,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { formatDateTime } from "@/utils/formatters";
+import { formatDateTime, formatLastModified } from "@/utils/formatters";
 import type { SportClip } from "@/store/clips";
 
 interface Location {
