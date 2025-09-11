@@ -7,16 +7,6 @@
     aria-label="Navegação inferior"
   >
     <div class="h-15 flex justify-around">
-      <!-- Botão dinâmico: Logo para ir para user-page, X para sair -->
-      <button
-        v-if="isUserPage"
-        @click="goBack"
-        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
-        aria-label="Voltar"
-      >
-        <XIcon class="w-6 h-6 text-red drop-shadow-sm" />
-      </button>
-
       <RouterLink
         to="/"
         :class="[
@@ -27,6 +17,16 @@
       >
         <Home />
       </RouterLink>
+
+      <!-- Botão dinâmico: Logo para ir para user-page, X para sair -->
+      <button
+        v-if="isUserPage"
+        @click="goBack"
+        class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
+        aria-label="Voltar"
+      >
+        <XIcon class="w-6 h-6 text-red drop-shadow-sm" />
+      </button>
 
       <RouterLink
         v-if="!isUserPage"
