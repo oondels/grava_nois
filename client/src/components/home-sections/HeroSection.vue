@@ -38,7 +38,7 @@
               ><ChevronsDown class="my-2" /> Veja como funciona
             </a>
 
-            <RouterLink to="/lances-gravanois" class="btn btn--primary" role="button" aria-label="View pricing">
+            <RouterLink :to="auth.isAuthenticated ? '/lances-gravanois' : '/login'" class="btn btn--primary" role="button" aria-label="View pricing">
               <span class="d-flex align-center justify-center" v-if="auth.isAuthenticated">
                 <ClapperboardIcon class="mr-2" />
                 Meus lances
