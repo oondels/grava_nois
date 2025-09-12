@@ -72,7 +72,7 @@
       <div class="flex items-center gap-2 text-sm text-gray-600">
         <div class="flex items-center gap-1">
           <v-icon icon="mdi-clock-outline" size="14" class="text-green-500" />
-          <span class="text-green-500">{{ formatLastModified(clip.recordedAt) }}</span>
+          <span class="text-green-500">{{ formatters.formatLastModified(clip.recordedAt) }}</span>
         </div>
         <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
         <div class="flex items-center gap-1">
@@ -170,10 +170,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { customIcons } from '@/utils/icons'
-import { formatDuration, formatDateTime, getSportIcon, getSportLabel } from "@/utils/formatters";
-
+import { ref, computed, onMounted as vueOnMounted } from "vue";
+import * as formatters from '@/utils/formatters'
 import type { SportClip } from "@/store/clips";
 
 interface Location {
@@ -200,7 +198,7 @@ const isTouchDevice = ref(false);
 const isLocked = computed(() => !props.clip.purchased && props.clip.priceCents > 0);
 
 // Detecta se é um dispositivo touch
-onMounted(() => {
+vueOnMounted(() => {
   isTouchDevice.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 });
 
