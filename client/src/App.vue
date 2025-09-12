@@ -1,6 +1,6 @@
 <template>
   <!-- Skip link para acessibilidade -->
-  <!-- <ReloadPrompt/> -->
+  <ReloadPrompt/>
   <InstallPrompt/>
   <AppLayout />
 </template>
