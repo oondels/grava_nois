@@ -1,40 +1,25 @@
 <template>
   <!-- Skip link para acessibilidade -->
-  <ul>
-    <li v-for="instrument in instruments" :key="instrument.id">{{ instrument.name }}</li>
-  </ul>
-  <ReloadPrompt/>
+  <!-- <ReloadPrompt/> -->
+  <InstallPrompt/>
   <AppLayout />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { onMounted } from "vue";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
 import AppLayout from "@/layouts/AppLayout.vue";
-import { supabaseClient } from "./lib/supabaseAuth";
 import ReloadPrompt from "./components/ReloadPrompt.vue";
-
-const instruments = ref<Array<any>>([]);
-
-async function getInstruments() {
-  const { data } = await supabaseClient.from("instruments").select();
-
-  data ? (instruments.value = data) : (instruments.value = []);
-}
-
-onMounted(() => {
-  getInstruments();
-});
-
+import InstallPrompt from "./components/InstallPrompt.vue";
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
 onMounted(() => {
-  // Always initialize with dark theme regardless of system preference
   themeStore.setTheme(true);
   document.documentElement.dataset.theme = "dark";
 });
+
 </script>
 
 <style>

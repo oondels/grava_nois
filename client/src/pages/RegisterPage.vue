@@ -140,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Mail, Lock, Eye, EyeOff, User, UserPlus } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
@@ -205,6 +205,14 @@ async function onRegister() {
     loading.value = false;
   }
 }
+
+// Carrega script do Google apenas nesta rota (opcional)
+onMounted(async () => {
+  try {
+    const { ensureGoogleClientScript } = await import('@/utils/loadGoogleScript')
+    await ensureGoogleClientScript()
+  } catch {}
+})
 </script>
 
 <style scoped>

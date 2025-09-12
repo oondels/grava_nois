@@ -79,6 +79,8 @@
               target="_blank"
               color="primary"
               variant="tonal"
+              :prepend-icon="customIcons.web"
+
               size="small"
             >
               <template #prepend>
@@ -86,12 +88,8 @@
               </template>
               Site oficial
             </v-btn>
-            <v-btn v-else disabled variant="tonal" size="small">
-              <template #prepend>
-                <Globe :size="16" />
-              </template>
-              Site em breve
-            </v-btn>
+           <v-btn v-else disabled variant="tonal" :prepend-icon="customIcons.web" size="small">Site em breve</v-btn>
+
           </div>
 
           <div class="mt-3 flex items-center flex-wrap gap-2">
@@ -239,23 +237,15 @@ function openSponsor(sponsor: Sponsor) {
   dialogOpen.value = true;
 }
 
-import {
-  Instagram,
-  Twitter,
-  Facebook,
-  Youtube,
-  Linkedin,
-  Globe,
-  MessageCircle,
-} from "lucide-vue-next";
-
+import { customIcons } from '@/utils/icons'
 const socialList = [
-  { key: "instagram" as const, label: "Instagram", icon: Instagram },
-  { key: "twitter" as const, label: "Twitter / X", icon: Twitter },
-  { key: "facebook" as const, label: "Facebook", icon: Facebook },
-  { key: "youtube" as const, label: "YouTube", icon: Youtube },
-  { key: "linkedin" as const, label: "LinkedIn", icon: Linkedin },
-  { key: "whatsapp" as const, label: "WhatsApp", icon: MessageCircle },
+  { key: "instagram" as const, label: "Instagram", icon: customIcons.instagram },
+  { key: "twitter" as const, label: "Twitter / X", icon: customIcons.twitter },
+  { key: "facebook" as const, label: "Facebook", icon: customIcons.facebook },
+  { key: "youtube" as const, label: "YouTube", icon: customIcons.youtube },
+  { key: "linkedin" as const, label: "LinkedIn", icon: customIcons.linkedin },
+  // whatsapp não incluso por enquanto
+
 ];
 
 function normalizeUrl(url: string): string {

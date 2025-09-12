@@ -87,18 +87,6 @@ const handleSearch = (value: string | null) => {
   clipsStore.updateFilters({ search: value || "" });
 };
 
-watch(
-  () => route.path,
-  () => {
-    showFooterComponent();
-  },
-  { immediate: true }
-);
-
-onMounted(() => {
-  showFooterComponent();
-});
-
 // Controle do diálogo de manutenção
 const maintenanceDialog = ref(false);
 </script>

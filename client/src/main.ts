@@ -3,12 +3,13 @@ import { createPinia } from "pinia";
 import router from "@/router";
 import App from "@/App.vue";
 import "./style.css";
-import "@mdi/font/css/materialdesignicons.min.css";
+// Removido @mdi/font: usaremos ícones SVG (mdi-svg)
 
 import "vuetify/styles";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 
 import { useAuthStore } from './store/auth'
 
@@ -40,6 +41,11 @@ const vuetify = createVuetify({
   directives,
   theme: {
     defaultTheme: "dark",
+  },
+  icons: {
+    defaultSet: 'mdi',
+    aliases,
+    sets: { mdi },
   },
 });
 

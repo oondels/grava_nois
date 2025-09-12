@@ -6,8 +6,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <link rel="stylesheet" href="./src/style.css" />
 
-    <!-- Client Google Auth Button -->
-    <script src="https://accounts.google.com/gsi/client" async></script>
+    <!-- Google Auth carregado sob demanda nas rotas de auth -->
 
     <!-- Fonts: Headings (Sora/Poppins), Body (Inter/Manrope) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,12 +15,15 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- PWA basic meta -->
+    <meta name="description" content="Grava Nóis: replays esportivos instantâneos — capture, compartilhe e baixe seus melhores lances em uma plataforma rápida e fácil." />
+    <link rel="canonical" href="/" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAFAFA" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0A0A0A" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="Grava Nóis" />
+    <!-- Manifest é injetado automaticamente pelo vite-plugin-pwa em build -->
     <title>Grava Nóis - Replays Esportivos</title>
   </head>
   <body>

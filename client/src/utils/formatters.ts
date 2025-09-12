@@ -57,15 +57,17 @@ export const getSportColor = (sport: string): string => {
   return colors[sport as keyof typeof colors] || 'grey'
 }
 
-// Substituído: antes retornava nomes MDI; agora mantemos rótulos em componentes (ver usos)
+
+import { customIcons } from './icons'
 export const getSportIcon = (sport: string): string => {
   const icons = {
-    futebol: 'football',
-    basquete: 'basketball',
-    volei: 'volleyball',
-    futevolei: 'volleyball'
+    futebol: customIcons.soccer,
+    basquete: customIcons.basketball,
+    volei: customIcons.volleyball,
+    futevolei: customIcons.volleyball,
   }
-  return icons[sport as keyof typeof icons] || 'help-circle'
+  return (icons as any)[sport] || customIcons.information
+
 }
 
 export const getSportLabel = (sport: string): string => {

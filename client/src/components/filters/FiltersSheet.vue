@@ -8,7 +8,8 @@
       <v-card-title class="d-flex align-center justify-space-between">
         <span class="text-subtitle-1">Filtros</span>
         <v-btn icon variant="text" aria-label="Fechar" @click="open = false">
-          <X />
+          <v-icon :icon="customIcons.close" />
+
         </v-btn>
       </v-card-title>
 
@@ -61,7 +62,8 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { X } from 'lucide-vue-next'
+import { customIcons } from '@/utils/icons'
+
 
 interface SportOption { label: string; value: string; icon?: string }
 

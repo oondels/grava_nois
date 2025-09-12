@@ -11,7 +11,7 @@ const routes = [
     path: "/lances-gravanois",
     name: "Lances GravaNois",
     component: () => import("@/pages/VideosPage.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: false },
   },
   {
     path: "/login",
@@ -58,7 +58,8 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory("/"),
+  // usa a base do Vite para suportar deploy em subpaths
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
 

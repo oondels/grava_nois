@@ -128,11 +128,11 @@
           <h2 id="showcase-title" class="section-title">Feito para qualquer quadra, qualquer time</h2>
           <div class="showcase-grid">
             <div class="media-card">
-              <img class="media-img" :src="IMAGES.soccer" alt="Partida de Futebol" loading="lazy" decoding="async" />
+              <img class="media-img" :src="IMAGES.soccer" alt="Partida de Futebol" loading="lazy" decoding="async" width="800" height="450" />
               <div class="media-label">Futebol</div>
             </div>
             <div class="media-card">
-              <img class="media-img" :src="IMAGES.volleyball" alt="Quadra de vôlei" loading="lazy" decoding="async" />
+              <img class="media-img" :src="IMAGES.volleyball" alt="Quadra de vôlei" loading="lazy" decoding="async" width="800" height="450" />
               <div class="media-label">Vôlei</div>
             </div>
             <div class="media-card">
@@ -142,11 +142,13 @@
                 alt="Quadra de basquete"
                 loading="lazy"
                 decoding="async"
+                width="800"
+                height="450"
               />
               <div class="media-label">Basquete</div>
             </div>
             <div class="media-card">
-              <img class="media-img" :src="IMAGES.outdoor" alt="Quadra externa/areia" loading="lazy" decoding="async" />
+              <img class="media-img" :src="IMAGES.outdoor" alt="Quadra externa/areia" loading="lazy" decoding="async" width="800" height="450" />
               <div class="media-label">Areia & quadras externas</div>
             </div>
           </div>

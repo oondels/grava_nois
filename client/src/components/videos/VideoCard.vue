@@ -46,15 +46,15 @@
       </div>
 
       <div v-if="hasAudio" class="badge audio" aria-label="Com áudio">
-        <v-icon icon="mdi-volume-high" size="16" />
+        <v-icon :icon="customIcons.volumeHigh" size="16" />
       </div>
 
       <div v-if="isLocked" class="badge lock" aria-label="Conteúdo pago">
-        <v-icon icon="mdi-lock" size="16" />
+        <v-icon :icon="customIcons.lock" size="16" />
       </div>
 
       <div class="hover-overlay" :class="{ show: hover }">
-        <v-icon icon="mdi-play" size="44" />
+        <v-icon :icon="customIcons.play" size="44" />
         <div class="text-caption text-medium-emphasis mt-2">Prévia</div>
       </div> -->
       </div>
@@ -91,6 +91,7 @@
     </v-card-text>
 
     <v-card-actions class="pt-0 action-row">
+
       <div class="d-flex align-center justify-space-between w-100 pa-3">
         <!-- Action Buttons -->
         <div class="flex items-center gap-3">
@@ -169,8 +170,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { formatDateTime, formatLastModified } from "@/utils/formatters";
+import { ref, computed } from "vue";
+import { customIcons } from '@/utils/icons'
+import { formatDuration, formatDateTime, getSportIcon, getSportLabel } from "@/utils/formatters";
+
 import type { SportClip } from "@/store/clips";
 
 interface Location {

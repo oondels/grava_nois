@@ -1,7 +1,8 @@
 <template>
   <div class="maintenance-page">
     <div class="content" role="status" aria-live="polite">
-      <AlertTriangle :size="72" color="#f59e0b" class="mb-4" />
+      <v-icon :icon="customIcons.alert" size="72" color="amber" class="mb-4" />
+
 
       <h1 class="title">Serviço em manutenção</h1>
       <p class="subtitle">
@@ -16,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import { customIcons } from '@/utils/icons'
 // Página simples de aviso de manutenção
 import { AlertTriangle } from "lucide-vue-next";
 </script>

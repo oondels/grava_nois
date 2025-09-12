@@ -43,7 +43,9 @@
             aria-label="Limpar estado"
             @click.stop="$emit('clear-estado')"
           >
-            <X :size="14" />
+
+            <v-icon :icon="closeIcon" size="14" />
+
           </v-btn>
         </template>
       </v-chip>
@@ -66,7 +68,8 @@
             aria-label="Limpar cidade"
             @click.stop="$emit('clear-cidade')"
           >
-            <X :size="14" />
+            <v-icon :icon="closeIcon" size="14" />
+
           </v-btn>
         </template>
       </v-chip>
@@ -89,7 +92,8 @@
             aria-label="Limpar quadra"
             @click.stop="$emit('clear-quadra')"
           >
-            <X :size="14" />
+            <v-icon :icon="closeIcon" size="14" />
+
           </v-btn>
         </template>
       </v-chip>
@@ -116,7 +120,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { X } from "lucide-vue-next";
+import { customIcons } from '@/utils/icons'
+
 
 interface ChipItem {
   label: string;
@@ -136,8 +141,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  filterIcon: "",
+  filterIcon: customIcons.filter as unknown as string,
+
 });
+
+const closeIcon = customIcons.close
 
 const emit = defineEmits([
   "update:sort",

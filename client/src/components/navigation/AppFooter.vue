@@ -4,32 +4,23 @@
       <!-- Brand / Intro -->
       <div class="brand-col">
         <h3 class="logo-text">Grava Nóis</h3>
-        <p class="tagline">Seu lance, nossa história.</p>
+        <p class="tagline">Seu lance, sua história.</p>
 
-        <!-- Redes -->
-        <div class="social-row flex justify-center" aria-label="Redes sociais">
-          <a
-            href="https://www.instagram.com/grava_nois?igsh=MWhhczl3dGRpN25waw=="
-            target="_blank"
-            aria-label="Instagram"
-            class="social-link"
-            title="Instagram"
-          >
-            <Instagram color="magenta" :size="22" />
+        <div class="social-row" aria-label="Redes sociais">
+          <a href="#" aria-label="Instagram" class="social-link" title="Instagram">
+            <v-icon :icon="customIcons.instagram" size="22" />
           </a>
-
-          <span aria-label="Whatsapp" class="social-link disabled" title="Whatsapp (em breve)">
-            <MessageCircle color="grey" :size="22" />
-          </span>
-
-          <a
-            href="https://www.linkedin.com/in/hendriusfelix/"
-            target="_blank"
-            aria-label="LinkedIn"
-            class="social-link"
-            title="LinkedIn"
-          >
-            <Linkedin color="blue" :size="22" />
+          <a href="#" aria-label="YouTube" class="social-link" title="YouTube">
+            <v-icon :icon="customIcons.youtube" size="22" />
+          </a>
+          <a href="#" aria-label="Facebook" class="social-link" title="Facebook">
+            <v-icon :icon="customIcons.facebook" size="22" />
+          </a>
+          <a href="#" aria-label="X (Twitter)" class="social-link" title="X (Twitter)">
+            <v-icon :icon="customIcons.twitter" size="22" />
+          </a>
+          <a href="#" aria-label="LinkedIn" class="social-link" title="LinkedIn">
+            <v-icon :icon="customIcons.linkedin" size="22" />
           </a>
         </div>
 
@@ -61,10 +52,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { RouterLink } from "vue-router";
-import { Instagram, Linkedin, MessageCircle } from "lucide-vue-next";
-const year = computed(() => new Date().getFullYear());
+import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
+import { customIcons } from '@/utils/icons'
+const year = computed(() => new Date().getFullYear())
 </script>
 
 <style scoped>

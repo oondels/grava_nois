@@ -1,5 +1,5 @@
 <template>
-  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${HeroBG})` }">
+  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="heroBgStyle">
     <div class="hero__container">
       <!-- Top-centered symbol-only logo -->
       <div class="hero__logo-wrap parallax parallax--logo">
@@ -38,6 +38,7 @@
               ><ChevronsDown class="my-2" /> Veja como funciona
             </a>
 
+
             <RouterLink :to="auth.isAuthenticated ? '/lances-gravanois' : '/login'" class="btn btn--primary" role="button" aria-label="View pricing">
               <span class="d-flex align-center justify-center" v-if="auth.isAuthenticated">
                 <ClapperboardIcon class="mr-2" />
@@ -56,8 +57,8 @@
         <!-- Optional right-side mockup on desktop with crossfade carousel -->
         <div class="hero__mockup parallax parallax--mockup" aria-hidden="true">
           <div class="mockup-fader">
-            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" loading="eager" />
-            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" loading="lazy" />
+            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" loading="eager" decoding="async" width="1280" height="800" />
+            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" loading="lazy" decoding="async" width="1280" height="800" />
           </div>
         </div>
       </div>
@@ -85,6 +86,7 @@ const auth = useAuthStore();
 import { ChevronsDown, ClapperboardIcon, LogIn } from "lucide-vue-next";
 
 import { onMounted, onBeforeUnmount, ref, computed } from "vue";
+import { prefetchRoute } from '@/utils/prefetchRoute'
 
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
 const heroModules = import.meta.glob("@/assets/hero_sec_imgs/*.{png,jpg,jpeg,webp}", { eager: true });
@@ -95,34 +97,9 @@ const heroImages = Object.values(heroModules)
 // Fallbacks explícitos para assets (mantidos para tree-shaking ameno)
 const logoSrc = LogoSymbol;
 const mockupSrc = Mockup;
-// const bgFallback = HeroBG || BasketBall;
-
-// // BG como computed para evitar recomputações e aceitar troca futura
-// const bgUrl = ref<string>(BasketBall || bgFallback);
-/**
- * Overlay dinâmico sem tocar no <style>:
- * Camada 1: highlight suave que segue --px/--py
- * Camada 2: vinheta escura que segue --px/--py
- * Camada 3: imagem de fundo
- */
-// const bgStyle = computed(() => ({
-//   backgroundImage: `
-//     radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(255,255,255,0.16), transparent 65%),
-//     radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(0,0,0,0) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0.78) 100%),
-//     url(${bgUrl.value})
-//   `
-// }));
-
-// Pré-carregar imagens do carrossel para suavizar a primeira troca
-function preloadImages(urls: string[]) {
-  urls.slice(0, 4).forEach((u) => {
-    const i = new Image();
-    i.decoding = "async";
-    i.src = u;
-  });
-}
 
 const rootEl = ref<HTMLElement | null>(null);
+const heroBgStyle = ref<Record<string, string>>({});
 let raf = 0; // reservado para futuras animações auxiliares (mantido para contagem)
 let carouselTimer: number | undefined;
 let animRaf = 0;
@@ -143,6 +120,7 @@ const showHint = ref(true);
 let hintTimer: number | undefined;
 const isInteracting = ref(false);
 const useGyro = ref(false);
+function prefetchLogin() { prefetchRoute('/login') }
 
 // Scroll resistance state
 const SCROLL_THRESHOLD = 42; // px drag before native scroll
@@ -440,75 +418,75 @@ function observeVisibility() {
 }
 
 // Mounted
-onMounted(() => {
-  const el = rootEl.value;
-  if (!el) return;
+// onMounted(() => {
+//   const el = rootEl.value;
+//   if (!el) return;
 
-  // Init center
-  applyPointerVars(0.5, 0.5);
-  posX.value = 0.5;
-  posY.value = 0.5;
-  targetX = 0.5;
-  targetY = 0.5;
+//   // Init center
+//   applyPointerVars(0.5, 0.5);
+//   posX.value = 0.5;
+//   posY.value = 0.5;
+//   targetX = 0.5;
+//   targetY = 0.5;
 
-  // Respeito a prefers-reduced-motion
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-  reduceMotionPref = !!reduce.matches;
+//   // Respeito a prefers-reduced-motion
+//   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+//   reduceMotionPref = !!reduce.matches;
 
-  // Listeners de interação
-  el.addEventListener("pointerdown", onPointerDown as any, { passive: true });
-  el.addEventListener("pointerup", onPointerUp as any, { passive: true });
-  el.addEventListener("pointercancel", onPointerUp as any, { passive: true });
-  el.addEventListener("pointermove", onPointerMove, { passive: true });
-  el.addEventListener("keydown", onKeyNav as any, { passive: false });
+//   // Listeners de interação
+//   el.addEventListener("pointerdown", onPointerDown as any, { passive: true });
+//   el.addEventListener("pointerup", onPointerUp as any, { passive: true });
+//   el.addEventListener("pointercancel", onPointerUp as any, { passive: true });
+//   el.addEventListener("pointermove", onPointerMove, { passive: true });
+//   el.addEventListener("keydown", onKeyNav as any, { passive: false });
 
-  // touch handlers (não passive para resistência)
-  el.addEventListener("touchstart", onTouchStart, { passive: false });
-  el.addEventListener("touchmove", onTouchMove, { passive: false });
+//   // touch handlers (não passive para resistência)
+//   el.addEventListener("touchstart", onTouchStart, { passive: false });
+//   el.addEventListener("touchmove", onTouchMove, { passive: false });
 
-  // Scroll damping (wheel/touch)
-  el.addEventListener("wheel", wheelHandler, { passive: false } as AddEventListenerOptions);
-  touchStartListenerDamp = (evt: TouchEvent) => {
-    if (evt.touches && evt.touches[0]) onTouchStartDamp(evt.touches[0]);
-  };
-  touchMoveListenerDamp = (evt: TouchEvent) => {
-    if (evt.touches && evt.touches[0]) onTouchMoveDamp(evt.touches[0], evt);
-  };
-  el.addEventListener("touchstart", touchStartListenerDamp, { passive: true });
-  el.addEventListener("touchmove", touchMoveListenerDamp, { passive: false });
+//   // Scroll damping (wheel/touch)
+//   el.addEventListener("wheel", wheelHandler, { passive: false } as AddEventListenerOptions);
+//   touchStartListenerDamp = (evt: TouchEvent) => {
+//     if (evt.touches && evt.touches[0]) onTouchStartDamp(evt.touches[0]);
+//   };
+//   touchMoveListenerDamp = (evt: TouchEvent) => {
+//     if (evt.touches && evt.touches[0]) onTouchMoveDamp(evt.touches[0], evt);
+//   };
+//   el.addEventListener("touchstart", touchStartListenerDamp, { passive: true });
+//   el.addEventListener("touchmove", touchMoveListenerDamp, { passive: false });
 
-  // Tenta habilitar gyro sem permissão explícita (Android/Chrome)
-  try {
-    const testHandler = (e: DeviceOrientationEvent) => {
-      if ((e.beta ?? 0) !== 0 || (e.gamma ?? 0) !== 0) {
-        deviceToTarget(e.beta ?? 0, e.gamma ?? 0);
-        useGyro.value = true;
-        window.removeEventListener("deviceorientation", testHandler as any);
-      }
-    };
-    window.addEventListener("deviceorientation", testHandler as any, { passive: true, once: true } as any);
-  } catch {}
+//   // Tenta habilitar gyro sem permissão explícita (Android/Chrome)
+//   try {
+//     const testHandler = (e: DeviceOrientationEvent) => {
+//       if ((e.beta ?? 0) !== 0 || (e.gamma ?? 0) !== 0) {
+//         deviceToTarget(e.beta ?? 0, e.gamma ?? 0);
+//         useGyro.value = true;
+//         window.removeEventListener("deviceorientation", testHandler as any);
+//       }
+//     };
+//     window.addEventListener("deviceorientation", testHandler as any, { passive: true, once: true } as any);
+//   } catch {}
 
-  // Init carousel + preload
-  if (heroImages.length > 0) {
-    imgA.value = heroImages[0];
-    imgB.value = heroImages[1 % heroImages.length] || heroImages[0];
-    showA.value = true;
-    currentIcon.value = heroImages[0] || logoSrc;
-    preloadImages(heroImages);
-  } else {
-    imgA.value = mockupSrc as unknown as string;
-    imgB.value = mockupSrc as unknown as string;
-    currentIcon.value = logoSrc as unknown as string;
-  }
-  startCarousel();
+//   // Init carousel + preload
+//   if (heroImages.length > 0) {
+//     imgA.value = heroImages[0];
+//     imgB.value = heroImages[1 % heroImages.length] || heroImages[0];
+//     showA.value = true;
+//     currentIcon.value = heroImages[0] || logoSrc;
+//     preloadImages(heroImages);
+//   } else {
+//     imgA.value = mockupSrc as unknown as string;
+//     imgB.value = mockupSrc as unknown as string;
+//     currentIcon.value = logoSrc as unknown as string;
+//   }
+//   startCarousel();
 
-  // Auto-hide hint
-  hideHintSoon();
+//   // Auto-hide hint
+//   hideHintSoon();
 
-  // Observer de visibilidade
-  observeVisibility();
-});
+//   // Observer de visibilidade
+//   observeVisibility();
+// });
 
 // Cleanup
 onBeforeUnmount(() => {
@@ -532,6 +510,22 @@ onBeforeUnmount(() => {
   if (orientationHandler) window.removeEventListener("deviceorientation", orientationHandler as any);
   if (io) io.disconnect();
 });
+
+// Carrega o background pesado da hero de forma deferida para evitar bloquear render
+onMounted(() => {
+  try {
+    const img = new Image()
+    // sinaliza ao navegador que não é prioridade máxima
+    ;(img as any).fetchPriority = 'low'
+    img.decoding = 'async'
+    img.src = HeroBG
+    img.onload = () => {
+      heroBgStyle.value = { backgroundImage: `url(${HeroBG})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    }
+  } catch {
+    heroBgStyle.value = { backgroundImage: `url(${HeroBG})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  }
+})
 </script>
 
 <style scoped>
