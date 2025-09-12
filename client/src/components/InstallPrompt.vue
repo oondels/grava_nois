@@ -2,7 +2,7 @@
   <div v-if="visible" class="install-toast" role="dialog" aria-live="polite">
     <div class="message">
       <strong>Instale o Grava Nóis</strong>
-      <span class="sub">Acesse mais rápido e use offline.</span>
+      <span class="sub">Acesse mais rápido.</span>
     </div>
     <div class="actions">
       <button class="btn primary" @click="install">Instalar</button>
