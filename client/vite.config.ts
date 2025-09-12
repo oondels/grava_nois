@@ -6,7 +6,7 @@ import { VitePWA } from "vite-plugin-pwa";
 // https://vitejs.dev/config/
 export default defineConfig({
   // Use base absoluta para evitar 404 de assets quando app abre em subpaths (ex: /auth/callback no PWA)
-  base: '/',
+  base: './',
   plugins: [
     vue(),
     VitePWA({
@@ -39,8 +39,8 @@ export default defineConfig({
         globIgnores: ["**/assets/volleysvg-*.svg", "**/*.ttf", "**/*.eot"],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp}"],
         // fallback de navegação segue para SPA (index.html) por padrão
-        // Evite que o SW intercepte OAuth callback e outras rotas especiais
-        navigateFallbackDenylist: [/^\/auth\//, /^\/api\//],
+        // Não negar /auth para permitir que o SPA processe o callback do OAuth
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           // Imagens: Cache First com expiração
           {
