@@ -1,4 +1,6 @@
 export const formatDuration = (seconds: number): string => {
+  console.log(`formatDuration called with seconds: ${seconds}`);
+  
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   
@@ -34,6 +36,17 @@ export const formatDateTime = (dateString: string): string => {
   })
 }
 
+export function formatLastModified(dateString: any) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${date.getHours().toString().padStart(2, "0")}:${date
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")} - ${date.getDate()} ${months[date.getMonth()]} - ${date.getFullYear()}`;
+}
+
 export const getSportColor = (sport: string): string => {
   const colors = {
     futebol: 'green',
@@ -44,6 +57,7 @@ export const getSportColor = (sport: string): string => {
   return colors[sport as keyof typeof colors] || 'grey'
 }
 
+
 import { customIcons } from './icons'
 export const getSportIcon = (sport: string): string => {
   const icons = {
@@ -53,6 +67,7 @@ export const getSportIcon = (sport: string): string => {
     futevolei: customIcons.volleyball,
   }
   return (icons as any)[sport] || customIcons.information
+
 }
 
 export const getSportLabel = (sport: string): string => {

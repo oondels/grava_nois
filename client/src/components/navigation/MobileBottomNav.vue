@@ -7,6 +7,17 @@
     aria-label="Navegação inferior"
   >
     <div class="h-15 flex justify-around">
+      <RouterLink
+        to="/"
+        :class="[
+          'w-12 h-12 rounded-xl flex items-center justify-center',
+          isActive('/') ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400' : '',
+        ]"
+        aria-label="Ir para a página inicial"
+      >
+        <Home />
+      </RouterLink>
+
       <!-- Botão dinâmico: Logo para ir para user-page, X para sair -->
       <button
         v-if="isUserPage"
@@ -39,9 +50,9 @@
             Perfil
           </span>
 
-          <CircleUserIcon v-if="auth.isAuthenticated" role="button"  />
+          <CircleUserIcon v-if="auth.isAuthenticated" role="button" />
 
-          <LogInIcon v-else role="button"  />
+          <LogInIcon v-else role="button" />
         </div>
       </RouterLink>
 
@@ -61,6 +72,7 @@
       </RouterLink>
 
       <RouterLink
+
         to="/lances-gravanois"
         :class="[
           'w-12 h-12 rounded-xl flex items-center justify-center',
@@ -149,9 +161,7 @@
             <div
               :class="[
                 'w-12 h-12 rounded-xl flex items-center justify-center',
-                isActive(item.to)
-                  ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
-                  : '',
+                isActive(item.to) ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400' : '',
               ]"
             >
               <component :is="item.icon" class="w-6 h-6" aria-hidden="true" />

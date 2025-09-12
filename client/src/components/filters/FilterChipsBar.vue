@@ -43,7 +43,9 @@
             aria-label="Limpar estado"
             @click.stop="$emit('clear-estado')"
           >
+
             <v-icon :icon="closeIcon" size="14" />
+
           </v-btn>
         </template>
       </v-chip>
@@ -67,6 +69,7 @@
             @click.stop="$emit('clear-cidade')"
           >
             <v-icon :icon="closeIcon" size="14" />
+
           </v-btn>
         </template>
       </v-chip>
@@ -90,6 +93,7 @@
             @click.stop="$emit('clear-quadra')"
           >
             <v-icon :icon="closeIcon" size="14" />
+
           </v-btn>
         </template>
       </v-chip>
@@ -118,6 +122,7 @@
 import { ref, watch } from "vue";
 import { customIcons } from '@/utils/icons'
 
+
 interface ChipItem {
   label: string;
   value: string;
@@ -137,6 +142,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   filterIcon: customIcons.filter as unknown as string,
+
 });
 
 const closeIcon = customIcons.close

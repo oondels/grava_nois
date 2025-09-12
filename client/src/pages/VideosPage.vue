@@ -6,56 +6,75 @@
     </div>
 
     <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">
-      <div>
-        <h1 class="text-h4 font-weight-bold mb-1">Replays e Lances</h1>
-        <p class="text-medium-emphasis mb-0">Resgate seus melhores lances</p>
+      <div class="d-flex align-center ga-3 flex-wrap justify-center">
+        <h1 class="text-h4 font-weight-bold mb-1 page-title">Replays e Lances</h1>
+
+        <!-- Aviso sutil: fase inicial (ao lado do título) -->
+        <v-dialog max-width="500">
+          <template v-slot:activator="{ props: activatorProps }">
+            <v-btn
+              v-bind="activatorProps"
+              class="title-alert-btn pulse"
+              color="warning"
+              variant="tonal"
+              size="small"
+              :rounded="true"
+              aria-label="Aviso importante"
+            >
+              <v-icon icon="mdi mdi-alert-decagram" size="20" />
+            </v-btn>
+          </template>
+
+          <template v-slot:default="{ isActive }">
+            <v-card title="Aviso" class="result-card" v-if="isActive">
+              <v-card-text>
+                <v-alert
+                  v-if="showEarlyNotice"
+                  type="warning"
+                  variant="tonal"
+                  border="start"
+                  rounded="lg"
+                  density="comfortable"
+                  class="mb-2"
+                >
+                  Em fase inicial: Se encontrar um erro nos relate clicando
+                  <router-link to="/reportar-erro" class="text-primary">aqui</router-link>.
+                </v-alert>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-dialog>
+
+        <p class="text-medium-emphasis mb-0 w-100 text-center">Resgate seus melhores lances</p>
       </div>
     </div>
 
-    <!-- Aviso sutil: fase inicial -->
-    <v-alert
-      v-if="showEarlyNotice"
-      type="warning"
+    <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="mb-7" @click="refresh">
+      Vídeos
+    </v-btn>
+
+    <!-- Callout: incentive to post and tag Instagram -->
+    <div
+      type="info"
       variant="tonal"
       border="start"
       rounded="lg"
+      class="mb-6 d-flex align-center ga-3 bg-blue-lighten-2 pa-4 rounded-lg border-l-4 border-blue-700"
       density="comfortable"
-      class="mb-6"
     >
-      <div class="d-flex align-center justify-space-between ga-3 position-relative">
-        <div class="text-body-2">
-          Este aplicativo está em fase inicial (beta). Pedimos um pouco de paciência e, por favor, reporte qualquer erro
-          que encontrar.
-        </div>
-
-        <div class="d-flex align-center ga-2 mt-4">
-          <v-btn
-            size="small"
-            variant="outlined"
-            color="red"
-            :to="{ path: '/reportar-erro', query: { page: 'Lances / Grava Nóis' } }"
-          >
-            Reportar
-          </v-btn>
-        </div>
-
+      <div>
+        <v-icon icon="mdi mdi-instagram" size="22" class="me-1" />
+        Curtiu seu vídeo? Publique e marque para aparecer no nosso Insta!
         <v-btn
-          class="position-absolute"
-          style="top: -10px; right: -10px"
-          size="small"
-          variant="text"
-          icon
-          @click="showEarlyNotice = false"
-          :aria-label="'Fechar aviso'"
+          href="https://www.instagram.com/grava_nois?igsh=MWhhczl3dGRpN25waw=="
+          target="_blank"
+          rel="noopener noreferrer"
+          density="compact"
         >
-          <v-icon :icon="customIcons.close" />
+          @grava_nois
         </v-btn>
       </div>
-    </v-alert>
-
-    <v-btn color="success" variant="outlined" :prepend-icon="customIcons.refresh" class="mb-7" @click="refresh">
-      Atualizar Vídeos
-    </v-btn>
+    </div>
 
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
@@ -93,79 +112,12 @@
       <div v-else class="px-4 pb-4">
         <v-row>
           <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
-            <v-card rounded="xl" elevation="3" class="result-card">
-              <div class="thumb-wrapper">
-                <div class="thumb-video">
-                  <!-- Data Vídeo -->
-                  <v-chip size="small" class="date-badge mb-2" variant="outlined">
-                    {{ formatLastModified(file.last_modified) }}
-                  </v-chip>
+            <VideoCard
+              :clip="toClip(file)"
+              :show-disabled="state.loading || previewMap[file.path] === null"
+              @show="() => onShow(file)"
+              @download="() => onDownload(file)"
 
-                  <video
-                    v-if="typeof previewMap[file.path] === 'string'"
-                    :src="previewMap[file.path]!"
-                    controls
-                    preload="none"
-                    playsinline
-                    style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px 12px 0 0"
-                  />
-                  <div v-else>
-                    <div
-                      v-if="previewMap[file.path] === null"
-                      class="d-flex align-center justify-center"
-                      style="
-                        width: 100%;
-                        aspect-ratio: 16/9;
-                        background: #111;
-                        color: #ccc;
-                        border-radius: 12px 12px 0 0;
-                      "
-                    >
-                      Carregando prévia…
-                    </div>
-                    <div v-else class="thumb-placeholder">
-                      <img :src="thumbVideo" alt="Thumbnail genérico de vídeo" class="thumb-image" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <v-card-actions class="pt-0">
-                <v-btn
-                  size="small"
-                  variant="outlined"
-                  :prepend-icon="customIcons.play"
-                  :disabled="state.loading || previewMap[file.path] === null"
-                  @click="onShow(file)"
-                >
-                  Exibir
-                </v-btn>
-
-                <!-- <v-btn
-                  size="small"
-                  variant="outlined"
-                  :href="previewMap[file.path] || undefined"
-                  target="_blank"
-                  prepend-icon="mdi mdi-play"
-                  :disabled="!previewMap[file.path]"
-                >
-                  Abrir
-                </v-btn> -->
-
-                <v-spacer />
-
-                <v-btn
-                  size="small"
-                  color="green"
-                  variant="outlined"
-                  :prepend-icon="customIcons.download || customIcons.cloudDownload"
-                  :disabled="!previewMap[file.path]"
-                  @click="onDownload(file)"
-                >
-                  Baixar
-                </v-btn>
-              </v-card-actions>
-            </v-card>
           </v-col>
         </v-row>
 
@@ -185,6 +137,8 @@ import { reactive, ref, onMounted } from "vue";
 import { customIcons } from '@/utils/icons'
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
+import VideoCard from "@/components/videos/VideoCard.vue";
+import type { SportClip } from "@/store/clips";
 
 type LocalLocation = { estado: string; cidade: string; quadra: string };
 
@@ -241,6 +195,23 @@ function formatLastModified(dateString: any) {
     .getMinutes()
     .toString()
     .padStart(2, "0")} - ${date.getDate()} ${months[date.getMonth()]} - ${date.getFullYear()}`;
+}
+
+function toClip(file: VideoFile): SportClip {
+  const recordedAt = file.last_modified || new Date().toISOString();
+  return {
+    id: file.path,
+    sport: "futebol",
+    durationSec: 10,
+    priceCents: 0,
+    purchased: true,
+    status: "pago",
+    recordedAt,
+    camera: "Cam-01",
+    venue: "Grava Nóis",
+    thumbUrl: thumbVideo as unknown as string,
+    videoUrl: previewMap[file.path] || "",
+  };
 }
 
 /** ================= Data Fetch ================= */
@@ -407,6 +378,41 @@ onMounted(() => {
 @media (min-width: 600px) {
   :root {
     --gn-sticky-top: 64px;
+  }
+}
+
+/* Título + botão de aviso (chamativo, sem exagero) */
+.page-title {
+  display: inline-flex;
+  align-items: center;
+}
+
+.title-alert-btn {
+  /* Usa a cor de aviso global, com brilho sutil */
+  --pulse-base: var(--warning-color, #f59e0b);
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  backdrop-filter: saturate(1.1);
+}
+
+.title-alert-btn:hover {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35);
+}
+
+.pulse {
+  animation: pulseGlow 2.4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
   }
 }
 </style>

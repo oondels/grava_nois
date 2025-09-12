@@ -3,6 +3,7 @@
     <div class="content" role="status" aria-live="polite">
       <v-icon :icon="customIcons.alert" size="72" color="amber" class="mb-4" />
 
+
       <h1 class="title">Serviço em manutenção</h1>
       <p class="subtitle">
         Estamos temporariamente indisponíveis devido a equipamento danificado.
@@ -18,6 +19,7 @@
 <script setup lang="ts">
 import { customIcons } from '@/utils/icons'
 // Página simples de aviso de manutenção
+import { AlertTriangle } from "lucide-vue-next";
 </script>
 
 <style scoped>

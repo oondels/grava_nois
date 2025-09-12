@@ -7,77 +7,164 @@
     @mouseleave="hover = false"
   >
     <div class="thumb-wrapper">
-      <v-img :src="clip.thumbUrl" :aspect-ratio="16 / 9" cover :eager="false" class="thumb-img">
-        <template #placeholder>
-          <div class="d-flex align-center justify-center h-100">
-            <v-progress-circular indeterminate color="primary" />
+      <template v-if="clip.videoUrl">
+        <video class="thumb-video" :src="clip.videoUrl" controls preload="none" playsinline />
+      </template>
+
+      <template v-else>
+        <!-- Foto pre carregada antes do clipe ser disponibiliado para assistir -->
+        <v-img :src="clip.thumbUrl" :aspect-ratio="16 / 9" cover :eager="false" class="thumb-img">
+          <template #placeholder>
+            <div class="d-flex align-center justify-center h-100">
+              <v-progress-circular indeterminate color="primary" />
+            </div>
+          </template>
+
+          <!-- Play Button Overlay -->
+          <div class="play-overlay" :class="{ show: hover || isTouchDevice }">
+            <v-btn
+              icon
+              size="x-large"
+              variant="elevated"
+              color="white"
+              :disabled="showDisabled"
+              @click.stop="$emit('show', clip)"
+              class="play-button"
+            >
+              <v-icon icon="mdi-play" size="32" color="primary" />
+            </v-btn>
           </div>
-        </template>
-      </v-img>
+        </v-img>
+      </template>
 
-      <div class="thumb-gradient" />
+      <div class="thumb-gradient"></div>
 
-      <!-- Duração -->
-      <div class="badge duration" aria-label="Duração do clipe">
+      <!-- Funcionalidades futuras -->
+      <div>
+        <!-- <div class="badge duration" aria-label="Duração do clipe">
         {{ formatDuration(clip.durationSec) }}
       </div>
 
-      <!-- Áudio opcional -->
       <div v-if="hasAudio" class="badge audio" aria-label="Com áudio">
         <v-icon :icon="customIcons.volumeHigh" size="16" />
       </div>
 
-      <!-- Cadeado (pago) -->
       <div v-if="isLocked" class="badge lock" aria-label="Conteúdo pago">
         <v-icon :icon="customIcons.lock" size="16" />
       </div>
 
-      <!-- Hover overlay / preview cue -->
       <div class="hover-overlay" :class="{ show: hover }">
         <v-icon :icon="customIcons.play" size="44" />
         <div class="text-caption text-medium-emphasis mt-2">Prévia</div>
+      </div> -->
       </div>
     </div>
 
     <v-card-text class="pt-3">
-      <div class="d-flex align-center justify-space-between mb-1">
+      <!-- <div class="d-flex align-center justify-space-between mb-1">
         <div class="text-subtitle-2 font-weight-medium text-truncate" :title="clip.venue">{{ clip.venue }}</div>
         <v-chip size="x-small" color="primary" variant="tonal">
           <v-icon :icon="getSportIcon(clip.sport)" size="16" class="me-1" />
           {{ getSportLabel(clip.sport) }}
         </v-chip>
+      </div> -->
+
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <div class="flex items-center gap-1">
+          <v-icon icon="mdi-clock-outline" size="14" class="text-green-500" />
+          <span class="text-green-500">{{ formatLastModified(clip.recordedAt) }}</span>
+        </div>
+        <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
+        <div class="flex items-center gap-1">
+          <!-- <v-icon icon="mdi-high-definition" size="14" class="text-blue-500" /> -->
+          <span class="font-medium text-red-600">HD</span>
+        </div>
       </div>
 
-      <div class="d-flex align-center ga-3 text-medium-emphasis text-caption">
-        <span class="d-inline-flex align-center ga-1">{{ clip.camera }}</span>
-        <span class="d-inline-flex align-center ga-1">• {{ formatDateTime(clip.recordedAt) }}</span>
-        <span class="d-inline-flex align-center ga-1">• HD</span>
-      </div>
-
-      <div class="d-flex flex-wrap ga-2 mt-3">
+      <!-- <div class="d-flex flex-wrap ga-2 mt-3">
         <v-chip size="x-small" variant="tonal" color="secondary">{{ location?.estado }}</v-chip>
         <v-chip size="x-small" variant="tonal" color="secondary">{{ location?.cidade }}</v-chip>
         <v-chip size="x-small" variant="tonal" color="secondary" class="text-truncate max-w-100">{{
           location?.quadra
         }}</v-chip>
-      </div>
+      </div> -->
     </v-card-text>
 
     <v-card-actions class="pt-0 action-row">
-      <v-btn variant="text" :prepend-icon="customIcons.heart" :color="favorite ? 'primary' : ''" @click.stop="toggleFavorite">
-        Favoritar
-      </v-btn>
 
-      <v-btn color="primary" variant="tonal" :prepend-icon="customIcons.cloudDownload" @click.stop="$emit('download', clip)">
-        Baixar
-      </v-btn>
+      <div class="d-flex align-center justify-space-between w-100 pa-3">
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-3">
+          <!-- <v-btn
+            variant="elevated"
+            color="primary"
+            size="default"
+            prepend-icon="mdi-play"
+            :disabled="showDisabled"
+            @click.stop="$emit('show', clip)"
+            class="primary-action-btn"
+          >
+            <span class="hidden sm:inline">Assistir</span>
+            <span class="sm:hidden">Play</span>
+          </v-btn> -->
+
+          <v-btn
+            variant="outlined"
+            color="secondary"
+            size="small"
+            density="compact"
+            prepend-icon="mdi-download"
+            @click.stop="$emit('download', clip)"
+            class="secondary-action-btn"
+          >
+            <span>Baixar</span>
+            <!-- <v-icon class="sm:hidden">mdi-download</v-icon> -->
+          </v-btn>
+        </div>
+
+        <div class="flex items-center gap-2 relative p-3">
+          <v-tooltip text="Curtir vídeo" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn
+                v-bind="tooltipProps"
+                icon
+                variant="text"
+                size="small"
+                :color="favorite ? 'red' : 'grey'"
+                @click.stop="toggleFavorite"
+                class="social-btn"
+                disabled
+              >
+                <v-icon :icon="favorite ? 'mdi-heart' : 'mdi-heart-outline'" />
+              </v-btn>
+            </template>
+          </v-tooltip>
+
+          <v-tooltip text="Comentar" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn v-bind="tooltipProps" icon variant="text" size="small" color="grey" class="social-btn" disabled>
+                <v-icon icon="mdi-comment-outline" />
+              </v-btn>
+            </template>
+          </v-tooltip>
+
+          <v-tooltip text="Compartilhar" location="top">
+            <template #activator="{ props: tooltipProps }">
+              <v-btn v-bind="tooltipProps" icon variant="text" size="small" color="grey" class="social-btn" disabled>
+                <v-icon icon="mdi-share-variant" />
+              </v-btn>
+            </template>
+          </v-tooltip>
+
+          <span class="absolute bottom-0 right-0">
+            <v-chip size="x-small" color="amber" variant="elevated" class="ml-2">
+              <v-icon icon="mdi-clock-outline" size="12" class="mr-1" />
+              em breve
+            </v-chip>
+          </span>
+        </div>
+      </div>
       <v-spacer />
-      <!-- <v-btn v-if="isLocked" color="primary" variant="tonal" :prepend-icon="'mdi-lock-open-variant'" @click.stop="$emit('unlock', clip)">
-        Desbloquear
-      </v-btn>
-      <v-btn v-else color="primary" variant="tonal" :prepend-icon="'mdi-cloud-download'" @click.stop="$emit('download', clip)">
-        Baixar
-      </v-btn> -->
     </v-card-actions>
   </v-card>
 </template>
@@ -86,6 +173,7 @@
 import { ref, computed } from "vue";
 import { customIcons } from '@/utils/icons'
 import { formatDuration, formatDateTime, getSportIcon, getSportLabel } from "@/utils/formatters";
+
 import type { SportClip } from "@/store/clips";
 
 interface Location {
@@ -98,15 +186,23 @@ interface Props {
   clip: SportClip;
   location?: Location | null;
   hasAudio?: boolean;
+  showDisabled?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   hasAudio: false,
+  showDisabled: false,
 });
 
 const hover = ref(false);
 const favorite = ref(false);
+const isTouchDevice = ref(false);
 const isLocked = computed(() => !props.clip.purchased && props.clip.priceCents > 0);
+
+// Detecta se é um dispositivo touch
+onMounted(() => {
+  isTouchDevice.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+});
 
 function toggleFavorite() {
   favorite.value = !favorite.value;
@@ -114,6 +210,97 @@ function toggleFavorite() {
 </script>
 
 <style scoped>
+/* Play Button Overlay */
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+.play-overlay.show {
+  opacity: 1;
+}
+
+/* Mobile: sempre mostrar com menor opacidade */
+@media (max-width: 768px) {
+  .play-overlay {
+    opacity: 0.7;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .play-overlay.show {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
+
+.play-button {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.play-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Mobile: área de toque maior */
+@media (max-width: 768px) {
+  .play-button {
+    min-width: 64px;
+    min-height: 64px;
+  }
+}
+
+/* Primary Action Button */
+.primary-action-btn {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.primary-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Secondary Action Button */
+.secondary-action-btn {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.secondary-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Social Buttons */
+.social-btn {
+  transition: all 0.2s ease;
+}
+
+.social-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .primary-action-btn {
+    min-width: 80px;
+  }
+
+  .secondary-action-btn {
+    min-width: 48px;
+  }
+}
+
 .video-card {
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -125,8 +312,10 @@ function toggleFavorite() {
 .thumb-wrapper {
   position: relative;
 }
-.thumb-img {
-  filter: saturate(1.03);
+.thumb-video {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
 }
 .thumb-gradient {
   position: absolute;

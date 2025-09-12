@@ -4,6 +4,6 @@
   "compilerOptions": {
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["vite-plugin-pwa/vue", "vite/client"]
+    "types": ["vite-plugin-pwa/vue", "vite/client", "vidstack/vue"]
   }
 }

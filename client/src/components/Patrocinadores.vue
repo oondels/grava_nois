@@ -80,11 +80,16 @@
               color="primary"
               variant="tonal"
               :prepend-icon="customIcons.web"
+
               size="small"
             >
+              <template #prepend>
+                <Globe :size="16" />
+              </template>
               Site oficial
             </v-btn>
-            <v-btn v-else disabled variant="tonal" :prepend-icon="customIcons.web" size="small">Site em breve</v-btn>
+           <v-btn v-else disabled variant="tonal" :prepend-icon="customIcons.web" size="small">Site em breve</v-btn>
+
           </div>
 
           <div class="mt-3 flex items-center flex-wrap gap-2">
@@ -99,7 +104,7 @@
               color="primary"
               :aria-label="soc.label"
             >
-              <v-icon :icon="soc.icon" />
+              <component :is="soc.icon" :size="20" />
             </v-btn>
           </div>
 
@@ -240,6 +245,7 @@ const socialList = [
   { key: "youtube" as const, label: "YouTube", icon: customIcons.youtube },
   { key: "linkedin" as const, label: "LinkedIn", icon: customIcons.linkedin },
   // whatsapp não incluso por enquanto
+
 ];
 
 function normalizeUrl(url: string): string {

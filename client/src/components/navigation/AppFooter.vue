@@ -26,17 +26,17 @@
 
         <p class="copyright">© {{ year }} Grava Nóis. Todos os direitos reservados.</p>
       </div>
-      
+
       <!-- Suporte -->
       <nav class="links-col" aria-label="Suporte">
-        <h4>Suporte</h4>
         <ul>
-          <li><RouterLink to="/suporte">Central de Ajuda</RouterLink></li>
-          <li><RouterLink to="/contato">Instalar no meu campo</RouterLink></li>
-          <li><RouterLink to="/contato">Contato</RouterLink></li>
+          <!-- <li><RouterLink to="/suporte">Central de Ajuda</RouterLink></li> -->
+          <v-btn variant="outlined" color="success">
+            <RouterLink to="/contato">Instalar no meu campo</RouterLink>
+          </v-btn>
+          <!-- <li><RouterLink to="/contato">Contato</RouterLink></li> -->
         </ul>
       </nav>
-
     </div>
 
     <div class="legal">
@@ -49,7 +49,6 @@
       </small>
     </div>
   </footer>
-  
 </template>
 
 <script setup lang="ts">
