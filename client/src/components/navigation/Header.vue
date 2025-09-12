@@ -34,6 +34,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { defineComponent, h, resolveComponent } from "vue";
 import { RouterLink, useRoute } from "vue-router";
+import { prefetchRoute } from '@/utils/prefetchRoute'
 import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 
@@ -77,6 +78,8 @@ const HeaderLink = defineComponent({
             isActive() ? "text-green-600 dark:text-green-400" : "text-white-800 dark:text-white-100"
           }`,
           "aria-current": isActive() ? "page" : null,
+          onMouseenter: () => prefetchRoute(props.to),
+          onFocus: () => prefetchRoute(props.to),
         },
         {
           default: () => [

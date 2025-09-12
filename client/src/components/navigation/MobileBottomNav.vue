@@ -28,6 +28,8 @@
             ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
             : '',
         ]"
+        @mouseenter="prefetchUserOrLogin"
+        @focus="prefetchUserOrLogin"
       >
         <div>
           <span
@@ -52,6 +54,8 @@
             : '',
         ]"
         aria-label="Ir para a página inicial"
+        @mouseenter="() => prefetch('/')"
+        @focus="() => prefetch('/')"
       >
         <Home />
       </RouterLink>
@@ -65,6 +69,8 @@
             : '',
         ]"
         aria-label="Meus Lances"
+        @mouseenter="() => prefetch('/lances-gravanois')"
+        @focus="() => prefetch('/lances-gravanois')"
       >
         <ClapperboardIcon />
       </RouterLink>
@@ -137,6 +143,8 @@
             :aria-disabled="item.disabled || undefined"
             :tabindex="item.disabled ? -1 : 0"
             @click.prevent="handleItemClick(item)"
+            @mouseenter="() => prefetch(item.to)"
+            @focus="() => prefetch(item.to)"
           >
             <div
               :class="[
@@ -189,6 +197,7 @@ import {
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
+import { prefetchRoute as prefetch } from '@/utils/prefetchRoute'
 
 const auth = useAuthStore();
 
@@ -217,6 +226,10 @@ const navigationItems = computed<NavItem[]>(() => [
 ]);
 
 const visibleItems = computed(() => navigationItems.value);
+
+function prefetchUserOrLogin() {
+  prefetch(auth.isAuthenticated ? '/user-page' : '/login')
+}
 
 const isActive = (to: string) => {
   return route.path === to || route.path.startsWith(to + "/");

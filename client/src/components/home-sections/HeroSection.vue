@@ -38,7 +38,7 @@
               ><ChevronsDown class="my-2" /> Veja como funciona
             </a>
 
-            <RouterLink to="/login" class="btn btn--primary" role="button" aria-label="View pricing">
+            <RouterLink to="/login" class="btn btn--primary" role="button" aria-label="View pricing" @mouseenter="prefetchLogin" @focus="prefetchLogin">
               <span class="d-flex align-center justify-center" v-if="auth.isAuthenticated">
                 <ClapperboardIcon class="mr-2" />
                 Meus lances
@@ -85,6 +85,7 @@ const auth = useAuthStore();
 import { ChevronsDown, ClapperboardIcon, LogIn } from "lucide-vue-next";
 
 import { onMounted, onBeforeUnmount, ref, computed } from "vue";
+import { prefetchRoute } from '@/utils/prefetchRoute'
 
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
 const heroModules = import.meta.glob("@/assets/hero_sec_imgs/*.{png,jpg,jpeg,webp}", { eager: true });
@@ -118,6 +119,7 @@ const showHint = ref(true);
 let hintTimer: number | undefined;
 const isInteracting = ref(false);
 const useGyro = ref(false);
+function prefetchLogin() { prefetchRoute('/login') }
 
 // Scroll resistance state
 const SCROLL_THRESHOLD = 42; // px drag before native scroll

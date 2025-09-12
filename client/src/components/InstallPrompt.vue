@@ -2,11 +2,12 @@
   <div v-if="visible" class="install-toast" role="dialog" aria-live="polite">
     <div class="message">
       <strong>Instale o Grava Nóis</strong>
-      <span class="sub">Acesse mais rápido.</span>
+      <span v-if="!iosGuide" class="sub">Acesse mais rápido e use offline.</span>
+      <span v-else class="sub">No iPhone/iPad: toque em Compartilhar e depois em “Adicionar à Tela de Início”.</span>
     </div>
     <div class="actions">
-      <button class="btn primary" @click="install">Instalar</button>
-      <button class="btn" @click="dismiss">Agora não</button>
+      <button v-if="!iosGuide" class="btn primary" @click="install">Instalar</button>
+      <button class="btn" @click="dismiss">Depois</button>
     </div>
   </div>
 </template>
@@ -21,6 +22,7 @@ type BeforeInstallPromptEvent = Event & {
 
 const visible = ref(false);
 const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null);
+const iosGuide = ref(false);
 
 const STORAGE_KEY = "installPromptDismissed";
 
@@ -31,6 +33,11 @@ function isStandalone() {
   // @ts-expect-error - iOS Safari property
   if (window.navigator.standalone) return true;
   return false;
+}
+
+function isIOS() {
+  if (typeof navigator === 'undefined') return false
+  return /iphone|ipad|ipod/i.test(navigator.userAgent)
 }
 
 function shouldShowPrompt() {
@@ -84,6 +91,11 @@ function dismiss() {
 onMounted(() => {
   window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as EventListener);
   window.addEventListener("appinstalled", onAppInstalled);
+  // iOS Safari não dispara beforeinstallprompt
+  if (isIOS() && !isStandalone() && shouldShowPrompt()) {
+    iosGuide.value = true
+    visible.value = true
+  }
 });
 
 onBeforeUnmount(() => {
