@@ -31,7 +31,7 @@
               @click.stop="$emit('show', clip)"
               class="play-button"
             >
-              <v-icon icon="mdi-play" size="32" color="primary" />
+              <v-icon :icon="customIcons.play" size="32" color="primary" />
             </v-btn>
           </div>
         </v-img>
@@ -71,7 +71,7 @@
 
       <div class="flex items-center gap-2 text-sm text-gray-600">
         <div class="flex items-center gap-1">
-          <v-icon icon="mdi-clock-outline" size="14" class="text-green-500" />
+          <v-icon :icon="customIcons.clock" size="14" class="text-green-500" />
           <span class="text-green-500">{{ formatters.formatLastModified(clip.recordedAt) }}</span>
         </div>
         <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
@@ -158,7 +158,7 @@
 
           <span class="absolute bottom-0 right-0">
             <v-chip size="x-small" color="amber" variant="elevated" class="ml-2">
-              <v-icon icon="mdi-clock-outline" size="12" class="mr-1" />
+              <v-icon :icon="customIcons.clock" size="12" class="mr-1" />
               em breve
             </v-chip>
           </span>
@@ -173,6 +173,7 @@
 import { ref, computed, onMounted as vueOnMounted } from "vue";
 import * as formatters from '@/utils/formatters'
 import type { SportClip } from "@/store/clips";
+import { customIcons } from "@/utils/icons";
 
 interface Location {
   estado: string;
@@ -229,7 +230,7 @@ function toggleFavorite() {
 @media (max-width: 768px) {
   .play-overlay {
     opacity: 0.7;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.7);
   }
 
   .play-overlay.show {

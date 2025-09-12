@@ -33,7 +33,8 @@ import {
   mdiWeb,
   mdiVolumeHigh,
   mdiLock,
-  mdiHeart
+  mdiHeart,
+  mdiClockTimeFour
 } from '@mdi/js'
 
 export const customIcons = {
@@ -72,4 +73,5 @@ export const customIcons = {
   volumeHigh: mdiVolumeHigh,
   lock: mdiLock,
   heart: mdiHeart,
+  clock: mdiClockTimeFour
 }

@@ -57,21 +57,6 @@
       </RouterLink>
 
       <RouterLink
-        to="/"
-        :class="[
-          'w-12 h-12 rounded-xl flex items-center justify-center',
-          isActive('/')
-            ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400'
-            : '',
-        ]"
-        aria-label="Ir para a página inicial"
-        @mouseenter="() => prefetch('/')"
-        @focus="() => prefetch('/')"
-      >
-        <Home />
-      </RouterLink>
-
-      <RouterLink
 
         to="/lances-gravanois"
         :class="[

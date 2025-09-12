@@ -28,7 +28,7 @@
               :rounded="true"
               aria-label="Aviso importante"
             >
-              <v-icon icon="mdi mdi-alert-decagram" size="20" />
+              <v-icon :icon="customIcons.alert" size="20" />
             </v-btn>
           </template>
 
@@ -56,10 +56,6 @@
       </div>
     </div>
 
-    <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="mb-7" @click="refresh">
-      Vídeos
-    </v-btn>
-
     <!-- Callout: incentive to post and tag Instagram -->
     <div
       type="info"
@@ -82,6 +78,10 @@
         </v-btn>
       </div>
     </div>
+
+    <v-btn color="success" variant="outlined" :prepend-icon="customIcons.refresh" class="mb-7" @click="refresh">
+      Vídeos
+    </v-btn>
 
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
