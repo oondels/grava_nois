@@ -2,7 +2,7 @@
   <v-container class="py-6" fluid>
     <!-- Header -->
     <div class="d-flex justify-center align-center mb-4">
-      <img class="gravanois-logo" :src="LogoGravaNoisCol" alt="Logo Grava Nóis" />
+      <img class="gravanois-logo" :src="LogoGravaNoisCol" alt="Logo Grava Nóis" decoding="async" width="140" height="40" />
     </div>
 
     <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">

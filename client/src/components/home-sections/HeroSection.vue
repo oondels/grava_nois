@@ -1,5 +1,5 @@
 <template>
-  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="{ backgroundImage: `url(${HeroBG})` }">
+  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="heroBgStyle">
     <div class="hero__container">
       <!-- Top-centered symbol-only logo -->
       <div class="hero__logo-wrap parallax parallax--logo">
@@ -56,8 +56,8 @@
         <!-- Optional right-side mockup on desktop with crossfade carousel -->
         <div class="hero__mockup parallax parallax--mockup" aria-hidden="true">
           <div class="mockup-fader">
-            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" loading="eager" />
-            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" loading="lazy" />
+            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" loading="eager" decoding="async" width="1280" height="800" />
+            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" loading="lazy" decoding="async" width="1280" height="800" />
           </div>
         </div>
       </div>
@@ -97,6 +97,7 @@ const logoSrc = LogoSymbol;
 const mockupSrc = Mockup;
 
 const rootEl = ref<HTMLElement | null>(null);
+const heroBgStyle = ref<Record<string, string>>({});
 let raf = 0; // reservado para futuras animações auxiliares (mantido para contagem)
 let carouselTimer: number | undefined;
 let animRaf = 0;
@@ -506,6 +507,22 @@ onBeforeUnmount(() => {
   if (orientationHandler) window.removeEventListener("deviceorientation", orientationHandler as any);
   if (io) io.disconnect();
 });
+
+// Carrega o background pesado da hero de forma deferida para evitar bloquear render
+onMounted(() => {
+  try {
+    const img = new Image()
+    // sinaliza ao navegador que não é prioridade máxima
+    ;(img as any).fetchPriority = 'low'
+    img.decoding = 'async'
+    img.src = HeroBG
+    img.onload = () => {
+      heroBgStyle.value = { backgroundImage: `url(${HeroBG})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    }
+  } catch {
+    heroBgStyle.value = { backgroundImage: `url(${HeroBG})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  }
+})
 </script>
 
 <style scoped>
