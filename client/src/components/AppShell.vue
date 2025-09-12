@@ -69,6 +69,14 @@ const showFooterComponent = () => {
   showFooter.value = true;
 };
 
+watch(
+  () => route.path,
+  () => {
+    showFooterComponent();
+  },
+  { immediate: true }
+);
+
 // Importando os novos componentes de navegação
 import Header from "@/components/navigation/Header.vue";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav.vue";
