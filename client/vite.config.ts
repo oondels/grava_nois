@@ -6,7 +6,7 @@ import { VitePWA } from "vite-plugin-pwa";
 // https://vitejs.dev/config/
 export default defineConfig({
   // Use base absoluta para evitar 404 de assets quando app abre em subpaths (ex: /auth/callback no PWA)
-  base: './',
+  base: '/',
   plugins: [
     vue(),
     VitePWA({
