@@ -5,8 +5,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // usar base relativa para funcionar em previews/subpaths
-  base: './',
+  // Use base absoluta para evitar 404 de assets quando app abre em subpaths (ex: /auth/callback no PWA)
+  base: '/',
   plugins: [
     vue(),
     VitePWA({
@@ -22,9 +22,9 @@ export default defineConfig({
         description:
           "Replays esportivos instantâneos — capture, compartilhe e baixe seus melhores lances.",
         lang: "pt-BR",
-        // com base relativa, use caminhos relativos para funcionar em subpaths
-        start_url: ".",
-        scope: ".",
+        // start_url e scope absolutos garantem assets corretos mesmo quando iniciado em /auth/*
+        start_url: "/",
+        scope: "/",
         display: "standalone",
         background_color: "#0b0b0b",
         theme_color: "#0b0b0b",
@@ -39,6 +39,8 @@ export default defineConfig({
         globIgnores: ["**/assets/volleysvg-*.svg", "**/*.ttf", "**/*.eot"],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp}"],
         // fallback de navegação segue para SPA (index.html) por padrão
+        // Evite que o SW intercepte OAuth callback e outras rotas especiais
+        navigateFallbackDenylist: [/^\/auth\//, /^\/api\//],
         runtimeCaching: [
           // Imagens: Cache First com expiração
           {
