@@ -3,7 +3,8 @@
   <ul>
     <li v-for="instrument in instruments" :key="instrument.id">{{ instrument.name }}</li>
   </ul>
-  <ReloadPrompt/>
+  <!-- <ReloadPrompt/> -->
+  <InstallPrompt/>
   <AppLayout />
 </template>
 
@@ -14,6 +15,7 @@ import { useThemeStore } from "@/store/theme";
 import AppLayout from "@/layouts/AppLayout.vue";
 import { supabaseClient } from "./lib/supabaseAuth";
 import ReloadPrompt from "./components/ReloadPrompt.vue";
+import InstallPrompt from "./components/InstallPrompt.vue";
 
 const instruments = ref<Array<any>>([]);
 
@@ -22,19 +24,15 @@ async function getInstruments() {
 
   data ? (instruments.value = data) : (instruments.value = []);
 }
-
-onMounted(() => {
-  getInstruments();
-});
-
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
 onMounted(() => {
-  // Always initialize with dark theme regardless of system preference
+  getInstruments();
   themeStore.setTheme(true);
   document.documentElement.dataset.theme = "dark";
 });
+
 </script>
 
 <style>

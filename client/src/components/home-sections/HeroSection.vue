@@ -95,32 +95,6 @@ const heroImages = Object.values(heroModules)
 // Fallbacks explícitos para assets (mantidos para tree-shaking ameno)
 const logoSrc = LogoSymbol;
 const mockupSrc = Mockup;
-// const bgFallback = HeroBG || BasketBall;
-
-// // BG como computed para evitar recomputações e aceitar troca futura
-// const bgUrl = ref<string>(BasketBall || bgFallback);
-/**
- * Overlay dinâmico sem tocar no <style>:
- * Camada 1: highlight suave que segue --px/--py
- * Camada 2: vinheta escura que segue --px/--py
- * Camada 3: imagem de fundo
- */
-// const bgStyle = computed(() => ({
-//   backgroundImage: `
-//     radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(255,255,255,0.16), transparent 65%),
-//     radial-gradient(520px 520px at var(--px, 50%) var(--py, 50%), rgba(0,0,0,0) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0.78) 100%),
-//     url(${bgUrl.value})
-//   `
-// }));
-
-// Pré-carregar imagens do carrossel para suavizar a primeira troca
-function preloadImages(urls: string[]) {
-  urls.slice(0, 4).forEach((u) => {
-    const i = new Image();
-    i.decoding = "async";
-    i.src = u;
-  });
-}
 
 const rootEl = ref<HTMLElement | null>(null);
 let raf = 0; // reservado para futuras animações auxiliares (mantido para contagem)
@@ -440,75 +414,75 @@ function observeVisibility() {
 }
 
 // Mounted
-onMounted(() => {
-  const el = rootEl.value;
-  if (!el) return;
+// onMounted(() => {
+//   const el = rootEl.value;
+//   if (!el) return;
 
-  // Init center
-  applyPointerVars(0.5, 0.5);
-  posX.value = 0.5;
-  posY.value = 0.5;
-  targetX = 0.5;
-  targetY = 0.5;
+//   // Init center
+//   applyPointerVars(0.5, 0.5);
+//   posX.value = 0.5;
+//   posY.value = 0.5;
+//   targetX = 0.5;
+//   targetY = 0.5;
 
-  // Respeito a prefers-reduced-motion
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-  reduceMotionPref = !!reduce.matches;
+//   // Respeito a prefers-reduced-motion
+//   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+//   reduceMotionPref = !!reduce.matches;
 
-  // Listeners de interação
-  el.addEventListener("pointerdown", onPointerDown as any, { passive: true });
-  el.addEventListener("pointerup", onPointerUp as any, { passive: true });
-  el.addEventListener("pointercancel", onPointerUp as any, { passive: true });
-  el.addEventListener("pointermove", onPointerMove, { passive: true });
-  el.addEventListener("keydown", onKeyNav as any, { passive: false });
+//   // Listeners de interação
+//   el.addEventListener("pointerdown", onPointerDown as any, { passive: true });
+//   el.addEventListener("pointerup", onPointerUp as any, { passive: true });
+//   el.addEventListener("pointercancel", onPointerUp as any, { passive: true });
+//   el.addEventListener("pointermove", onPointerMove, { passive: true });
+//   el.addEventListener("keydown", onKeyNav as any, { passive: false });
 
-  // touch handlers (não passive para resistência)
-  el.addEventListener("touchstart", onTouchStart, { passive: false });
-  el.addEventListener("touchmove", onTouchMove, { passive: false });
+//   // touch handlers (não passive para resistência)
+//   el.addEventListener("touchstart", onTouchStart, { passive: false });
+//   el.addEventListener("touchmove", onTouchMove, { passive: false });
 
-  // Scroll damping (wheel/touch)
-  el.addEventListener("wheel", wheelHandler, { passive: false } as AddEventListenerOptions);
-  touchStartListenerDamp = (evt: TouchEvent) => {
-    if (evt.touches && evt.touches[0]) onTouchStartDamp(evt.touches[0]);
-  };
-  touchMoveListenerDamp = (evt: TouchEvent) => {
-    if (evt.touches && evt.touches[0]) onTouchMoveDamp(evt.touches[0], evt);
-  };
-  el.addEventListener("touchstart", touchStartListenerDamp, { passive: true });
-  el.addEventListener("touchmove", touchMoveListenerDamp, { passive: false });
+//   // Scroll damping (wheel/touch)
+//   el.addEventListener("wheel", wheelHandler, { passive: false } as AddEventListenerOptions);
+//   touchStartListenerDamp = (evt: TouchEvent) => {
+//     if (evt.touches && evt.touches[0]) onTouchStartDamp(evt.touches[0]);
+//   };
+//   touchMoveListenerDamp = (evt: TouchEvent) => {
+//     if (evt.touches && evt.touches[0]) onTouchMoveDamp(evt.touches[0], evt);
+//   };
+//   el.addEventListener("touchstart", touchStartListenerDamp, { passive: true });
+//   el.addEventListener("touchmove", touchMoveListenerDamp, { passive: false });
 
-  // Tenta habilitar gyro sem permissão explícita (Android/Chrome)
-  try {
-    const testHandler = (e: DeviceOrientationEvent) => {
-      if ((e.beta ?? 0) !== 0 || (e.gamma ?? 0) !== 0) {
-        deviceToTarget(e.beta ?? 0, e.gamma ?? 0);
-        useGyro.value = true;
-        window.removeEventListener("deviceorientation", testHandler as any);
-      }
-    };
-    window.addEventListener("deviceorientation", testHandler as any, { passive: true, once: true } as any);
-  } catch {}
+//   // Tenta habilitar gyro sem permissão explícita (Android/Chrome)
+//   try {
+//     const testHandler = (e: DeviceOrientationEvent) => {
+//       if ((e.beta ?? 0) !== 0 || (e.gamma ?? 0) !== 0) {
+//         deviceToTarget(e.beta ?? 0, e.gamma ?? 0);
+//         useGyro.value = true;
+//         window.removeEventListener("deviceorientation", testHandler as any);
+//       }
+//     };
+//     window.addEventListener("deviceorientation", testHandler as any, { passive: true, once: true } as any);
+//   } catch {}
 
-  // Init carousel + preload
-  if (heroImages.length > 0) {
-    imgA.value = heroImages[0];
-    imgB.value = heroImages[1 % heroImages.length] || heroImages[0];
-    showA.value = true;
-    currentIcon.value = heroImages[0] || logoSrc;
-    preloadImages(heroImages);
-  } else {
-    imgA.value = mockupSrc as unknown as string;
-    imgB.value = mockupSrc as unknown as string;
-    currentIcon.value = logoSrc as unknown as string;
-  }
-  startCarousel();
+//   // Init carousel + preload
+//   if (heroImages.length > 0) {
+//     imgA.value = heroImages[0];
+//     imgB.value = heroImages[1 % heroImages.length] || heroImages[0];
+//     showA.value = true;
+//     currentIcon.value = heroImages[0] || logoSrc;
+//     preloadImages(heroImages);
+//   } else {
+//     imgA.value = mockupSrc as unknown as string;
+//     imgB.value = mockupSrc as unknown as string;
+//     currentIcon.value = logoSrc as unknown as string;
+//   }
+//   startCarousel();
 
-  // Auto-hide hint
-  hideHintSoon();
+//   // Auto-hide hint
+//   hideHintSoon();
 
-  // Observer de visibilidade
-  observeVisibility();
-});
+//   // Observer de visibilidade
+//   observeVisibility();
+// });
 
 // Cleanup
 onBeforeUnmount(() => {

@@ -77,8 +77,6 @@ const handleSearch = (value: string | null) => {
   clipsStore.updateFilters({ search: value || "" });
 };
 
-onMounted(() => {});
-
 // Controle do diálogo de manutenção
 const maintenanceDialog = ref(false);
 </script>

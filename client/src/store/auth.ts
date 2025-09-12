@@ -43,7 +43,7 @@ export const useAuthStore = defineStore("auth", () => {
       // Mantém o Pinia em sincronia com o Supabase (registra apenas uma vez)
       if (!listenerBound) {
         supabaseClient.auth.onAuthStateChange((event, newSession) => {
-          console.log("[auth] event:", event);
+          // console.log("[auth] event:", event);
           session.value = newSession;
         });
         listenerBound = true;
