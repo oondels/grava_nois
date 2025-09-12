@@ -55,6 +55,7 @@ AppDataSource.initialize()
       const ALLOWED_ORIGINS = new Set([
         "https://www.gravanois.com.br",
         "https://gravanois.com.br",
+        "https://felix-3d.vercel.app",
         "http://localhost:5173",
         "http://localhost:5174",
       ]);
