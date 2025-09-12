@@ -17,7 +17,7 @@
 
         <li class="step-card">
           <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-            <span class="mdi mdi-gesture-tap-button fs-"></span>
+            <VideoIcon />
           </div>
           <div class="step-icon" aria-hidden="true"></div>
           <h3>Botão do lance</h3>

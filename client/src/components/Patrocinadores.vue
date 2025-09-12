@@ -79,12 +79,12 @@
               target="_blank"
               color="primary"
               variant="tonal"
-              prepend-icon="mdi-web"
+              :prepend-icon="customIcons.web"
               size="small"
             >
               Site oficial
             </v-btn>
-            <v-btn v-else disabled variant="tonal" prepend-icon="mdi-web" size="small">Site em breve</v-btn>
+            <v-btn v-else disabled variant="tonal" :prepend-icon="customIcons.web" size="small">Site em breve</v-btn>
           </div>
 
           <div class="mt-3 flex items-center flex-wrap gap-2">
@@ -232,13 +232,14 @@ function openSponsor(sponsor: Sponsor) {
   dialogOpen.value = true;
 }
 
+import { customIcons } from '@/utils/icons'
 const socialList = [
-  { key: "instagram" as const, label: "Instagram", icon: "mdi-instagram" },
-  { key: "twitter" as const, label: "Twitter / X", icon: "mdi-twitter" },
-  { key: "facebook" as const, label: "Facebook", icon: "mdi-facebook" },
-  { key: "youtube" as const, label: "YouTube", icon: "mdi-youtube" },
-  { key: "linkedin" as const, label: "LinkedIn", icon: "mdi-linkedin" },
-  { key: "whatsapp" as const, label: "WhatsApp", icon: "mdi-whatsapp" },
+  { key: "instagram" as const, label: "Instagram", icon: customIcons.instagram },
+  { key: "twitter" as const, label: "Twitter / X", icon: customIcons.twitter },
+  { key: "facebook" as const, label: "Facebook", icon: customIcons.facebook },
+  { key: "youtube" as const, label: "YouTube", icon: customIcons.youtube },
+  { key: "linkedin" as const, label: "LinkedIn", icon: customIcons.linkedin },
+  // whatsapp não incluso por enquanto
 ];
 
 function normalizeUrl(url: string): string {

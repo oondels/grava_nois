@@ -43,7 +43,7 @@
             aria-label="Limpar estado"
             @click.stop="$emit('clear-estado')"
           >
-            <v-icon icon="mdi-close" size="14" />
+            <v-icon :icon="closeIcon" size="14" />
           </v-btn>
         </template>
       </v-chip>
@@ -66,7 +66,7 @@
             aria-label="Limpar cidade"
             @click.stop="$emit('clear-cidade')"
           >
-            <v-icon icon="mdi-close" size="14" />
+            <v-icon :icon="closeIcon" size="14" />
           </v-btn>
         </template>
       </v-chip>
@@ -89,7 +89,7 @@
             aria-label="Limpar quadra"
             @click.stop="$emit('clear-quadra')"
           >
-            <v-icon icon="mdi-close" size="14" />
+            <v-icon :icon="closeIcon" size="14" />
           </v-btn>
         </template>
       </v-chip>
@@ -116,6 +116,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { customIcons } from '@/utils/icons'
 
 interface ChipItem {
   label: string;
@@ -135,8 +136,10 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  filterIcon: "mdi-filter",
+  filterIcon: customIcons.filter as unknown as string,
 });
+
+const closeIcon = customIcons.close
 
 const emit = defineEmits([
   "update:sort",

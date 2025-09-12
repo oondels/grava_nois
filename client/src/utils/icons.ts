@@ -24,7 +24,16 @@ import {
   mdiInformation,
   mdiThemeLightDark,
   mdiChevronDown,
-  mdiGoogle
+  mdiGoogle,
+  mdiInstagram,
+  mdiYoutube,
+  mdiFacebook,
+  mdiTwitter,
+  mdiLinkedin,
+  mdiWeb,
+  mdiVolumeHigh,
+  mdiLock,
+  mdiHeart
 } from '@mdi/js'
 
 export const customIcons = {
@@ -53,5 +62,14 @@ export const customIcons = {
   information: mdiInformation,
   themeLightDark: mdiThemeLightDark,
   chevronDown: mdiChevronDown,
-  google: mdiGoogle
+  google: mdiGoogle,
+  instagram: mdiInstagram,
+  youtube: mdiYoutube,
+  facebook: mdiFacebook,
+  twitter: mdiTwitter,
+  linkedin: mdiLinkedin,
+  web: mdiWeb,
+  volumeHigh: mdiVolumeHigh,
+  lock: mdiLock,
+  heart: mdiHeart,
 }

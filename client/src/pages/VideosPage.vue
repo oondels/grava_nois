@@ -48,12 +48,12 @@
           @click="showEarlyNotice = false"
           :aria-label="'Fechar aviso'"
         >
-          <v-icon class="mdi mdi-close" />
+          <v-icon :icon="customIcons.close" />
         </v-btn>
       </div>
     </v-alert>
 
-    <v-btn color="success" variant="outlined" prepend-icon="mdi mdi-reload" class="mb-7" @click="refresh">
+    <v-btn color="success" variant="outlined" :prepend-icon="customIcons.refresh" class="mb-7" @click="refresh">
       Atualizar Vídeos
     </v-btn>
 
@@ -134,7 +134,7 @@
                 <v-btn
                   size="small"
                   variant="outlined"
-                  prepend-icon="mdi mdi-eye"
+                  :prepend-icon="customIcons.play"
                   :disabled="state.loading || previewMap[file.path] === null"
                   @click="onShow(file)"
                 >
@@ -158,7 +158,7 @@
                   size="small"
                   color="green"
                   variant="outlined"
-                  prepend-icon="mdi mdi-download"
+                  :prepend-icon="customIcons.download || customIcons.cloudDownload"
                   :disabled="!previewMap[file.path]"
                   @click="onDownload(file)"
                 >
@@ -182,6 +182,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from "vue";
+import { customIcons } from '@/utils/icons'
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
 

@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useAuthStore } from "@/store/auth";
 import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
@@ -154,6 +154,13 @@ const submitLogin = async () => {
   }
 };
 
+// Carrega script do Google apenas nesta rota
+onMounted(async () => {
+  try {
+    const { ensureGoogleClientScript } = await import('@/utils/loadGoogleScript')
+    await ensureGoogleClientScript()
+  } catch {}
+})
 // const handleForgotPassword = () => {
 //   console.log("Trocando senha");
 
