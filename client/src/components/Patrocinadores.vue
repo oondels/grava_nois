@@ -233,8 +233,10 @@ const dialogOpen = ref(false);
 const selectedSponsor = ref<Sponsor | null>(null);
 
 function openSponsor(sponsor: Sponsor) {
-  selectedSponsor.value = sponsor;
-  dialogOpen.value = true;
+  console.log(sponsor);
+  
+  // selectedSponsor.value = sponsor;
+  // dialogOpen.value = true;
 }
 
 import { customIcons } from '@/utils/icons'

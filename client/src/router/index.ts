@@ -63,6 +63,28 @@ const router = createRouter({
   routes,
 });
 
+// Evita tela branca quando um chunk dinâmico falha ao carregar (PWA/atualização)
+router.onError((err) => {
+  const msg = String((err && (err as any).message) || err || "");
+  const isChunkLoadError = /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(
+    msg
+  );
+  if (isChunkLoadError) {
+    try {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => Promise.all(regs.map((r) => r.update())))
+          .finally(() => window.location.reload());
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  }
+});
+
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
