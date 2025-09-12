@@ -56,8 +56,8 @@
           <div class="w-full flex items-center justify-center py-6">
             <v-img
               v-if="selectedSponsor"
-              :src="selectedSponsor.logoUrl"
-              :alt="selectedSponsor.name"
+              :src="selectedSponsor?.logoUrl"
+              :alt="selectedSponsor?.name"
               max-height="160"
               max-width="420"
               contain
@@ -92,7 +92,8 @@
 
           </div>
 
-          <div class="mt-3 flex items-center flex-wrap gap-2">
+          <!-- TODO: COrrigir erro ao exibir redes dos patrocinadores -->
+          <!-- <div v-if="selectedSponsor?.socials" class="mt-3 flex items-center flex-wrap gap-2">
             <v-btn
               v-for="soc in socialList"
               :key="soc.key"
@@ -108,7 +109,7 @@
             </v-btn>
           </div>
 
-          <v-divider class="my-4" />
+          <v-divider class="my-4" /> -->
 
           <div>
             <div class="text-subtitle-2 mb-2">Serviços</div>
@@ -233,10 +234,8 @@ const dialogOpen = ref(false);
 const selectedSponsor = ref<Sponsor | null>(null);
 
 function openSponsor(sponsor: Sponsor) {
-  console.log(sponsor);
-  
-  // selectedSponsor.value = sponsor;
-  // dialogOpen.value = true;
+  selectedSponsor.value = sponsor;
+  dialogOpen.value = true;
 }
 
 import { customIcons } from '@/utils/icons'
@@ -251,7 +250,7 @@ const socialList = [
 ];
 
 function normalizeUrl(url: string): string {
-  if (!url) return url;
+  if (!url || typeof url !== 'string') return url;
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 </script>
