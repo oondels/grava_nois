@@ -325,9 +325,8 @@ function onShow(file: VideoFile) {
   ensurePreview(file.path, file.bucket);
 }
 
-/** ================= Lifecycle ================= */
 onMounted(() => {
-  // refresh();
+  refresh();
 });
 </script>
 
