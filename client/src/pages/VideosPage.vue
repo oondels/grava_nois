@@ -147,7 +147,8 @@ import thumbVideo from "@/assets/images/thumb-video.webp";
 import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
 
-type LocalLocation = { estado: string; cidade: string; quadra: string };
+// type LocalLocation = { estado: string; cidade: string; quadra: string };
+const userData = ref<any>(null); // dados adicionais do usuário
 
 // Aviso sutil de fase inicial
 const showEarlyNotice = ref(true);
@@ -191,17 +192,6 @@ function getApiBase() {
   const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
   if (envBase) return envBase.replace(/\/$/, "");
   return "https://api.gravanois-api.com.br";
-}
-
-function formatLastModified(dateString: any) {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  return `${date.getHours().toString().padStart(2, "0")}:${date
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")} - ${date.getDate()} ${months[date.getMonth()]} - ${date.getFullYear()}`;
 }
 
 function toClip(file: VideoFile): SportClip {
@@ -334,8 +324,11 @@ function onShow(file: VideoFile) {
 
 /** ================= Lifecycle ================= */
 onMounted(() => {
-  // Carrega a primeira página
-  refresh();
+  // refresh();
+
+  userData.value = JSON.parse(localStorage.getItem("grn-user") || "{}");
+  console.log(userData.value);
+  
 });
 </script>
 
