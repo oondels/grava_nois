@@ -2,6 +2,8 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { supabaseClient } from "@/lib/supabaseAuth";
+import axios from "axios";
+import { BASE_URL } from "@/config/ip";
 
 type SessionT = Awaited<ReturnType<typeof supabaseClient.auth.getSession>>["data"]["session"];
 type UserT = NonNullable<SessionT>["user"];
@@ -17,7 +19,6 @@ export const useAuthStore = defineStore("auth", () => {
   const safeUser = computed(() =>
     user.value
       ? {
-          id: user.value.id,
           email: user.value.email,
           name: user.value.user_metadata?.full_name,
           avatar_url: user.value.user_metadata?.avatar_url,
@@ -45,6 +46,22 @@ export const useAuthStore = defineStore("auth", () => {
         supabaseClient.auth.onAuthStateChange((event, newSession) => {
           // console.log("[auth] event:", event);
           session.value = newSession;
+
+          // Após login, buscar dados do usuário e persistir no localStorage
+          if (event === "SIGNED_IN" && newSession?.user?.id) {
+            const userId = newSession.user.id;
+            (async () => {
+              try {
+                const res = await axios.get(`${BASE_URL}/users/${userId}`);
+                const userPayload = res.data?.user ?? res.data ?? null;
+                if (userPayload) {
+                  localStorage.setItem("grn-user", JSON.stringify(userPayload));
+                }
+              } catch (err) {
+                console.error("Erro ao buscar dados do usuário:", err);
+              }
+            })();
+          }
         });
         listenerBound = true;
       }
@@ -140,6 +157,7 @@ export const useAuthStore = defineStore("auth", () => {
   return {
     session,
     user,
+    safeUser,
     isAuthenticated,
     loading,
     init,

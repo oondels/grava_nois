@@ -10,7 +10,8 @@
     <!-- Header com foto e informações básicas -->
     <div class="user-header">
       <div class="user-avatar-container">
-        <img :src="LogoGravaNoisSimbol" alt="Foto de perfil" class="user-avatar" />
+        <img :src="user?.avatar_url || LogoGravaNoisSimbol" alt="Foto de perfil" class="user-avatar" />
+
         <button
           @click="showProfileEdit = true"
           disabled="true"
@@ -22,7 +23,7 @@
       </div>
 
       <div class="user-info">
-        <!-- <h1 class="user-name">{{ user?.name || "Usuário" }}</h1> -->
+        <h1 class="user-name">{{ formatUserName(user?.name )|| "Usuário" }}</h1>
         <p class="user-email">{{ user?.email || "email@exemplo.com" }}</p>
         <div class="user-status"></div>
       </div>
@@ -258,8 +259,8 @@ import { useSnackbar } from "@/composables/useSnackbar";
 const router = useRouter();
 const authStore = useAuthStore();
 
-// Dados do usuário
-const user = computed(() => authStore.user);
+// Dados do usuário (sanitizados)
+const user = computed(() => authStore.safeUser);
 
 // Estados dos modais
 const showProfileEdit = ref(false);
@@ -291,6 +292,11 @@ const locationForm = reactive({
   city: "",
   state: "",
 });
+
+const formatUserName = (name: string) => {
+  if (!name) return "Usuário";
+  return name.split(" ")[0] + " " + name.split(" ")[name.split(" ").length - 1];
+}
 
 // Regras de validação
 const rules = {

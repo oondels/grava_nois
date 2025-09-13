@@ -1,17 +1,19 @@
 import express, { Request, Response, NextFunction } from "express";
-import multer from "multer";
-import { createClient } from "@supabase/supabase-js";
+// import multer from "multer";
 import { AppDataSource } from "./config/database";
 import { VideoStatus } from "./models/Videos";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import cors from "cors";
-import { publishClipEvent } from "./rabbitmq/publisher";
+// import { publishClipEvent } from "./rabbitmq/publisher";
 import nodeMailer from "nodemailer";
 import { config } from "./config/dotenv";
 import cookieParser from "cookie-parser"
 import pedidosRouter from './routes/pedidos'
 import produtosRouter from './routes/produtos'
+import { supabase } from "./config/supabase";
+
+import { userRouter } from './routes/userPage'
 
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import { serialize as serializeCookie, parse as parseCookie } from "cookie";
@@ -77,13 +79,16 @@ AppDataSource.initialize()
       );
 
       app.use(express.json());
+      
 
       // Temporary routes (Felix3D)
       app.use('/temp_felix3d/pedidos', pedidosRouter)
       app.use('/temp_felix3d/produtos', produtosRouter)
 
+      // App routes
+      app.use('/users', userRouter)
+
       // Initialize Supabase client with service role key (secure, only on server)
-      const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
 
       // Acumula cookies que o @supabase/ssr deseja setar e envia antes de finalizar a resposta
       function flushSupabaseCookies(res: Response) {

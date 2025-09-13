@@ -78,6 +78,15 @@ const isMobile = computed(() => window.matchMedia("(max-width: 660px)").matches)
 
 // Store instances
 const route = useRoute();
+watch(
+  () => route.path,
+  () => {
+    showFooterComponent();
+  },
+  { immediate: true }
+);
+
+
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 const clipsStore = useClipsStore();

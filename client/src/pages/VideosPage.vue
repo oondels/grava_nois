@@ -140,14 +140,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, computed } from "vue";
 import { customIcons } from "@/utils/icons";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
 import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
 
-type LocalLocation = { estado: string; cidade: string; quadra: string };
+import { useAuthStore } from "@/store/auth";
+const authStore = useAuthStore();
+
+// type LocalLocation = { estado: string; cidade: string; quadra: string };
+const user = computed(() => authStore.safeUser);
 
 // Aviso sutil de fase inicial
 const showEarlyNotice = ref(true);
@@ -191,17 +195,6 @@ function getApiBase() {
   const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
   if (envBase) return envBase.replace(/\/$/, "");
   return "https://api.gravanois-api.com.br";
-}
-
-function formatLastModified(dateString: any) {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  return `${date.getHours().toString().padStart(2, "0")}:${date
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")} - ${date.getDate()} ${months[date.getMonth()]} - ${date.getFullYear()}`;
 }
 
 function toClip(file: VideoFile): SportClip {
@@ -334,8 +327,7 @@ function onShow(file: VideoFile) {
 
 /** ================= Lifecycle ================= */
 onMounted(() => {
-  // Carrega a primeira página
-  refresh();
+  // refresh();
 });
 </script>
 
