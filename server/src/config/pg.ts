@@ -2,6 +2,7 @@ import { Pool } from 'pg'
 import './dotenv'
 
 import postgres from 'postgres'
+import { preprocess } from 'zod'
 
 const tempDbUser = process.env.TEMP_DB_USER || 'postgres'
 const tempDbPassword = process.env.TEMP_DB_PASSWORD || 'postgres'
@@ -27,6 +28,6 @@ pool
     console.error('Erro ao conectar ao banco TEMP: ', error)
   })
 
-export const supabaseDb = postgres("postgresql://postgres.okfhfwdvoidzhbejotza:gravanois-admin@aws-0-sa-east-1.pooler.supabase.com:5432/postgres", {
+export const supabaseDb = postgres(process.env.SUPABASE_DATABASE as string, {
   ssl: 'require'
 })
