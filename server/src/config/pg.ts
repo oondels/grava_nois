@@ -1,5 +1,7 @@
 import { Pool } from 'pg'
-import './dotenv' // garante carregamento das variáveis de ambiente
+import './dotenv'
+
+import postgres from 'postgres'
 
 const tempDbUser = process.env.TEMP_DB_USER || 'postgres'
 const tempDbPassword = process.env.TEMP_DB_PASSWORD || 'postgres'
@@ -24,3 +26,7 @@ pool
   .catch((error) => {
     console.error('Erro ao conectar ao banco TEMP: ', error)
   })
+
+export const supabaseDb = postgres("postgresql://postgres.okfhfwdvoidzhbejotza:gravanois-admin@aws-0-sa-east-1.pooler.supabase.com:5432/postgres", {
+  ssl: 'require'
+})
