@@ -69,14 +69,6 @@ const showFooterComponent = () => {
   showFooter.value = true;
 };
 
-watch(
-  () => route.path,
-  () => {
-    showFooterComponent();
-  },
-  { immediate: true }
-);
-
 // Importando os novos componentes de navegação
 import Header from "@/components/navigation/Header.vue";
 import MobileBottomNav from "@/components/navigation/MobileBottomNav.vue";
@@ -86,6 +78,15 @@ const isMobile = computed(() => window.matchMedia("(max-width: 660px)").matches)
 
 // Store instances
 const route = useRoute();
+watch(
+  () => route.path,
+  () => {
+    showFooterComponent();
+  },
+  { immediate: true }
+);
+
+
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 const clipsStore = useClipsStore();
