@@ -140,15 +140,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, computed } from "vue";
 import { customIcons } from "@/utils/icons";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
 import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
 
+import { useAuthStore } from "@/store/auth";
+const authStore = useAuthStore();
+
 // type LocalLocation = { estado: string; cidade: string; quadra: string };
-const userData = ref<any>(null); // dados adicionais do usuário
+const user = computed(() => authStore.safeUser);
 
 // Aviso sutil de fase inicial
 const showEarlyNotice = ref(true);
@@ -325,10 +328,6 @@ function onShow(file: VideoFile) {
 /** ================= Lifecycle ================= */
 onMounted(() => {
   // refresh();
-
-  userData.value = JSON.parse(localStorage.getItem("grn-user") || "{}");
-  console.log(userData.value);
-  
 });
 </script>
 

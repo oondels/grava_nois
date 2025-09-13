@@ -19,7 +19,6 @@ export const useAuthStore = defineStore("auth", () => {
   const safeUser = computed(() =>
     user.value
       ? {
-          id: user.value.id,
           email: user.value.email,
           name: user.value.user_metadata?.full_name,
           avatar_url: user.value.user_metadata?.avatar_url,
@@ -158,6 +157,7 @@ export const useAuthStore = defineStore("auth", () => {
   return {
     session,
     user,
+    safeUser,
     isAuthenticated,
     loading,
     init,
