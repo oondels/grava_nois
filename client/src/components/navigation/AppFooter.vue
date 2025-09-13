@@ -6,20 +6,11 @@
         <h3 class="logo-text">Grava Nóis</h3>
         <p class="tagline">Seu lance, sua história.</p>
 
-        <div class="social-row" aria-label="Redes sociais">
-          <a href="#" aria-label="Instagram" class="social-link" title="Instagram">
+        <div class="" aria-label="Redes sociais">
+          <a href="https://www.instagram.com/grava_nois/?igsh=MWhhczl3dGRpN25waw%3D%3D#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="social-link" title="Instagram">
             <v-icon :icon="customIcons.instagram" size="22" />
           </a>
-          <a href="#" aria-label="YouTube" class="social-link" title="YouTube">
-            <v-icon :icon="customIcons.youtube" size="22" />
-          </a>
-          <a href="#" aria-label="Facebook" class="social-link" title="Facebook">
-            <v-icon :icon="customIcons.facebook" size="22" />
-          </a>
-          <a href="#" aria-label="X (Twitter)" class="social-link" title="X (Twitter)">
-            <v-icon :icon="customIcons.twitter" size="22" />
-          </a>
-          <a href="#" aria-label="LinkedIn" class="social-link" title="LinkedIn">
+          <a href="https://www.linkedin.com/in/hendriusfelix/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" class="social-link" title="LinkedIn">
             <v-icon :icon="customIcons.linkedin" size="22" />
           </a>
         </div>
