@@ -16,13 +16,64 @@ export const useAuthStore = defineStore("auth", () => {
   let listenerBound = false;
 
   const user = computed<UserT | null>(() => session.value?.user ?? null);
+  const isGoogleUser = computed(() => {
+    const u = user.value as any;
+    const byAppMeta = u?.app_metadata?.provider === "google";
+    const byIdentities = Array.isArray(u?.identities)
+      ? u.identities.some((i: any) => i?.provider === "google")
+      : false;
+    return Boolean(byAppMeta || byIdentities);
+  });
+
+  // Sinalização para sugerir sincronização de dados do Google -> Perfil
+  type SyncSuggestion = {
+    name?: { current: string | null | undefined; google: string | null | undefined };
+    avatar_url?: { current: string | null | undefined; google: string | null | undefined };
+  } | null;
+  const needsGoogleSyncPrompt = ref(false);
+  const googleSyncSuggestion = ref<SyncSuggestion>(null);
+
+  function computeSyncSuggestion(profile: any, supaUser: any): SyncSuggestion {
+    const gName = supaUser?.user_metadata?.full_name ?? null;
+    const gAvatar = supaUser?.user_metadata?.avatar_url ?? null;
+    const pName = profile?.name ?? null;
+    const pAvatar = profile?.avatar_url ?? null;
+
+    const suggestion: any = {};
+    if ((gName && !pName) || (gName && pName && gName !== pName)) {
+      suggestion.name = { current: pName, google: gName };
+    }
+    if ((gAvatar && !pAvatar) || (gAvatar && pAvatar && gAvatar !== pAvatar)) {
+      suggestion.avatar_url = { current: pAvatar, google: gAvatar };
+    }
+    return Object.keys(suggestion).length ? suggestion : null;
+  }
+
+  function markGoogleSyncDismissed(userId?: string) {
+    const id = userId || user.value?.id;
+    if (!id) return;
+    try {
+      localStorage.setItem(`grn-google-sync-dismissed:${id}`, "1");
+    } catch {}
+  }
+
+  function wasGoogleSyncDismissed(userId?: string) {
+    const id = userId || user.value?.id;
+    if (!id) return false;
+    try {
+      return localStorage.getItem(`grn-google-sync-dismissed:${id}`) === "1";
+    } catch {
+      return false;
+    }
+  }
   const safeUser = computed(() =>
     user.value
       ? {
-          email: user.value.email,
-          name: user.value.user_metadata?.full_name,
-          avatar_url: user.value.user_metadata?.avatar_url,
-        }
+        id: user.value.id,
+        email: user.value.email,
+        name: user.value.user_metadata?.full_name,
+        avatar_url: user.value.user_metadata?.avatar_url,
+      }
       : null
   );
 
@@ -52,9 +103,35 @@ export const useAuthStore = defineStore("auth", () => {
             const userId = newSession.user.id;
             (async () => {
               try {
+                console.log('buscando dados do usuário...');
+
                 const res = await axios.get(`${BASE_URL}/users/${userId}`);
                 const userPayload = res.data?.user ?? res.data ?? null;
                 if (userPayload) {
+                  // Detecta se este login foi via Google
+                  const loggedInWithGoogle =
+                    newSession?.user?.app_metadata?.provider === "google" ||
+                    (Array.isArray(newSession?.user?.identities)
+                      ? newSession.user.identities.some((i: any) => i?.provider === "google")
+                      : false);
+
+                  if (loggedInWithGoogle) {
+                    // Preenche campos faltantes com dados do Google
+                    userPayload.name = userPayload.name || newSession.user.user_metadata?.full_name;
+                    userPayload.avatar_url = userPayload.avatar_url || newSession.user.user_metadata?.avatar_url;
+
+                    // Calcula sugestão de sincronização se houver divergências
+                    if (!wasGoogleSyncDismissed(userId)) {
+                      const suggestion = computeSyncSuggestion(userPayload, newSession.user);
+                      googleSyncSuggestion.value = suggestion;
+                      needsGoogleSyncPrompt.value = Boolean(suggestion);
+                    }
+                  } else {
+                    // Limpa qualquer sugestão remanescente para outros provedores
+                    googleSyncSuggestion.value = null;
+                    needsGoogleSyncPrompt.value = false;
+                  }
+
                   localStorage.setItem("grn-user", JSON.stringify(userPayload));
                 }
               } catch (err) {
@@ -152,6 +229,9 @@ export const useAuthStore = defineStore("auth", () => {
   async function signOut() {
     const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
+    // Reset prompt state on sign out
+    googleSyncSuggestion.value = null;
+    needsGoogleSyncPrompt.value = false;
   }
 
   return {
@@ -159,6 +239,10 @@ export const useAuthStore = defineStore("auth", () => {
     user,
     safeUser,
     isAuthenticated,
+    isGoogleUser,
+    needsGoogleSyncPrompt,
+    googleSyncSuggestion,
+    markGoogleSyncDismissed,
     loading,
     init,
     ensureReady,

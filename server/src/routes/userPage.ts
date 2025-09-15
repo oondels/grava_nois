@@ -9,7 +9,7 @@ userRouter.get('/:id', async (req: Request, res: Response) => {
 
     const user = await supabaseDb`
     select
-      name, avatar_url, state, city, country, quadras
+      name, avatar_url, state, city, country, quadras, provider
     from grn_auth.profiles
     where user_id = ${userId}
   `
