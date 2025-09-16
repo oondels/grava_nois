@@ -23,7 +23,7 @@
       </div>
 
       <div class="user-info">
-        <h1 class="user-name">{{ formatUserName(user?.name )|| "Usuário" }}</h1>
+        <h1 class="user-name">{{ formatUserName(user?.name) || "Usuário" }}</h1>
         <p class="user-email">{{ user?.email || "email@exemplo.com" }}</p>
         <div class="user-status"></div>
       </div>
@@ -226,7 +226,48 @@
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar: agora global via AppLayout + useSnackbar() -->
+    <!-- Modal: Adicionar Quadra -->
+    <v-dialog v-model="showAddQuadra" max-width="600" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <BuildingIcon class="me-2" />
+          Adicionar Quadra
+        </v-card-title>
+
+        <v-card-text>
+          <div>
+            <v-combobox
+              label="Selecione uma quadra"
+              v-model="selectedQuadra"
+              :items="availableQuadras"
+              variant="outlined"
+              item-title="name"
+              item-value="id"
+              :return-object="true"
+              :hide-no-data="false"
+              :hide-selected="true"
+            />
+            <div class="text-caption text-medium-emphasis mt-2">
+              Só será vinculada se ainda não estiver na sua lista.
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showAddQuadra = false">Cancelar</v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="linkingQuadra"
+            :disabled="!canLinkSelected"
+            @click="linkSelectedQuadra"
+          >
+            Vincular
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -255,12 +296,15 @@ import {
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { getSportColor, getSportLabel } from "@/utils/formatters";
 import { useSnackbar } from "@/composables/useSnackbar";
+import axios from "axios";
+import { BASE_URL } from "@/config/ip";
 
 const router = useRouter();
 const authStore = useAuthStore();
 
 // Dados do usuário (sanitizados)
 const user = computed(() => authStore.safeUser);
+console.log(user.value);
 
 // Estados dos modais
 const showProfileEdit = ref(false);
@@ -272,6 +316,11 @@ const showPasswordChange = ref(false);
 const showTwoFactor = ref(false);
 const showContactSupport = ref(false);
 
+type QuadraItem = { id: string; name: string; address?: string; sports?: string[]; active?: boolean };
+const selectedQuadra = ref<QuadraItem | null>(null);
+const availableQuadras = ref<QuadraItem[]>([
+  { id: "5b388420-8379-4418-80d9-5a9f7b2023cf", name: "Quadra Areia Lagoa Plínio" },
+]);
 // Estados de loading
 const savingProfile = ref(false);
 const savingLocation = ref(false);
@@ -296,7 +345,7 @@ const locationForm = reactive({
 const formatUserName = (name: string) => {
   if (!name) return "Usuário";
   return name.split(" ")[0] + " " + name.split(" ")[name.split(" ").length - 1];
-}
+};
 
 // Regras de validação
 const rules = {
@@ -311,26 +360,108 @@ const rules = {
   },
 };
 
-// Mock de quadras vinculadas
-const quadrasVinculadas = ref([
-  {
-    id: "1",
-    name: "Quadra do Zé",
-    address: "Rua das Flores, 123 - Centro",
-    sports: ["futebol", "futevolei"],
-    active: true,
-  },
-  {
-    id: "2",
-    name: "Ginásio Municipal",
-    address: "Av. Principal, 456 - Bairro Novo",
-    sports: ["basquete", "volei"],
-    active: true,
-  },
-]);
+// Quadras vinculadas ao usuário (vêm do backend grn_auth.profiles.quadras)
+const quadrasVinculadas = ref<QuadraItem[]>([]);
+
+const canLinkSelected = computed(() => {
+  if (!selectedQuadra.value) return false;
+  return !quadrasVinculadas.value.some((q) => q.id === selectedQuadra.value!.id);
+});
+
+const linkingQuadra = ref(false);
+
+async function fetchUserQuadras() {
+  try {
+    const uid = authStore.user?.id || authStore.safeUser?.id;
+    if (!uid) return;
+    const res = await axios.get(`${BASE_URL}/users/${uid}`);
+    const profile = res.data?.user ?? null;
+    const incoming = profile?.quadras ?? [];
+    // Aceita tanto array de objetos quanto array de ids
+    if (Array.isArray(incoming)) {
+      if (incoming.length && typeof incoming[0] === 'string') {
+        quadrasVinculadas.value = (incoming as string[]).map((id) => ({ id, name: id }));
+      } else {
+        quadrasVinculadas.value = incoming as QuadraItem[];
+      }
+    } else {
+      quadrasVinculadas.value = [];
+    }
+
+    // Atualiza o subtítulo reativo do menu
+    const sec = menuSections.value.find((s) => s.id === 'quadras');
+    if (sec) {
+      const item = sec.items.find((i: any) => i.id === 'quadras-vinculadas');
+      if (item) item.subtitle = `${quadrasVinculadas.value.length} local(is) ativo(s)`;
+    }
+  } catch (e) {
+    // Silencioso para não poluir UI
+  }
+}
+
+async function linkSelectedQuadra() {
+  if (!selectedQuadra.value) return;
+  const uid = authStore.user?.id || authStore.safeUser?.id;
+  if (!uid) {
+    notify('É necessário estar logado.', 'error');
+    return;
+  }
+
+  // Evita duplicidade no cliente
+  if (quadrasVinculadas.value.some((q) => q.id === selectedQuadra.value!.id)) {
+    notify('Você já está vinculado a esta quadra.', 'info');
+    return;
+  }
+
+  const next = [...quadrasVinculadas.value, selectedQuadra.value];
+
+  try {
+    linkingQuadra.value = true;
+    await axios.patch(`${BASE_URL}/users/${uid}`, { quadras: next });
+
+    quadrasVinculadas.value = next;
+    // Atualiza subtitle
+    const sec = menuSections.value.find((s) => s.id === 'quadras');
+    if (sec) {
+      const item = sec.items.find((i: any) => i.id === 'quadras-vinculadas');
+      if (item) item.subtitle = `${quadrasVinculadas.value.length} local(is) ativo(s)`;
+    }
+
+    notify('Quadra vinculada com sucesso!', 'success');
+    selectedQuadra.value = null;
+    showAddQuadra.value = false;
+  } catch (e: any) {
+    notify(e?.response?.data?.message || 'Erro ao vincular quadra.', 'error');
+  } finally {
+    linkingQuadra.value = false;
+  }
+}
 
 // Array de seções e opções do menu
 const menuSections = ref([
+  {
+    id: "quadras",
+    title: "Minhas Quadras",
+    icon: MapIcon,
+    items: [
+      {
+        id: "quadras-vinculadas",
+        title: "Quadras Vinculadas",
+        subtitle: `${quadrasVinculadas.value.length} local(is) ativo(s)`,
+        icon: BuildingIcon,
+        action: "showQuadras",
+        comingSoon: false,
+      },
+      {
+        id: "add-quadra",
+        title: "Adicionar Quadra",
+        subtitle: "Vincular novo local esportivo",
+        icon: PlusIcon,
+        action: "showAddQuadra",
+        comingSoon: false,
+      },
+    ],
+  },
   {
     id: "profile",
     title: "Perfil e Configurações",
@@ -362,52 +493,29 @@ const menuSections = ref([
       },
     ],
   },
-  {
-    id: "quadras",
-    title: "Minhas Quadras",
-    icon: MapIcon,
-    items: [
-      {
-        id: "quadras-vinculadas",
-        title: "Quadras Vinculadas",
-        subtitle: `${quadrasVinculadas.value.length} local(is) ativo(s)`,
-        icon: BuildingIcon,
-        action: "showQuadras",
-        comingSoon: true,
-      },
-      {
-        id: "add-quadra",
-        title: "Adicionar Quadra",
-        subtitle: "Vincular novo local esportivo",
-        icon: PlusIcon,
-        action: "showAddQuadra",
-        comingSoon: true,
-      },
-    ],
-  },
-  {
-    id: "security",
-    title: "Conta e Segurança",
-    icon: ShieldIcon,
-    items: [
-      {
-        id: "change-password",
-        title: "Alterar Senha",
-        subtitle: "Atualizar credenciais de acesso",
-        icon: LockIcon,
-        action: "showPasswordChange",
-        comingSoon: true,
-      },
-      {
-        id: "two-factor",
-        title: "Autenticação 2FA",
-        subtitle: "Segurança adicional para sua conta",
-        icon: SmartphoneIcon,
-        action: "showTwoFactor",
-        comingSoon: true,
-      },
-    ],
-  },
+  // {
+  //   id: "security",
+  //   title: "Conta e Segurança",
+  //   icon: ShieldIcon,
+  //   items: [
+  //     {
+  //       id: "change-password",
+  //       title: "Alterar Senha",
+  //       subtitle: "Atualizar credenciais de acesso",
+  //       icon: LockIcon,
+  //       action: "showPasswordChange",
+  //       comingSoon: true,
+  //     },
+  //     {
+  //       id: "two-factor",
+  //       title: "Autenticação 2FA",
+  //       subtitle: "Segurança adicional para sua conta",
+  //       icon: SmartphoneIcon,
+  //       action: "showTwoFactor",
+  //       comingSoon: true,
+  //     },
+  //   ],
+  // },
   {
     id: "support",
     title: "Suporte e Ajuda",
@@ -451,7 +559,7 @@ const handleItemClick = (item: any) => {
       showQuadras.value = true;
       break;
     case "showAddQuadra":
-      // Funcionalidade em breve
+      showAddQuadra.value = true;
       break;
     case "showPasswordChange":
       // Funcionalidade em breve
@@ -534,10 +642,7 @@ const goBack = () => {
 
 // Inicialização
 onMounted(() => {
-  // if (user.value) {
-  //   profileForm.name = user.value.name
-  //   profileForm.email = user.value.email
-  // }
+  fetchUserQuadras();
 });
 </script>
 

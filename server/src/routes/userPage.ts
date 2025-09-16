@@ -67,14 +67,9 @@ userRouter.patch('/:id', async (req: Request, res: Response) => {
       return res.status(200).json({ message: 'Nada para atualizar', user: current })
     }
 
-    // Constrói SET dinâmico de forma segura para valores; colunas são validadas acima
-    const setParts = Object.entries(updates).map(([col, val]) =>
-      supabaseDb`${supabaseDb.unsafe(col)} = ${val}`
-    )
-
     const updatedRows = await supabaseDb`
       update grn_auth.profiles
-      set ${supabaseDb.join(setParts, supabaseDb`, `)}, updated_at = now()
+      set ${supabaseDb(updates)}, updated_at = now()
       where user_id = ${userId}
       returning *
     `
