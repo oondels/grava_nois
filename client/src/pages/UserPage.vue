@@ -23,7 +23,7 @@
       </div>
 
       <div class="user-info">
-        <h1 class="user-name">{{ formatUserName(user?.name )|| "Usuário" }}</h1>
+        <h1 class="user-name">{{ formatUserName(user?.name) || "Usuário" }}</h1>
         <p class="user-email">{{ user?.email || "email@exemplo.com" }}</p>
         <div class="user-status"></div>
       </div>
@@ -136,17 +136,17 @@
               density="comfortable"
               :rules="[rules.required, rules.cep]"
               class="mb-3"
-              @blur="autoFillAddress"
+              @input="autoFillAddress"
             />
 
-            <v-text-field
+            <!-- <v-text-field
               v-model="locationForm.address"
               label="Endereço"
               variant="outlined"
               density="comfortable"
               :rules="[rules.required]"
               class="mb-3"
-            />
+            /> -->
 
             <v-text-field
               v-model="locationForm.city"
@@ -165,13 +165,15 @@
               :rules="[rules.required]"
               class="mb-3"
             />
+
+            <v-text-field label="Brasil" variant="outlined" density="comfortable" class="mb-0" disabled />
           </v-form>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer />
-          <v-btn @click="showLocationEdit = false" variant="text"> Cancelar </v-btn>
-          <v-btn @click="saveLocation" color="primary" variant="flat" :loading="savingLocation"> Salvar </v-btn>
+          <v-btn @click="showLocationEdit = false" variant="outlined" color="red"> Cancelar </v-btn>
+          <v-btn @click="saveLocation" color="green" variant="flat" :loading="savingLocation"> Salvar </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -211,8 +213,11 @@
               </div>
 
               <div class="quadra-status">
-                <v-chip :color="quadra.active ? 'success' : 'warning'" size="small" variant="flat">
-                  {{ quadra.active ? "Ativo" : "Inativo" }}
+                <!-- // TODO: Corrigir para veriicfcar status real da quadra -->
+                <!-- <v-chip :color="quadra.active ? 'success' : 'warning'" size="small" variant="flat"> -->
+                <v-chip :color="true ? 'success' : 'warning'" size="small" variant="flat">
+                  <!-- {{ quadra.active ? "Ativo" : "Inativo" }} -->
+                  Ativo
                 </v-chip>
               </div>
             </div>
@@ -221,12 +226,54 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn @click="showQuadras = false" color="primary" variant="flat"> Fechar </v-btn>
+          <v-btn @click="showQuadras = false" color="red" variant="outlined"> Fechar </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar: agora global via AppLayout + useSnackbar() -->
+    <!-- Modal: Adicionar Quadra -->
+    <v-dialog v-model="showAddQuadra" max-width="600" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <BuildingIcon class="me-2" />
+          Adicionar Quadra
+        </v-card-title>
+
+        <v-card-text>
+          <div>
+            <v-combobox
+              label="Selecione uma quadra"
+              v-model="selectedQuadra"
+              :items="availableQuadras"
+              variant="outlined"
+              item-title="name"
+              item-value="id"
+              :return-object="true"
+              :hide-no-data="false"
+              :hide-selected="true"
+            />
+            <div class="text-caption text-medium-emphasis mt-2">
+              Só será vinculada se ainda não estiver na sua lista.
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="outlined" color="red" @click="showAddQuadra = false">Cancelar</v-btn>
+
+          <v-btn
+            color="green"
+            variant="flat"
+            :loading="linkingQuadra"
+            :disabled="!canLinkSelected"
+            @click="linkSelectedQuadra"
+          >
+            Vincular
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -255,12 +302,16 @@ import {
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { getSportColor, getSportLabel } from "@/utils/formatters";
 import { useSnackbar } from "@/composables/useSnackbar";
+import axios from "axios";
+import { BASE_URL } from "@/config/ip";
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-// Dados do usuário (sanitizados)
+// Dados do usuário (sanitizados pos login)
 const user = computed(() => authStore.safeUser);
+// Dados filtrados do usuário (do localStorage)
+const userData = ref({} as any);
 
 // Estados dos modais
 const showProfileEdit = ref(false);
@@ -272,6 +323,11 @@ const showPasswordChange = ref(false);
 const showTwoFactor = ref(false);
 const showContactSupport = ref(false);
 
+type QuadraItem = { id: string; name: string; address?: string; sports?: string[]; active?: boolean };
+const selectedQuadra = ref<QuadraItem | null>(null);
+const availableQuadras = ref<QuadraItem[]>([
+  { id: "5b388420-8379-4418-80d9-5a9f7b2023cf", name: "Quadra Areia Lagoa Plínio" },
+]);
 // Estados de loading
 const savingProfile = ref(false);
 const savingLocation = ref(false);
@@ -296,7 +352,7 @@ const locationForm = reactive({
 const formatUserName = (name: string) => {
   if (!name) return "Usuário";
   return name.split(" ")[0] + " " + name.split(" ")[name.split(" ").length - 1];
-}
+};
 
 // Regras de validação
 const rules = {
@@ -311,57 +367,137 @@ const rules = {
   },
 };
 
-// Mock de quadras vinculadas
-const quadrasVinculadas = ref([
-  {
-    id: "1",
-    name: "Quadra do Zé",
-    address: "Rua das Flores, 123 - Centro",
-    sports: ["futebol", "futevolei"],
-    active: true,
-  },
-  {
-    id: "2",
-    name: "Ginásio Municipal",
-    address: "Av. Principal, 456 - Bairro Novo",
-    sports: ["basquete", "volei"],
-    active: true,
-  },
-]);
+// Quadras vinculadas ao usuário (vêm do backend grn_auth.profiles.quadras)
+const quadrasVinculadas = ref<QuadraItem[]>([]);
+
+const canLinkSelected = computed(() => {
+  if (!selectedQuadra.value) return false;
+  return !quadrasVinculadas.value.some((q) => q.id === selectedQuadra.value!.id);
+});
+
+const linkingQuadra = ref(false);
+
+async function fetchUserQuadras() {
+  try {
+    // Tenta localStorage primeiro (rápido)
+    let fromLs: any = null;
+    try {
+      const raw = localStorage.getItem("grn-user");
+      if (raw) fromLs = JSON.parse(raw);
+    } catch {}
+
+    let quadras: any[] = Array.isArray(fromLs?.quadras) ? fromLs.quadras : [];
+
+    // Se vazio ou sem LS, busca do backend para garantir frescor
+    if (!quadras.length) {
+      const uid = authStore.user?.id || authStore.safeUser?.id;
+      if (uid) {
+        const res = await axios.get(`${BASE_URL}/users/${uid}`);
+        const profile = res.data?.user ?? null;
+        if (Array.isArray(profile?.quadras)) quadras = profile.quadras;
+      }
+    }
+
+    // Normaliza: aceita array de ids (string) ou objetos
+    let normalized: QuadraItem[] = [];
+    if (Array.isArray(quadras)) {
+      if (quadras.length && typeof quadras[0] === "string") {
+        normalized = (quadras as string[]).map((id) => ({ id, name: id }));
+      } else {
+        normalized = (quadras as any[]).filter(Boolean).map((q: any) => ({
+          id: q.id,
+          name: q.name ?? q.id,
+          address: q.address,
+          sports: q.sports,
+          active: q.active,
+        }));
+      }
+    }
+
+    // Remove duplicatas por id
+    const seen = new Set<string>();
+    quadrasVinculadas.value = normalized.filter((q) => {
+      if (!q?.id) return false;
+      if (seen.has(q.id)) return false;
+      seen.add(q.id);
+      return true;
+    });
+
+    // Atualiza o subtítulo reativo do menu
+    const sec = menuSections.value.find((s) => s.id === "quadras");
+    if (sec) {
+      const item = sec.items.find((i: any) => i.id === "quadras-vinculadas");
+      if (item) item.subtitle = `${quadrasVinculadas.value.length} local(is) ativo(s)`;
+    }
+  } catch (e) {}
+}
+
+function fetchUserLocations() {
+  try {
+    let fromLs: any = null;
+    try {
+      const raw = localStorage.getItem("grn-user");
+      if (raw) fromLs = JSON.parse(raw);
+    } catch {}
+
+    if (fromLs) {
+      locationForm.cep = fromLs.cep || "";
+      locationForm.city = fromLs.city || "";
+      locationForm.state = fromLs.state || "";
+    }
+  } catch (e) {
+    console.error("Erro ao buscar localização do usuário:", e);
+  }
+}
+
+async function linkSelectedQuadra() {
+  if (!selectedQuadra.value) return;
+  const uid = authStore.user?.id || authStore.safeUser?.id;
+  if (!uid) {
+    notify("É necessário estar logado.", "error");
+    return;
+  }
+
+  // Evita duplicidade no cliente
+  if (quadrasVinculadas.value.some((q) => q.id === selectedQuadra.value!.id)) {
+    notify("Você já está vinculado a esta quadra.", "info");
+    return;
+  }
+
+  const next = [...quadrasVinculadas.value, selectedQuadra.value];
+
+  try {
+    linkingQuadra.value = true;
+    await axios.patch(`${BASE_URL}/users/${uid}`, { quadras: next });
+
+    quadrasVinculadas.value = next;
+    // Atualiza subtitle
+    const sec = menuSections.value.find((s) => s.id === "quadras");
+    if (sec) {
+      const item = sec.items.find((i: any) => i.id === "quadras-vinculadas");
+      if (item) item.subtitle = `${quadrasVinculadas.value.length} local(is) ativo(s)`;
+    }
+
+    notify("Quadra vinculada com sucesso!", "success");
+
+    // Atualiza cache local, se existir
+    const userDataRaw = localStorage.getItem("grn-user");
+    if (userDataRaw) {
+      const userData = JSON.parse(userDataRaw);
+      userData.quadras = next;
+      localStorage.setItem("grn-user", JSON.stringify(userData));
+    }
+    selectedQuadra.value = null;
+    showAddQuadra.value = false;
+  } catch (e: any) {
+    notify(e?.response?.data?.message || "Erro ao vincular quadra.", "error");
+  } finally {
+    linkingQuadra.value = false;
+  }
+}
 
 // Array de seções e opções do menu
 const menuSections = ref([
-  {
-    id: "profile",
-    title: "Perfil e Configurações",
-    icon: UserIcon,
-    items: [
-      {
-        id: "edit-profile",
-        title: "Editar Perfil",
-        subtitle: "Nome, email e informações pessoais",
-        icon: UserIcon,
-        action: "showProfileEdit",
-        comingSoon: true,
-      },
-      {
-        id: "location",
-        title: "Localização",
-        subtitle: "Endereço e cidade",
-        icon: MapPinIcon,
-        action: "showLocationEdit",
-        comingSoon: true,
-      },
-      {
-        id: "preferences",
-        title: "Preferências",
-        subtitle: "Notificações e privacidade",
-        icon: SettingsIcon,
-        action: "showPreferences",
-        comingSoon: true,
-      },
-    ],
-  },
   {
     id: "quadras",
     title: "Minhas Quadras",
@@ -373,7 +509,7 @@ const menuSections = ref([
         subtitle: `${quadrasVinculadas.value.length} local(is) ativo(s)`,
         icon: BuildingIcon,
         action: "showQuadras",
-        comingSoon: true,
+        comingSoon: false,
       },
       {
         id: "add-quadra",
@@ -381,53 +517,85 @@ const menuSections = ref([
         subtitle: "Vincular novo local esportivo",
         icon: PlusIcon,
         action: "showAddQuadra",
-        comingSoon: true,
+        comingSoon: false,
       },
     ],
   },
   {
-    id: "security",
-    title: "Conta e Segurança",
-    icon: ShieldIcon,
+    id: "profile",
+    title: "Perfil e Configurações",
+    icon: UserIcon,
     items: [
       {
-        id: "change-password",
-        title: "Alterar Senha",
-        subtitle: "Atualizar credenciais de acesso",
-        icon: LockIcon,
-        action: "showPasswordChange",
-        comingSoon: true,
+        id: "location",
+        title: "Localização",
+        subtitle: "Endereço e cidade",
+        icon: MapPinIcon,
+        action: "showLocationEdit",
+        comingSoon: false,
       },
       {
-        id: "two-factor",
-        title: "Autenticação 2FA",
-        subtitle: "Segurança adicional para sua conta",
-        icon: SmartphoneIcon,
-        action: "showTwoFactor",
+        id: "edit-profile",
+        title: "Editar Perfil",
+        subtitle: "Nome, email e informações pessoais",
+        icon: UserIcon,
+        action: "showProfileEdit",
         comingSoon: true,
       },
+
+      // {
+      //   id: "preferences",
+      //   title: "Preferências",
+      //   subtitle: "Notificações e privacidade",
+      //   icon: SettingsIcon,
+      //   action: "showPreferences",
+      //   comingSoon: true,
+      // },
     ],
   },
+  // {
+  //   id: "security",
+  //   title: "Conta e Segurança",
+  //   icon: ShieldIcon,
+  //   items: [
+  //     {
+  //       id: "change-password",
+  //       title: "Alterar Senha",
+  //       subtitle: "Atualizar credenciais de acesso",
+  //       icon: LockIcon,
+  //       action: "showPasswordChange",
+  //       comingSoon: true,
+  //     },
+  //     {
+  //       id: "two-factor",
+  //       title: "Autenticação 2FA",
+  //       subtitle: "Segurança adicional para sua conta",
+  //       icon: SmartphoneIcon,
+  //       action: "showTwoFactor",
+  //       comingSoon: true,
+  //     },
+  //   ],
+  // },
   {
     id: "support",
     title: "Suporte e Ajuda",
     icon: HelpCircleIcon,
     items: [
-      {
-        id: "help-center",
-        title: "Central de Ajuda",
-        subtitle: "FAQ e tutoriais",
-        icon: MessageCircleIcon,
-        action: "navigateToSuporte",
-        comingSoon: true,
-      },
+      // {
+      //   id: "help-center",
+      //   title: "Central de Ajuda",
+      //   subtitle: "FAQ e tutoriais",
+      //   icon: MessageCircleIcon,
+      //   action: "navigateToSuporte",
+      //   comingSoon: true,
+      // },
       {
         id: "contact-support",
         title: "Contatar Suporte",
         subtitle: "Enviar mensagem para nossa equipe",
         icon: MailIcon,
         action: "showContactSupport",
-        comingSoon: true,
+        comingSoon: false,
       },
     ],
   },
@@ -451,7 +619,7 @@ const handleItemClick = (item: any) => {
       showQuadras.value = true;
       break;
     case "showAddQuadra":
-      // Funcionalidade em breve
+      showAddQuadra.value = true;
       break;
     case "showPasswordChange":
       // Funcionalidade em breve
@@ -460,10 +628,10 @@ const handleItemClick = (item: any) => {
       // Funcionalidade em breve
       break;
     case "navigateToSuporte":
-      router.push("/suporte");
+      router.push("/reportar-erro");
       break;
     case "showContactSupport":
-      // Funcionalidade em breve
+      router.push("/reportar-erro");
       break;
   }
 };
@@ -496,48 +664,81 @@ const saveProfile = async () => {
 };
 
 const saveLocation = async () => {
-  savingLocation.value = true;
+  const uid = authStore.user?.id || authStore.safeUser?.id;
+  if (!uid) {
+    notify("É necessário estar logado.", "error");
+    return;
+  }
 
+  // Validações simples
+  const cepOnlyDigits = (locationForm.cep || "").replace(/\D/g, "");
+  if (!cepOnlyDigits || cepOnlyDigits.length !== 8) {
+    notify("CEP inválido.", "error");
+    return;
+  }
+  if (!locationForm.city || !locationForm.state) {
+    notify("Preencha todos os campos de endereço.", "error");
+    return;
+  }
+
+  savingLocation.value = true;
   try {
-    // Simular salvamento
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const payload = {
+      cep: cepOnlyDigits,
+      address: locationForm.address,
+      city: locationForm.city,
+      state: locationForm.state,
+    };
+
+    const { data } = await axios.patch(`${BASE_URL}/users/${uid}`, payload);
+
+    // Atualiza cache local, se existir
+    try {
+      const raw = localStorage.getItem("grn-user");
+      const stored = raw ? JSON.parse(raw) : null;
+      if (stored) {
+        const next = { ...stored, ...payload };
+        localStorage.setItem("grn-user", JSON.stringify(next));
+      }
+    } catch {}
 
     showLocationEdit.value = false;
     notify("Localização atualizada com sucesso!", "success");
-
-    // Reset form
-    locationForm.cep = "";
-    locationForm.address = "";
-    locationForm.city = "";
-    locationForm.state = "";
-  } catch (error) {
-    notify("Erro ao salvar localização", "error");
+  } catch (e: any) {
+    notify(e?.response?.data?.message || "Erro ao salvar localização.", "error");
   } finally {
     savingLocation.value = false;
   }
 };
 
-const autoFillAddress = () => {
-  // Simular preenchimento automático por CEP
-  if (locationForm.cep === "12345-678") {
-    locationForm.address = "Rua Exemplo, 123";
-    locationForm.city = "São Paulo";
-    locationForm.state = "SP";
-  }
-};
+// Edições do Perfil Usuário
+async function autoFillAddress() {
+  if (!locationForm.cep || locationForm.cep.length !== 8) return;
 
-// Removido: snackbar local; padronizado para useSnackbar() global
+  const cep = locationForm.cep.replace(/\D/g, "");
+  if (cep.length !== 8) return;
+  try {
+    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.erro) return;
+
+    locationForm.address = data.logradouro || locationForm.address;
+    locationForm.city = data.localidade || locationForm.city;
+    locationForm.state = data.uf || locationForm.state;
+  } catch {}
+}
 
 const goBack = () => {
   router.back();
 };
 
-// Inicialização
 onMounted(() => {
-  // if (user.value) {
-  //   profileForm.name = user.value.name
-  //   profileForm.email = user.value.email
-  // }
+  const storedUser = localStorage.getItem("grn-user");
+  userData.value = storedUser ? JSON.parse(storedUser) : null;
+
+  fetchUserQuadras();
+  fetchUserLocations();
 });
 </script>
 
