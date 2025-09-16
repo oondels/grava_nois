@@ -79,7 +79,7 @@
       </div>
     </div>
 
-    <v-card class="pa-4" variant="outlined" color="success" rounded="lg">
+    <v-card class="pa-4"  >
       <v-card-text class="pa-0">
         <section
           class="relative rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-gradient-to-br from-emerald-50/60 to-sky-50/40 dark:from-zinc-900/60 dark:to-zinc-900/20 backdrop-blur-xl px-5 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
@@ -278,7 +278,6 @@ async function fetchPage(quadraId: string | null = null) {
   if (!selectedQuadra.value) return;
 
   console.log(quadraId);
-  
 
   isRefreshing.value = true;
 
@@ -395,24 +394,23 @@ function onShow(file: VideoFile) {
 
 const selectedQuadra = ref<any>(null);
 
-
 /**
  * Retrieves the last selected quadra or a unique quadra from available quadras.
- * 
- * @returns {Object|null} Returns null if no quadras are available, 
+ *
+ * @returns {Object|null} Returns null if no quadras are available,
  *                        the single quadra if only one exists,
  *                        the last selected quadra from localStorage if found,
  *                        or the first available quadra as fallback.
  */
 const getLastOrUniqueQuadra = () => {
   if (availableQuadras.value.length === 0) return null;
-  if (availableQuadras.value.length === 1) return selectedQuadra.value = availableQuadras.value[0];
+  if (availableQuadras.value.length === 1) return (selectedQuadra.value = availableQuadras.value[0]);
   // tenta pegar a última quadra selecionada
   const lastId = localStorage.getItem("grn-last-quadra-id");
   const found = availableQuadras.value.find((q) => q.id === lastId);
-  if (found) return selectedQuadra.value = found;
+  if (found) return (selectedQuadra.value = found);
   // senão, retorna a primeira
-  return selectedQuadra.value = availableQuadras.value[0];
+  return (selectedQuadra.value = availableQuadras.value[0]);
 };
 
 // Watch para logar sempre que selectedQuadra mudar
@@ -450,7 +448,7 @@ onMounted(() => {
     focusQuadra();
   }, 500);
 
-  getLastOrUniqueQuadra()
+  getLastOrUniqueQuadra();
 });
 
 /**

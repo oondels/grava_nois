@@ -15,60 +15,53 @@
             <!-- Form -->
             <v-card-text class="pa-6 pt-3">
               <v-form>
-                <v-text-field
-                  v-model.trim="loginData.email"
-                  label="Email"
-                  type="email"
-                  variant="outlined"
-                  :rules="[rules.required, rules.email]"
-                  class="mb-4"
-                  autocomplete="email"
-                  autofocus
-                >
-                  <template #prepend-inner>
-                    <Mail :size="18" class="text-medium-emphasis" />
-                  </template>
-                </v-text-field>
+                <div class="relative my-4">
+                  <v-text-field
+                    v-model.trim="loginData.email"
+                    label="Email"
+                    type="email"
+                    variant="outlined"
+                    :rules="[rules.required, rules.email]"
+                    class="mb-4"
+                    autocomplete="email"
+                    autofocus
+                  >
+                    <template #prepend-inner>
+                      <Mail :size="18" class="text-medium-emphasis" />
+                    </template>
+                  </v-text-field>
 
-                <v-text-field
-                  v-model.trim="loginData.password"
-                  :type="showPassword ? 'text' : 'password'"
-                  label="Senha"
-                  variant="outlined"
-                  :rules="[rules.required]"
-                  class="mb-2"
-                  autocomplete="current-password"
-                >
-                  <template #prepend-inner>
-                    <Lock :size="18" class="text-medium-emphasis" />
-                  </template>
+                  <v-text-field
+                    v-model.trim="loginData.password"
+                    :type="showPassword ? 'text' : 'password'"
+                    label="Senha"
+                    variant="outlined"
+                    :rules="[rules.required]"
+                    class="mb-2"
+                    autocomplete="current-password"
+                    @keyup.enter="submitLogin"
+                  >
+                    <template #prepend-inner>
+                      <Lock :size="18" class="text-medium-emphasis" />
+          \          </template>
 
-                  <template #append-inner>
-                    <v-btn
-                      size="small"
-                      variant="text"
-                      :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
-                      @click="showPassword = !showPassword"
-                    >
-                      <Eye v-if="!showPassword" :size="18" />
-                      <EyeOff v-else :size="18" />
-                    </v-btn>
-                  </template>
-                </v-text-field>
+                    <template #append-inner>
+                      <v-btn
+                        size="small"
+                        variant="text"
+                        :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+                        @click="showPassword = !showPassword"
+                      >
+                        <Eye v-if="!showPassword" :size="18" />
+                        <EyeOff v-else :size="18" />
+                      </v-btn>
+                    </template>
+                  </v-text-field>
 
-                <div class="d-flex align-center justify-center my-5">
-                  <!-- <v-btn variant="text" size="small" class="text-primary"> Esqueci minha senha </v-btn> -->
-
-                  <div class="d-flex justify-center align-center">
-                    <!-- <span> Não possui uma conta? </span> -->
-                    <RouterLink
-                      to="/register"
-                      class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
-                      aria-label="Ir para página de cadastro"
-                    >
-                      <v-btn variant="text" size="small" class="text-primary"> Cadastre-se </v-btn>
-                    </RouterLink>
-                  </div>
+                  <!-- <span> Não possui uma conta? </span> -->
+                  <RouterLink class="absolute bottom-0 right-0" to="/register" aria-label="Ir para página de cadastro">
+                    <a class="text-blue p-1" href="#">Cadastre-se</a>
+                  </RouterLink>
                 </div>
 
                 <v-btn
@@ -114,7 +107,7 @@ import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter, useRoute } from "vue-router";
 
 const rules = {
   required: (value: string) => !!value || "Campo obrigatório",
@@ -124,8 +117,8 @@ const rules = {
   },
 };
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const loadingAuth = ref(false);
@@ -142,10 +135,10 @@ const submitLogin = async () => {
     await auth.signInWithEmail(loginData.email, loginData.password);
 
     // Redirect after successful email login
-    const desired = (localStorage.getItem('postAuthRedirect') || '').trim()
-    const target = desired && desired.startsWith('/') ? desired : '/lances-gravanois'
-    localStorage.removeItem('postAuthRedirect')
-    router.replace(target)
+    const desired = (localStorage.getItem("postAuthRedirect") || "").trim();
+    const target = desired && desired.startsWith("/") ? desired : "/lances-gravanois";
+    localStorage.removeItem("postAuthRedirect");
+    router.replace(target);
   } catch (error: any) {
     showSnackbar(error.message, "error");
     console.error("signIn error:", error);
@@ -157,10 +150,10 @@ const submitLogin = async () => {
 // Carrega script do Google apenas nesta rota
 onMounted(async () => {
   try {
-    const { ensureGoogleClientScript } = await import('@/utils/loadGoogleScript')
-    await ensureGoogleClientScript()
+    const { ensureGoogleClientScript } = await import("@/utils/loadGoogleScript");
+    await ensureGoogleClientScript();
   } catch {}
-})
+});
 // const handleForgotPassword = () => {
 //   console.log("Trocando senha");
 
