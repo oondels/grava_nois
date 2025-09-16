@@ -479,6 +479,14 @@ async function linkSelectedQuadra() {
     }
 
     notify("Quadra vinculada com sucesso!", "success");
+
+    // Atualiza cache local, se existir
+    const userDataRaw = localStorage.getItem("grn-user");
+    if (userDataRaw) {
+      const userData = JSON.parse(userDataRaw);
+      userData.quadras = next;
+      localStorage.setItem("grn-user", JSON.stringify(userData));
+    }
     selectedQuadra.value = null;
     showAddQuadra.value = false;
   } catch (e: any) {
