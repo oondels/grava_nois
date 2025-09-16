@@ -136,17 +136,17 @@
               density="comfortable"
               :rules="[rules.required, rules.cep]"
               class="mb-3"
-              @blur="autoFillAddress"
+              @input="autoFillAddress"
             />
 
-            <v-text-field
+            <!-- <v-text-field
               v-model="locationForm.address"
               label="Endereço"
               variant="outlined"
               density="comfortable"
               :rules="[rules.required]"
               class="mb-3"
-            />
+            /> -->
 
             <v-text-field
               v-model="locationForm.city"
@@ -165,13 +165,15 @@
               :rules="[rules.required]"
               class="mb-3"
             />
+
+            <v-text-field label="Brasil" variant="outlined" density="comfortable" class="mb-0" disabled />
           </v-form>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer />
-          <v-btn @click="showLocationEdit = false" variant="text"> Cancelar </v-btn>
-          <v-btn @click="saveLocation" color="primary" variant="flat" :loading="savingLocation"> Salvar </v-btn>
+          <v-btn @click="showLocationEdit = false" variant="outlined" color="red"> Cancelar </v-btn>
+          <v-btn @click="saveLocation" color="green" variant="flat" :loading="savingLocation"> Salvar </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -224,7 +226,7 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn @click="showQuadras = false" color="primary" variant="flat"> Fechar </v-btn>
+          <v-btn @click="showQuadras = false" color="red" variant="outlined"> Fechar </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -258,9 +260,10 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="showAddQuadra = false">Cancelar</v-btn>
+          <v-btn variant="outlined" color="red" @click="showAddQuadra = false">Cancelar</v-btn>
+
           <v-btn
-            color="primary"
+            color="green"
             variant="flat"
             :loading="linkingQuadra"
             :disabled="!canLinkSelected"
@@ -376,7 +379,7 @@ const linkingQuadra = ref(false);
 
 async function fetchUserQuadras() {
   try {
-    // 1) Tenta localStorage primeiro (rápido)
+    // Tenta localStorage primeiro (rápido)
     let fromLs: any = null;
     try {
       const raw = localStorage.getItem("grn-user");
@@ -385,7 +388,7 @@ async function fetchUserQuadras() {
 
     let quadras: any[] = Array.isArray(fromLs?.quadras) ? fromLs.quadras : [];
 
-    // 2) Se vazio ou sem LS, busca do backend para garantir frescor
+    // Se vazio ou sem LS, busca do backend para garantir frescor
     if (!quadras.length) {
       const uid = authStore.user?.id || authStore.safeUser?.id;
       if (uid) {
@@ -395,25 +398,23 @@ async function fetchUserQuadras() {
       }
     }
 
-    // 3) Normaliza: aceita array de ids (string) ou objetos
+    // Normaliza: aceita array de ids (string) ou objetos
     let normalized: QuadraItem[] = [];
     if (Array.isArray(quadras)) {
       if (quadras.length && typeof quadras[0] === "string") {
         normalized = (quadras as string[]).map((id) => ({ id, name: id }));
       } else {
-        normalized = (quadras as any[])
-          .filter(Boolean)
-          .map((q: any) => ({
-            id: q.id,
-            name: q.name ?? q.id,
-            address: q.address,
-            sports: q.sports,
-            active: q.active,
-          }));
+        normalized = (quadras as any[]).filter(Boolean).map((q: any) => ({
+          id: q.id,
+          name: q.name ?? q.id,
+          address: q.address,
+          sports: q.sports,
+          active: q.active,
+        }));
       }
     }
 
-    // 4) Remove duplicatas por id
+    // Remove duplicatas por id
     const seen = new Set<string>();
     quadrasVinculadas.value = normalized.filter((q) => {
       if (!q?.id) return false;
@@ -422,14 +423,30 @@ async function fetchUserQuadras() {
       return true;
     });
 
-    // 5) Atualiza o subtítulo reativo do menu
+    // Atualiza o subtítulo reativo do menu
     const sec = menuSections.value.find((s) => s.id === "quadras");
     if (sec) {
       const item = sec.items.find((i: any) => i.id === "quadras-vinculadas");
       if (item) item.subtitle = `${quadrasVinculadas.value.length} local(is) ativo(s)`;
     }
+  } catch (e) {}
+}
+
+function fetchUserLocations() {
+  try {
+    let fromLs: any = null;
+    try {
+      const raw = localStorage.getItem("grn-user");
+      if (raw) fromLs = JSON.parse(raw);
+    } catch {}
+
+    if (fromLs) {
+      locationForm.cep = fromLs.cep || "";
+      locationForm.city = fromLs.city || "";
+      locationForm.state = fromLs.state || "";
+    }
   } catch (e) {
-    // Silencioso para não poluir UI
+    console.error("Erro ao buscar localização do usuário:", e);
   }
 }
 
@@ -502,6 +519,14 @@ const menuSections = ref([
     icon: UserIcon,
     items: [
       {
+        id: "location",
+        title: "Localização",
+        subtitle: "Endereço e cidade",
+        icon: MapPinIcon,
+        action: "showLocationEdit",
+        comingSoon: false,
+      },
+      {
         id: "edit-profile",
         title: "Editar Perfil",
         subtitle: "Nome, email e informações pessoais",
@@ -509,22 +534,15 @@ const menuSections = ref([
         action: "showProfileEdit",
         comingSoon: true,
       },
-      {
-        id: "location",
-        title: "Localização",
-        subtitle: "Endereço e cidade",
-        icon: MapPinIcon,
-        action: "showLocationEdit",
-        comingSoon: true,
-      },
-      {
-        id: "preferences",
-        title: "Preferências",
-        subtitle: "Notificações e privacidade",
-        icon: SettingsIcon,
-        action: "showPreferences",
-        comingSoon: true,
-      },
+
+      // {
+      //   id: "preferences",
+      //   title: "Preferências",
+      //   subtitle: "Notificações e privacidade",
+      //   icon: SettingsIcon,
+      //   action: "showPreferences",
+      //   comingSoon: true,
+      // },
     ],
   },
   // {
@@ -555,21 +573,21 @@ const menuSections = ref([
     title: "Suporte e Ajuda",
     icon: HelpCircleIcon,
     items: [
-      {
-        id: "help-center",
-        title: "Central de Ajuda",
-        subtitle: "FAQ e tutoriais",
-        icon: MessageCircleIcon,
-        action: "navigateToSuporte",
-        comingSoon: true,
-      },
+      // {
+      //   id: "help-center",
+      //   title: "Central de Ajuda",
+      //   subtitle: "FAQ e tutoriais",
+      //   icon: MessageCircleIcon,
+      //   action: "navigateToSuporte",
+      //   comingSoon: true,
+      // },
       {
         id: "contact-support",
         title: "Contatar Suporte",
         subtitle: "Enviar mensagem para nossa equipe",
         icon: MailIcon,
         action: "showContactSupport",
-        comingSoon: true,
+        comingSoon: false,
       },
     ],
   },
@@ -602,10 +620,10 @@ const handleItemClick = (item: any) => {
       // Funcionalidade em breve
       break;
     case "navigateToSuporte":
-      router.push("/suporte");
+      router.push("/reportar-erro");
       break;
     case "showContactSupport":
-      // Funcionalidade em breve
+      router.push("/reportar-erro");
       break;
   }
 };
@@ -638,37 +656,70 @@ const saveProfile = async () => {
 };
 
 const saveLocation = async () => {
-  savingLocation.value = true;
+  const uid = authStore.user?.id || authStore.safeUser?.id;
+  if (!uid) {
+    notify("É necessário estar logado.", "error");
+    return;
+  }
 
+  // Validações simples
+  const cepOnlyDigits = (locationForm.cep || "").replace(/\D/g, "");
+  if (!cepOnlyDigits || cepOnlyDigits.length !== 8) {
+    notify("CEP inválido.", "error");
+    return;
+  }
+  if (!locationForm.city || !locationForm.state) {
+    notify("Preencha todos os campos de endereço.", "error");
+    return;
+  }
+
+  savingLocation.value = true;
   try {
-    // Simular salvamento
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const payload = {
+      cep: cepOnlyDigits,
+      address: locationForm.address,
+      city: locationForm.city,
+      state: locationForm.state,
+    };
+
+    const { data } = await axios.patch(`${BASE_URL}/users/${uid}`, payload);
+
+    // Atualiza cache local, se existir
+    try {
+      const raw = localStorage.getItem("grn-user");
+      const stored = raw ? JSON.parse(raw) : null;
+      if (stored) {
+        const next = { ...stored, ...payload };
+        localStorage.setItem("grn-user", JSON.stringify(next));
+      }
+    } catch {}
 
     showLocationEdit.value = false;
     notify("Localização atualizada com sucesso!", "success");
-
-    // Reset form
-    locationForm.cep = "";
-    locationForm.address = "";
-    locationForm.city = "";
-    locationForm.state = "";
-  } catch (error) {
-    notify("Erro ao salvar localização", "error");
+  } catch (e: any) {
+    notify(e?.response?.data?.message || "Erro ao salvar localização.", "error");
   } finally {
     savingLocation.value = false;
   }
 };
 
-const autoFillAddress = () => {
-  // Simular preenchimento automático por CEP
-  if (locationForm.cep === "12345-678") {
-    locationForm.address = "Rua Exemplo, 123";
-    locationForm.city = "São Paulo";
-    locationForm.state = "SP";
-  }
-};
+// Edições do Perfil Usuário
+async function autoFillAddress() {
+  if (!locationForm.cep || locationForm.cep.length !== 8) return;
 
-// Removido: snackbar local; padronizado para useSnackbar() global
+  const cep = locationForm.cep.replace(/\D/g, "");
+  if (cep.length !== 8) return;
+  try {
+    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.erro) return;
+
+    locationForm.address = data.logradouro || locationForm.address;
+    locationForm.city = data.localidade || locationForm.city;
+    locationForm.state = data.uf || locationForm.state;
+  } catch {}
+}
 
 const goBack = () => {
   router.back();
@@ -677,7 +728,9 @@ const goBack = () => {
 onMounted(() => {
   const storedUser = localStorage.getItem("grn-user");
   userData.value = storedUser ? JSON.parse(storedUser) : null;
+
   fetchUserQuadras();
+  fetchUserLocations();
 });
 </script>
 
