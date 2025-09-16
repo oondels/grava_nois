@@ -12,7 +12,7 @@
       />
     </div>
 
-    <div class="d-flex align-center justify-center mb-4 flex-wrap ga-4">
+    <div class="d-flex align-center justify-center mb-7 flex-wrap ga-4">
       <div class="d-flex align-center ga-3 flex-wrap justify-center">
         <h1 class="text-h4 font-weight-bold mb-1 page-title">Replays e Lances</h1>
 
@@ -79,9 +79,55 @@
       </div>
     </div>
 
-    <v-btn color="success" variant="outlined" :prepend-icon="customIcons.refresh" class="mb-7" @click="refresh">
-      Vídeos
-    </v-btn>
+    <v-card class="pa-4" variant="outlined" color="success" rounded="lg">
+      <v-card-text class="pa-0">
+        <div class="text-body-1 mb-3 text-center">
+          Selecione uma <strong>Quadra</strong> que você está vinculado(a).
+        </div>
+
+        <!-- Layout responsivo: empilha no mobile, lado a lado no >= sm -->
+        <v-row class="justify-center align-center" dense>
+          <v-col cols="12" sm="auto" class="d-flex justify-center">
+            <v-btn
+              :loading="isRefreshing"
+              :disabled="isRefreshing"
+              color="success"
+              variant="outlined"
+              :prepend-icon="customIcons.refresh"
+              @click="refresh"
+            >
+              Vídeos
+            </v-btn>
+          </v-col>
+
+          <v-col cols="12" sm="6" md="5" lg="4">
+            <v-combobox
+              v-model="selectedQuadra"
+              :items="availableQuadras"
+              item-title="name"
+              item-value="id"
+              :return-object="true"
+              variant="outlined"
+              color="success"
+              density="comfortable"
+              hide-no-data
+              hide-selected
+              label="Selecione uma quadra"
+              aria-label="Selecione uma quadra vinculada"
+              :menu-props="{ maxHeight: 300 }"
+              clearable
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
+
+      <!-- Mensagens auxiliares opcionais -->
+      <v-expand-transition>
+        <v-alert v-if="!availableQuadras?.length" type="info" variant="tonal" class="mt-3" density="comfortable">
+          Nenhuma quadra disponível no momento.
+        </v-alert>
+      </v-expand-transition>
+    </v-card>
 
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
       <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
@@ -153,6 +199,8 @@ const authStore = useAuthStore();
 // type LocalLocation = { estado: string; cidade: string; quadra: string };
 const user = computed(() => authStore.safeUser);
 
+const userData = ref({} as any);
+
 // Aviso sutil de fase inicial
 const showEarlyNotice = ref(true);
 
@@ -215,7 +263,10 @@ function toClip(file: VideoFile): SportClip {
 }
 
 /** ================= Data Fetch ================= */
+const isRefreshing = ref(false);
 async function fetchPage() {
+  isRefreshing.value = true;
+
   if (state.loading) return;
   state.loading = true;
   state.error = null;
@@ -243,6 +294,7 @@ async function fetchPage() {
     state.error = e?.message ?? "Erro ao carregar vídeos";
   } finally {
     state.loading = false;
+    isRefreshing.value = false;
   }
 }
 
@@ -325,8 +377,15 @@ function onShow(file: VideoFile) {
   ensurePreview(file.path, file.bucket);
 }
 
+const selectedQuadra = ref<any>(null);
+const availableQuadras = ref([] as any[]);
+
 onMounted(() => {
   refresh();
+  const storageUser = localStorage.getItem("grn-user");
+  userData.value = storageUser ? JSON.parse(storageUser) : {};
+
+  availableQuadras.value = userData.value.quadras || [];
 });
 </script>
 
