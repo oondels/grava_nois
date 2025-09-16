@@ -91,7 +91,6 @@
     </v-card-text>
 
     <v-card-actions class="pt-0 action-row">
-
       <div class="d-flex align-center justify-space-between w-100 pa-3">
         <!-- Action Buttons -->
         <div class="flex items-center gap-3">
@@ -113,16 +112,15 @@
             color="secondary"
             size="small"
             density="compact"
-            prepend-icon="mdi-download"
             @click.stop="$emit('download', clip)"
             class="secondary-action-btn"
           >
+            <DownloadIcon :size="17" class="mr-2" />
             <span>Baixar</span>
-            <!-- <v-icon class="sm:hidden">mdi-download</v-icon> -->
           </v-btn>
         </div>
 
-        <div class="flex items-center gap-2 relative p-3">
+        <!-- <div class="flex items-center gap-2 relative p-3">
           <v-tooltip text="Curtir vídeo" location="top">
             <template #activator="{ props: tooltipProps }">
               <v-btn
@@ -135,7 +133,7 @@
                 class="social-btn"
                 disabled
               >
-                <v-icon :icon="favorite ? 'mdi-heart' : 'mdi-heart-outline'" />
+                <v-icon color="red"  :icon="favorite ? '': customIcons.heart" />
               </v-btn>
             </template>
           </v-tooltip>
@@ -162,7 +160,7 @@
               em breve
             </v-chip>
           </span>
-        </div>
+        </div> -->
       </div>
       <v-spacer />
     </v-card-actions>
@@ -171,9 +169,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted as vueOnMounted } from "vue";
-import * as formatters from '@/utils/formatters'
+import * as formatters from "@/utils/formatters";
 import type { SportClip } from "@/store/clips";
 import { customIcons } from "@/utils/icons";
+import { DownloadIcon, HeartIcon } from "lucide-vue-next";
 
 interface Location {
   estado: string;
