@@ -81,26 +81,29 @@
 
     <v-card class="pa-4" variant="outlined" color="success" rounded="lg">
       <v-card-text class="pa-0">
-        <div class="text-body-1 mb-3 text-center">
-          Selecione uma <strong>Quadra</strong> que você está vinculado(a).
-        </div>
+        <section
+          class="relative rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-gradient-to-br from-emerald-50/60 to-sky-50/40 dark:from-zinc-900/60 dark:to-zinc-900/20 backdrop-blur-xl px-5 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+        >
+          <header class="text-center mb-5">
+            <h3 class="text-lg sm:text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Selecione uma <span class="text-emerald-600 dark:text-emerald-400">Quadra</span> vinculada
+            </h3>
+          </header>
 
-        <!-- Layout responsivo: empilha no mobile, lado a lado no >= sm -->
-        <v-row class="justify-center align-center" dense>
-          <v-col cols="12" sm="auto" class="d-flex justify-center">
+          <div class="grid grid-cols-1 sm:grid-cols-[auto,1fr] items-center gap-3">
             <v-btn
               :loading="isRefreshing"
               :disabled="isRefreshing"
               color="success"
               variant="outlined"
               :prepend-icon="customIcons.refresh"
+              class="h-11 rounded-xl px-5 border-emerald-600/40 text-emerald-700 dark:text-emerald-300 hover:shadow-md hover:-translate-y-0.5 transition-all"
               @click="refresh"
+              v-if="verificaQuadrasUser()"
             >
               Vídeos
             </v-btn>
-          </v-col>
 
-          <v-col cols="12" sm="6" md="5" lg="4">
             <v-combobox
               v-model="selectedQuadra"
               :items="availableQuadras"
@@ -116,18 +119,69 @@
               aria-label="Selecione uma quadra vinculada"
               :menu-props="{ maxHeight: 300 }"
               clearable
+              ref="quadraSelectRef"
+              class="rounded-xl [&_.v-field]:rounded-xl [&_.v-field__overlay]:!bg-transparent [&_.v-field__outline]:!border-zinc-300 dark:[&_.v-field__outline]:!border-zinc-700 hover:[&_.v-field__outline]:!border-emerald-400/60 focus-within:[&_.v-field__outline]:!border-emerald-500 focus-within:[&_.v-field__outline]:ring-2 focus-within:[&_.v-field__outline]:ring-emerald-500/30 transition-all"
             />
-          </v-col>
-        </v-row>
+          </div>
+        </section>
       </v-card-text>
 
-      <!-- Mensagens auxiliares opcionais -->
-      <v-alert v-if="!availableQuadras?.length" type="info" variant="tonal" class="mt-3" density="comfortable">
-        Nenhuma quadra disponível no momento.
-      </v-alert>
+      <div
+        v-if="!availableQuadras?.length"
+        type="info"
+        variant="tonal"
+        density="comfortable"
+        class="mt-3 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-xl p-4 sm:p-5 max-[360px]:p-3 overflow-hidden"
+        aria-live="polite"
+      >
+        <div class="flex items-start gap-3 sm:gap-4 max-[360px]:flex-col max-[360px]:items-stretch max-[360px]:gap-2">
+          <!-- Ícone / Badge -->
+          <div
+            class="shrink-0 h-10 w-10 sm:h-11 sm:w-11 max-[360px]:h-9 max-[360px]:w-9 rounded-xl bg-emerald-100/70 dark:bg-emerald-900/40 flex items-center justify-center max-[360px]:mx-auto"
+            aria-hidden="true"
+          >
+            <MapPinOffIcon class="h-6 w-6 max-[360px]:h-5 max-[360px]:w-5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <h4
+              class="text-base sm:text-[1.05rem] max-[360px]:text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-50"
+            >
+              Sem quadra vinculada
+            </h4>
+            <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5 break-words">
+              Selecione uma quadra acima para ver seus vídeos, ou cadastre uma no seu perfil.
+            </p>
+
+            <div class="mt-3 max-[360px]:mt-2 flex flex-col sm:flex-row gap-2">
+              <v-btn
+                size="small"
+                variant="flat"
+                color="success"
+                class="rounded-lg h-10 sm:h-9 px-4 shadow-sm hover:shadow-md transition w-full sm:w-auto"
+                @click="focusQuadra"
+              >
+                Selecionar quadra
+              </v-btn>
+
+              <!-- ajuste a rota conforme seu app -->
+              <router-link to="/user-page" class="inline-flex max-[360px]:w-full">
+                <v-btn
+                  size="small"
+                  variant="outlined"
+                  color="success"
+                  class="rounded-lg h-10 sm:h-9 px-4 w-full sm:w-auto"
+                >
+                  Cadastrar no perfil
+                </v-btn>
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </div>
     </v-card>
 
-    <v-sheet class="mb-6" color="surface" rounded="lg" border>
+    <v-sheet v-if="verificaQuadrasUser()" class="mb-6" color="surface" rounded="lg" border>
       <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
         <div class="text-caption text-medium-emphasis">
           {{ state.items.length }} clipes nesta página
@@ -159,10 +213,10 @@
         <v-alert type="error" variant="tonal">Erro ao carregadar conteúdo, verifique sua conexão!</v-alert>
       </div>
 
-      <!-- Lista -->
+      <!-- Conteúdo -->
       <div v-else class="px-4 pb-4">
         <!-- Exibe itens se tiver quadra vinculada -->
-        <div v-if="verificaQuadrasUser()">
+        <div>
           <v-row>
             <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
               <VideoCard
@@ -182,12 +236,12 @@
           </div>
         </div>
 
-        <div v-else>
+        <!-- <div v-else>
           <v-alert type="info" variant="tonal" class="mt-3" density="comfortable">
             Nenhum vídeo encontrado.
             <span v-if="!selectedQuadra"> Selecione uma quadra para ver os vídeos vinculados. </span>
           </v-alert>
-        </div>
+        </div> -->
       </div>
     </v-sheet>
   </v-container>
@@ -200,6 +254,7 @@ import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
 import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
+import { MapPinOffIcon } from "lucide-vue-next";
 
 import { useAuthStore } from "@/store/auth";
 const authStore = useAuthStore();
@@ -212,6 +267,11 @@ const userLoaded = ref(false);
 
 // Aviso sutil de fase inicial
 const showEarlyNotice = ref(true);
+
+const quadraSelectRef = ref();
+function focusQuadra() {
+  quadraSelectRef.value?.focus?.();
+}
 
 /** ================= Tipos ================= */
 type VideoFile = {
@@ -280,7 +340,6 @@ async function fetchPage() {
   state.loading = true;
   state.error = null;
   try {
-    // TODO: futuramente coletar client/venue do usuário logado/filtros
     const clientId = "86015dcb-cdbe-406b-8ef8-f7cc6d5a6887";
     const venueId = "5b388420-8379-4418-80d9-5a9f7b2023cf";
 
@@ -400,11 +459,7 @@ onMounted(() => {
   }
 
   const q = (userData.value as any)?.quadras;
-  availableQuadras.value = Array.isArray(q)
-    ? q
-    : q && typeof q === "object"
-    ? Object.values(q)
-    : [];
+  availableQuadras.value = Array.isArray(q) ? q : q && typeof q === "object" ? Object.values(q) : [];
 
   userLoaded.value = true;
 });
