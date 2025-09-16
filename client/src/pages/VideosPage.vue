@@ -64,9 +64,9 @@
       rounded="lg"
       class="mb-6 d-flex align-center ga-3 bg-blue-lighten-2 pa-4 rounded-lg border-l-4 border-blue-700"
       density="comfortable"
+      v-if="verificaQuadrasUser()"
     >
       <div>
-        <v-icon icon="mdi mdi-instagram" size="22" class="me-1" />
         Curtiu seu vídeo? Publique e marque para aparecer no nosso Insta!
         <v-btn
           href="https://www.instagram.com/grava_nois?igsh=MWhhczl3dGRpN25waw=="
@@ -122,11 +122,9 @@
       </v-card-text>
 
       <!-- Mensagens auxiliares opcionais -->
-      <v-expand-transition>
-        <v-alert v-if="!availableQuadras?.length" type="info" variant="tonal" class="mt-3" density="comfortable">
-          Nenhuma quadra disponível no momento.
-        </v-alert>
-      </v-expand-transition>
+      <v-alert v-if="!availableQuadras?.length" type="info" variant="tonal" class="mt-3" density="comfortable">
+        Nenhuma quadra disponível no momento.
+      </v-alert>
     </v-card>
 
     <v-sheet class="mb-6" color="surface" rounded="lg" border>
@@ -163,22 +161,32 @@
 
       <!-- Lista -->
       <div v-else class="px-4 pb-4">
-        <v-row>
-          <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
-            <VideoCard
-              :clip="toClip(file)"
-              :show-disabled="state.loading || previewMap[file.path] === null"
-              @show="() => onShow(file)"
-              @download="() => onDownload(file)"
-            ></VideoCard>
-          </v-col>
-        </v-row>
+        <!-- Exibe itens se tiver quadra vinculada -->
+        <div v-if="verificaQuadrasUser()">
+          <v-row>
+            <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
+              <VideoCard
+                :clip="toClip(file)"
+                :show-disabled="state.loading || previewMap[file.path] === null"
+                @show="() => onShow(file)"
+                @download="() => onDownload(file)"
+              ></VideoCard>
+            </v-col>
+          </v-row>
 
-        <!-- Pagination controls -->
-        <div class="d-flex align-center justify-space-between mt-2 px-1">
-          <v-btn variant="outlined" :disabled="state.page === 1 || state.loading" @click="prevPage"> Anterior </v-btn>
-          <div class="text-caption text-medium-emphasis">Página {{ state.page }}</div>
-          <v-btn variant="outlined" :disabled="!state.hasMore || state.loading" @click="nextPage"> Próxima </v-btn>
+          <!-- Pagination controls -->
+          <div class="d-flex align-center justify-space-between mt-2 px-1">
+            <v-btn variant="outlined" :disabled="state.page === 1 || state.loading" @click="prevPage"> Anterior </v-btn>
+            <div class="text-caption text-medium-emphasis">Página {{ state.page }}</div>
+            <v-btn variant="outlined" :disabled="!state.hasMore || state.loading" @click="nextPage"> Próxima </v-btn>
+          </div>
+        </div>
+
+        <div v-else>
+          <v-alert type="info" variant="tonal" class="mt-3" density="comfortable">
+            Nenhum vídeo encontrado.
+            <span v-if="!selectedQuadra"> Selecione uma quadra para ver os vídeos vinculados. </span>
+          </v-alert>
         </div>
       </div>
     </v-sheet>
@@ -200,6 +208,7 @@ const authStore = useAuthStore();
 const user = computed(() => authStore.safeUser);
 
 const userData = ref({} as any);
+const userLoaded = ref(false);
 
 // Aviso sutil de fase inicial
 const showEarlyNotice = ref(true);
@@ -383,10 +392,32 @@ const availableQuadras = ref([] as any[]);
 onMounted(() => {
   refresh();
   const storageUser = localStorage.getItem("grn-user");
-  userData.value = storageUser ? JSON.parse(storageUser) : {};
 
-  availableQuadras.value = userData.value.quadras || [];
+  try {
+    userData.value = storageUser ? JSON.parse(storageUser) : {};
+  } catch {
+    userData.value = {};
+  }
+
+  const q = (userData.value as any)?.quadras;
+  availableQuadras.value = Array.isArray(q)
+    ? q
+    : q && typeof q === "object"
+    ? Object.values(q)
+    : [];
+
+  userLoaded.value = true;
 });
+
+/**
+ * Verifica se o usuário possui quadras vinculadas.
+ * Aguarda o preenchimento inicial de `userData` (feito em onMounted).
+ */
+function verificaQuadrasUser(): boolean {
+  if (!userLoaded.value) return false;
+  const quadras = (userData.value as any)?.quadras;
+  return Array.isArray(quadras) && quadras.length > 0;
+}
 </script>
 
 <style scoped>

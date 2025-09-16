@@ -134,6 +134,8 @@ export const useAuthStore = defineStore("auth", () => {
 
                   localStorage.setItem("grn-user", JSON.stringify(userPayload));
                 }
+                console.log('...dados do usuário carregados');
+                
               } catch (err) {
                 console.error("Erro ao buscar dados do usuário:", err);
               }

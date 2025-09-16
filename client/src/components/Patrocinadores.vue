@@ -80,7 +80,6 @@
               color="primary"
               variant="tonal"
               :prepend-icon="customIcons.web"
-
               size="small"
             >
               <template #prepend>
@@ -88,8 +87,7 @@
               </template>
               Site oficial
             </v-btn>
-           <v-btn v-else disabled variant="tonal" :prepend-icon="customIcons.web" size="small">Site em breve</v-btn>
-
+            <v-btn v-else disabled variant="tonal" :prepend-icon="customIcons.web" size="small">Site em breve</v-btn>
           </div>
 
           <!-- TODO: COrrigir erro ao exibir redes dos patrocinadores -->
@@ -143,6 +141,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { sponsorOverrides, type SponsorOverride } from "@/data/patrocinadores";
+import { Globe } from "lucide-vue-next";
 
 type Socials = {
   instagram?: string | null;
@@ -238,7 +237,7 @@ function openSponsor(sponsor: Sponsor) {
   dialogOpen.value = true;
 }
 
-import { customIcons } from '@/utils/icons'
+import { customIcons } from "@/utils/icons";
 const socialList = [
   { key: "instagram" as const, label: "Instagram", icon: customIcons.instagram },
   { key: "twitter" as const, label: "Twitter / X", icon: customIcons.twitter },
@@ -246,11 +245,10 @@ const socialList = [
   { key: "youtube" as const, label: "YouTube", icon: customIcons.youtube },
   { key: "linkedin" as const, label: "LinkedIn", icon: customIcons.linkedin },
   // whatsapp não incluso por enquanto
-
 ];
 
 function normalizeUrl(url: string): string {
-  if (!url || typeof url !== 'string') return url;
+  if (!url || typeof url !== "string") return url;
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 </script>
@@ -277,20 +275,8 @@ function normalizeUrl(url: string): string {
 }
 
 .marquee-container {
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black 15%,
-    black 85%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black 15%,
-    black 85%,
-    transparent 100%
-  );
+  mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
 }
 
 @keyframes marquee {
