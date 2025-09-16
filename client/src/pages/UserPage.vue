@@ -211,8 +211,11 @@
               </div>
 
               <div class="quadra-status">
-                <v-chip :color="quadra.active ? 'success' : 'warning'" size="small" variant="flat">
-                  {{ quadra.active ? "Ativo" : "Inativo" }}
+                <!-- // TODO: Corrigir para veriicfcar status real da quadra -->
+                <!-- <v-chip :color="quadra.active ? 'success' : 'warning'" size="small" variant="flat"> -->
+                <v-chip :color="true ? 'success' : 'warning'" size="small" variant="flat">
+                  <!-- {{ quadra.active ? "Ativo" : "Inativo" }} -->
+                  Ativo
                 </v-chip>
               </div>
             </div>
@@ -302,9 +305,10 @@ import { BASE_URL } from "@/config/ip";
 const router = useRouter();
 const authStore = useAuthStore();
 
-// Dados do usuário (sanitizados)
+// Dados do usuário (sanitizados pos login)
 const user = computed(() => authStore.safeUser);
-console.log(user.value);
+// Dados filtrados do usuário (do localStorage)
+const userData = ref({} as any);
 
 // Estados dos modais
 const showProfileEdit = ref(false);
@@ -372,26 +376,56 @@ const linkingQuadra = ref(false);
 
 async function fetchUserQuadras() {
   try {
-    const uid = authStore.user?.id || authStore.safeUser?.id;
-    if (!uid) return;
-    const res = await axios.get(`${BASE_URL}/users/${uid}`);
-    const profile = res.data?.user ?? null;
-    const incoming = profile?.quadras ?? [];
-    // Aceita tanto array de objetos quanto array de ids
-    if (Array.isArray(incoming)) {
-      if (incoming.length && typeof incoming[0] === 'string') {
-        quadrasVinculadas.value = (incoming as string[]).map((id) => ({ id, name: id }));
-      } else {
-        quadrasVinculadas.value = incoming as QuadraItem[];
+    // 1) Tenta localStorage primeiro (rápido)
+    let fromLs: any = null;
+    try {
+      const raw = localStorage.getItem("grn-user");
+      if (raw) fromLs = JSON.parse(raw);
+    } catch {}
+
+    let quadras: any[] = Array.isArray(fromLs?.quadras) ? fromLs.quadras : [];
+
+    // 2) Se vazio ou sem LS, busca do backend para garantir frescor
+    if (!quadras.length) {
+      const uid = authStore.user?.id || authStore.safeUser?.id;
+      if (uid) {
+        const res = await axios.get(`${BASE_URL}/users/${uid}`);
+        const profile = res.data?.user ?? null;
+        if (Array.isArray(profile?.quadras)) quadras = profile.quadras;
       }
-    } else {
-      quadrasVinculadas.value = [];
     }
 
-    // Atualiza o subtítulo reativo do menu
-    const sec = menuSections.value.find((s) => s.id === 'quadras');
+    // 3) Normaliza: aceita array de ids (string) ou objetos
+    let normalized: QuadraItem[] = [];
+    if (Array.isArray(quadras)) {
+      if (quadras.length && typeof quadras[0] === "string") {
+        normalized = (quadras as string[]).map((id) => ({ id, name: id }));
+      } else {
+        normalized = (quadras as any[])
+          .filter(Boolean)
+          .map((q: any) => ({
+            id: q.id,
+            name: q.name ?? q.id,
+            address: q.address,
+            sports: q.sports,
+            active: q.active,
+          }));
+      }
+    }
+
+    // 4) Remove duplicatas por id
+    const seen = new Set<string>();
+    quadrasVinculadas.value = normalized.filter((q) => {
+      if (!q?.id) return false;
+      if (seen.has(q.id)) return false;
+      seen.add(q.id);
+      return true;
+    });
+
+    // 5) Atualiza o subtítulo reativo do menu
+    const sec = menuSections.value.find((s) => s.id === "quadras");
     if (sec) {
-      const item = sec.items.find((i: any) => i.id === 'quadras-vinculadas');
+      const item = sec.items.find((i: any) => i.id === "quadras-vinculadas");
       if (item) item.subtitle = `${quadrasVinculadas.value.length} local(is) ativo(s)`;
     }
   } catch (e) {
@@ -403,13 +437,13 @@ async function linkSelectedQuadra() {
   if (!selectedQuadra.value) return;
   const uid = authStore.user?.id || authStore.safeUser?.id;
   if (!uid) {
-    notify('É necessário estar logado.', 'error');
+    notify("É necessário estar logado.", "error");
     return;
   }
 
   // Evita duplicidade no cliente
   if (quadrasVinculadas.value.some((q) => q.id === selectedQuadra.value!.id)) {
-    notify('Você já está vinculado a esta quadra.', 'info');
+    notify("Você já está vinculado a esta quadra.", "info");
     return;
   }
 
@@ -421,17 +455,17 @@ async function linkSelectedQuadra() {
 
     quadrasVinculadas.value = next;
     // Atualiza subtitle
-    const sec = menuSections.value.find((s) => s.id === 'quadras');
+    const sec = menuSections.value.find((s) => s.id === "quadras");
     if (sec) {
-      const item = sec.items.find((i: any) => i.id === 'quadras-vinculadas');
+      const item = sec.items.find((i: any) => i.id === "quadras-vinculadas");
       if (item) item.subtitle = `${quadrasVinculadas.value.length} local(is) ativo(s)`;
     }
 
-    notify('Quadra vinculada com sucesso!', 'success');
+    notify("Quadra vinculada com sucesso!", "success");
     selectedQuadra.value = null;
     showAddQuadra.value = false;
   } catch (e: any) {
-    notify(e?.response?.data?.message || 'Erro ao vincular quadra.', 'error');
+    notify(e?.response?.data?.message || "Erro ao vincular quadra.", "error");
   } finally {
     linkingQuadra.value = false;
   }
@@ -640,8 +674,9 @@ const goBack = () => {
   router.back();
 };
 
-// Inicialização
 onMounted(() => {
+  const storedUser = localStorage.getItem("grn-user");
+  userData.value = storedUser ? JSON.parse(storedUser) : null;
   fetchUserQuadras();
 });
 </script>
