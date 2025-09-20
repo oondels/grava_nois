@@ -12,6 +12,8 @@ import cookieParser from "cookie-parser";
 import pedidosRouter from "./routes/pedidos";
 import produtosRouter from "./routes/produtos";
 import pindaibaRouter from "./routes/tempPindaiba";
+import { financeiroRouter } from "./routes/financeiro";
+
 import { supabase } from "./config/supabase";
 
 import { userRouter } from "./routes/user";
@@ -84,6 +86,7 @@ AppDataSource.initialize()
       // Temporary routes (Felix3D)
       app.use("/temp_felix3d/pedidos", pedidosRouter);
       app.use("/temp_felix3d/produtos", produtosRouter);
+      app.use("/temp_felix3d/financeiro", financeiroRouter);
 
       app.use("/pindaiba", pindaibaRouter);
 
