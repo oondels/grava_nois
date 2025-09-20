@@ -9,7 +9,7 @@ router.get("/", async (req: Request, res: Response) => {
 
 // Criar uma nova venda
 router.post("/", async (req: Request, res: Response) => {
-  const { nome, valor } = req.body;
+  const { nome, valor, qntd } = req.body;
 
   // Validação básica dos campos obrigatórios
   if (!nome || valor === undefined || valor === null) {
@@ -31,10 +31,10 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     await client.query("BEGIN");
 
-    const result = await client.query("INSERT INTO pindaiba_bar.vendas (nome, valor) VALUES ($1, $2) RETURNING *", [
-      nome,
-      Number(valor),
-    ]);
+    const result = await client.query(
+      "INSERT INTO pindaiba_bar.vendas (nome, valor, qntd) VALUES ($1, $2, $3) RETURNING *",
+      [nome, Number(valor), Number(qntd)]
+    );
 
     await client.query("COMMIT");
 
