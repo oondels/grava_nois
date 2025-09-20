@@ -16,7 +16,7 @@ import { financeiroRouter } from "./routes/financeiro";
 
 import { supabase } from "./config/supabase";
 
-import { userRouter } from "./routes/user";
+import { userRouter } from "./routes/userPage";
 
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import { serialize as serializeCookie, parse as parseCookie } from "cookie";
