@@ -1,7 +1,11 @@
 <template>
   <!-- Bottom bar (trigger) -->
   <nav
-    class="fixed bottom-3 left-3 right-3 z-40 border-t border-black/10 dark:border-white/10 backdrop-blur-md bg-white/90 dark:bg-neutral-900/70 rounded-xl shadow-sm transition-all duration-500 ease-in-out"
+    class="fixed bottom-3 left-3 right-3 z-40
+       border-t border-white/10
+       backdrop-blur-md bg-black/50
+       rounded-xl shadow-sm
+       transition-all duration-500 ease-in-out"
     :class="navHidden ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'"
     role="navigation"
     aria-label="Navegação inferior"
@@ -11,7 +15,7 @@
         to="/"
         :class="[
           'w-12 h-12 rounded-xl flex items-center justify-center',
-          isActive('/') ? 'bg-green-100/70 dark:bg-green-700/20 text-green-700 dark:text-green-400' : '',
+          isActive('/') ? 'bg-green-200/60 text-green-900' : '',
         ]"
         aria-label="Ir para a página inicial"
       >
