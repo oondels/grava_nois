@@ -1,161 +1,108 @@
-# SportClips - Plataforma de Download de Vídeos Esportivos
+# Grava Nóis – Plataforma de Replays Esportivos
 
-Uma plataforma completa para visualizar, comprar e baixar vídeos de lances esportivos com interface moderna e responsiva.
+O **Grava Nóis** é um ecossistema de captura e distribuição de replays esportivos pensado para quadras e campos amadores. O hardware instalado na quadra registra continuamente a partida; quando um atleta aciona o botão físico no local, o sistema recorta automaticamente os **25 segundos anteriores** e os **10 segundos posteriores** ao acionamento, concatena o trecho e envia o clipe final para armazenamento em nuvem (Amazon S3). Esses vídeos ficam imediatamente disponíveis para visualização e download pelos atletas no aplicativo web/PWA descrito neste repositório.
 
-## 🚀 Tecnologias
+## Como o fluxo funciona
 
-- **Vue 3** com Composition API e TypeScript
-- **Vuetify 3** para componentes e tema
-- **Vue Router 4** para roteamento
-- **Pinia** para gerenciamento de estado
-- **Bootstrap 5** (utilities apenas) para classes utilitárias
-- **Vite** como build tool
-- **Material Design Icons** para iconografia
+1. **Captura local** – Um dispositivo dedicado permanece gravando o jogo e monitora o botão físico da quadra.
+2. **Gatilho do atleta** – Ao identificar um lance marcante, o atleta pressiona o botão. O dispositivo separa o intervalo configurado (25s anteriores + 10s posteriores) e monta o clipe final.
+3. **Envio para a nuvem** – O clipe é processado e enviado automaticamente para um bucket S3. Metadados de identificação (quadra, atleta/time, timestamp) são registrados na API do Grava Nóis.
+4. **Disponibilização** – A API notifica a plataforma web/mobile, que lista os novos vídeos, disponibiliza URLs assinadas para preview e download e gerencia o acesso de cada usuário autenticado.
 
-## 🎨 Design System
+## Aplicação Web (este repositório)
 
-### Paleta de Cores
-- **Primária**: `#1B5E20` (Verde esporte)
-- **Secundária**: `#F57C00` (Laranja)  
-- **Atenção**: `#D32F2F` (Vermelho)
-- **Sistema de espaçamento**: 8px base
+Este projeto entrega a experiência web/PWA consumida por atletas e administradores:
 
-### Temas
-- Dark theme por padrão
-- Light theme disponível via toggle
-- Cores configuráveis via CSS variables
+- Autenticação com **Supabase** (email/senha e login social via Google).
+- Dashboard de vídeos por quadra, com paginação, preview sob demanda e download com URLs temporárias.
+- Notificações globais via [Notivue](https://vue-notification.netlify.app/).
+- Layout responsivo com **Vuetify 3**, Tailwind utilities e design focado em tema escuro.
+- Suporte a PWA (instalação, cache offline básico, prompts de atualização).
+- Integração com endpoints REST do backend (`/api/videos/list` e `/api/videos/sign`) para listar e assinar clipes.
 
-## 📱 Funcionalidades
+>  O conteúdo de mock na `useClipsStore` serve apenas para prototipagem offline; em produção, a listagem provém da API e dos arquivos gerados pelo sistema de captura.
 
-### Autenticação
-- Login com email/senha (qualquer combinação funciona no mock)
-- Modo demonstração sem necessidade de cadastro
-- Proteção de rotas autenticadas
+## 🏗️ Tecnologias principais
 
-### Navegação Principal
-- `/meus-lances` - Lista de vídeos com filtros avançados
-- `/lance/:id` - Player de vídeo com detalhes e metadados
-- `/downloads` - Gerenciamento de downloads
-- `/suporte` - FAQ e central de ajuda
+- [Vue 3](https://vuejs.org/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/) + `vite-plugin-pwa`
+- [Vuetify 3](https://vuetifyjs.com/) e [Tailwind CSS](https://tailwindcss.com/) (classes utilitárias)
+- [Pinia](https://pinia.vuejs.org/) para gerenciamento de estado
+- [Supabase JS](https://supabase.com/docs/reference/javascript/introduction) para autenticação
+- [Axios](https://axios-http.com/) para chamadas HTTP
 
-### Recursos Avançados
-- **Filtros**: Por esporte, data, status e busca textual
-- **Sistema de Compra**: Modal de checkout com cartão simulado
-- **Downloads**: Progresso em tempo real com pause/resume
-- **Player de Vídeo**: Controles nativos com poster
-- **Estados**: Loading skeletons, empty states, error handling
-- **Notificações**: Sistema de snackbar para feedback
+## Configuração do ambiente
 
-## 🛠️ Comandos
+Crie um arquivo `.env` (ou `.env.local`) na raiz com as variáveis necessárias para build e execução:
+
+```dotenv
+VITE_SUPABASE_URL=https://<sua-instancia>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<chave-publica>
+VITE_API_BASE=https://api.gravanois.com
+```
+
+- `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` habilitam o fluxo de autenticação (PKCE + persistência). 
+- `VITE_API_BASE` aponta para a API que expõe as rotas de vídeos (`/api/videos/list`, `/api/videos/sign`) e serviços auxiliares (`/send-report`, `/send-email`).
+
+> Em ambiente de desenvolvimento, caso a API ainda não esteja disponível, defina `VITE_API_BASE` para um mock server local ou utilize os dados mockados da store.
+
+## 🖥️ Scripts
 
 ```bash
 # Instalar dependências
-npm install
+default npm install
 
-# Executar em desenvolvimento
+# Rodar em modo desenvolvimento com HMR
 npm run dev
 
-# Build para produção
+# Gerar build de produção
 npm run build
 
-# Preview da build
+# Servir a build para verificação
 npm run preview
 ```
 
-## 🏗️ Estrutura do Projeto
+## 🗂️ Estrutura resumida
 
 ```
 src/
-├── components/          # Componentes reutilizáveis
-│   ├── AppShell.vue    # Layout principal
-│   ├── ClipCard.vue    # Card de vídeo
-│   ├── ClipFilters.vue # Filtros avançados
-│   └── ...
-├── pages/              # Páginas da aplicação
-├── layouts/            # Layouts
-├── store/              # Estados Pinia
-├── router/             # Configuração de rotas
-├── utils/              # Utilitários e formatters
-├── styles/             # CSS variables e utilities
-├── composables/        # Composables Vue
-└── plugins/            # Configuração Vuetify
+├── assets/             # Logos, imagens e ícones
+├── components/         # Componentes Vue reutilizáveis (AppShell, VideoCard, prompts PWA…)
+├── layouts/            # Layouts globais
+├── pages/              # Páginas da aplicação (Home, Login, Videos, etc.)
+├── router/             # Rotas e guards de autenticação
+├── services/           # Chamadas HTTP (reportes, instalação, vídeos)
+├── store/              # Pinia stores (auth, clips mock, tema)
+├── utils/              # Utilitários (formatters, loaders, ícones)
+└── lib/                # Configurações de SDKs (Supabase)
 ```
 
-## 🎯 Componentes Principais
+## 🔐 Fluxo de autenticação
 
-### ClipCard
-Card responsivo com thumbnail, badges, preço e CTA de compra/download.
+1. O aplicativo inicializa o Pinia e aguarda `auth.init()` antes de montar a Vue app.
+2. O store `auth` consulta a sessão atual no Supabase, sincroniza mudanças com `onAuthStateChange` e persiste dados do usuário em `localStorage` (`grn-user`).
+3. Guardas de rota asseguram que páginas como `/lances-gravanois` sejam acessadas apenas após login; usuários não autenticados são redirecionados para `/login` e o destino desejado é salvo em `postAuthRedirect`.
 
-### ClipFilters  
-Sistema de filtros com chips de esporte, date picker, select de status e busca.
+## 🌐 Integração com vídeos
 
-### DownloadButton
-Botão inteligente que muda de estado: Comprar → Baixar → Progresso → Concluído.
+- A página `VideosPage.vue` carrega os dados do usuário autenticado e suas quadras vinculadas.
+- Ao selecionar uma quadra (`VideoPageQuadra.vue`), a app usa `VITE_API_BASE` para buscar a lista paginada de clipes.
+- A prévia (preview) é carregada apenas sob demanda, através de URLs assinadas (`/api/videos/sign?kind=preview`). Downloads utilizam o mesmo endpoint com `kind=download`.
+- A aplicação armazena o último local escolhido em `localStorage` (`grn-last-quadra-id`) para agilizar o acesso do usuário em revisitas.
 
-### CheckoutMock
-Modal de pagamento simulado com validação de cartão de crédito.
+## 📲 PWA
 
-## 📦 Estados de Dados
+- Prompt personalizado para instalação (`InstallPrompt.vue`) com suporte a Android/Web e instruções específicas para iOS.
+- Componente `ReloadPrompt` monitora atualizações de Service Worker e oferece botão de “Atualizar”.
+- Configuração do `VitePWA` inclui cache para imagens, fontes e fallbacks padrão de SPA.
 
-### useClipsStore
-- Lista de vídeos mock com diferentes esportes
-- Filtros reativos
-- Simulação de compra e download
-- Estados de progresso e conclusão
+## 🛠️ Futuro e próximos passos
 
-### useAuthStore  
-- Autenticação mock
-- Modo demonstração
-- Proteção de rotas
-
-### useThemeStore
-- Toggle dark/light theme
-- Integração com Vuetify theme
-
-## 🌐 Responsividade
-
-- **Mobile**: Lista vertical, bottom navigation
-- **Tablet**: Grid 2 colunas, drawer temporário  
-- **Desktop**: Grid 3-4 colunas, sidebar fixa
-
-## ⚡ Performance
-
-- Lazy loading de páginas
-- Componentes otimizados
-- Imagens com placeholder
-- Estados de loading apropriados
-
-## 🔧 Personalização
-
-### Alterar Paleta de Cores
-Edite as CSS variables em `src/styles/variables.css`:
-
-```css
-:root {
-  --primary-color: #1B5E20;    /* Verde esporte */
-  --secondary-color: #F57C00;   /* Laranja */
-  --accent-color: #D32F2F;      /* Vermelho */
-}
-```
-
-### Configurar Vuetify
-Ajuste temas e configurações em `src/plugins/vuetify.ts`.
-
-### Bootstrap Utilities
-Apenas utilities são importadas em `src/styles/utilities.scss` para evitar conflitos com Vuetify.
-
-## 📱 Acessibilidade
-
-- Navegação por teclado completa
-- Contraste AA em todos os temas
-- ARIA labels em componentes interativos
-- Focus indicators visíveis
-- Estrutura semântica HTML
-
-## 🚀 Deploy
-
-O projeto está otimizado para deploy em qualquer provedor de hospedagem estática (Netlify, Vercel, GitHub Pages, etc.).
+- Conectar a listagem mockada ao pipeline completo de ingestão, incluindo metadados de atletas e eventos.
+- Disponibilizar comandos e documentação para o dispositivo de captura (edge device) e para o backend que recebe os vídeos.
+- Adicionar testes automatizados (unitários/E2E) e checklist de deploy.
+- Revisar estilos compartilhados e consolidar o design system entre Vuetify e Tailwind.
 
 ---
 
-**Desenvolvido com Vue 3 + Vuetify 3 + TypeScript**
+Para dúvidas ou sugestões, abra uma issue ou entre em contato com a equipe Grava Nóis.
