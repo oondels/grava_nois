@@ -11,6 +11,7 @@
         height="40"
       />
     </div>
+    <div ref="listTopRef"></div>
 
     <div class="d-flex align-center justify-center mb-7 flex-wrap ga-4">
       <div class="d-flex align-center ga-3 flex-wrap justify-center">
@@ -79,7 +80,7 @@
       </div>
     </div>
 
-    <v-card class="pa-4"  >
+    <v-card class="pa-4">
       <v-card-text class="pa-0">
         <section
           class="relative rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-gradient-to-br from-emerald-50/60 to-sky-50/40 dark:from-zinc-900/60 dark:to-zinc-900/20 backdrop-blur-xl px-5 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
@@ -166,6 +167,13 @@
             <div v-else class="px-4 pb-4">
               <!-- Exibe itens se tiver quadra vinculada -->
               <div>
+                <!-- Loader leve ao paginar quando já há itens -->
+                <v-progress-linear
+                  v-if="state.loading && state.items.length"
+                  color="success"
+                  indeterminate
+                  class="mb-2"
+                />
                 <v-row>
                   <v-col v-for="file in state.items" :key="getKey(file)" cols="12" sm="6" md="4" lg="3">
                     <VideoCard
@@ -179,10 +187,13 @@
 
                 <!-- Pagination controls -->
                 <div class="d-flex align-center justify-end mt-2 px-1 ga-2">
-                  <v-btn variant="outlined" :disabled="state.loading" @click="prevPage">
-                    Voltar ao início
-                  </v-btn>
-                  <v-btn variant="outlined" :disabled="!state.hasMore || state.loading" @click="nextPage">
+                  <v-btn variant="outlined" :disabled="state.loading" @click="prevPage"> Voltar ao início </v-btn>
+                  <v-btn
+                    variant="outlined"
+                    :disabled="!state.hasMore || state.loading"
+                    :loading="state.loading"
+                    @click="nextPage"
+                  >
                     Próxima
                   </v-btn>
                 </div>
@@ -214,6 +225,18 @@ const showEarlyNotice = ref(true);
 const quadraSelectRef = ref();
 function focusQuadra() {
   quadraSelectRef.value?.focus?.();
+}
+const listTopRef = ref<HTMLElement | null>(null);
+
+function scrollToListTop() {
+  const el = listTopRef.value as HTMLElement | null;
+  if (!el) return;
+  const root = document.documentElement;
+  const varPx = getComputedStyle(root).getPropertyValue('--gn-sticky-top').trim();
+  const offset = Number.parseInt(varPx || '64', 10) || 64;
+  const rect = el.getBoundingClientRect();
+  const absoluteTop = rect.top + window.scrollY - offset - 8; // pequeno respiro visual
+  window.scrollTo({ top: absoluteTop, behavior: 'smooth' });
 }
 
 /** ================= Tipos ================= */
@@ -269,7 +292,6 @@ async function fetchPage(quadraId: string | null = null) {
 
   isRefreshing.value = true;
 
-  if (state.loading) return;
   state.loading = true;
   state.error = null;
   try {
@@ -304,9 +326,16 @@ function refresh() {
 
 function nextPage() {
   if (state.loading || !state.hasMore) return;
-  Object.keys(previewMap).forEach((k) => delete previewMap[k]);
-  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
-  fetchPage(selectedQuadra.value.id);
+  // Scroll para o topo da listagem com offset do header fixo
+  scrollToListTop();
+  state.loading = true;
+  state.items = [];
+
+  setTimeout(() => {
+    Object.keys(previewMap).forEach((k) => delete previewMap[k]);
+    Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+    fetchPage(selectedQuadra.value.id);
+  }, 500);
 }
 
 function prevPage() {
