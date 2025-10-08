@@ -11,6 +11,7 @@
         height="40"
       />
     </div>
+    <div ref="listTopRef"></div>
 
     <div class="d-flex align-center justify-center mb-7 flex-wrap ga-4">
       <div class="d-flex align-center ga-3 flex-wrap justify-center">
@@ -79,7 +80,7 @@
       </div>
     </div>
 
-    <v-card class="pa-4"  >
+    <v-card class="pa-4">
       <v-card-text class="pa-0">
         <section
           class="relative rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-gradient-to-br from-emerald-50/60 to-sky-50/40 dark:from-zinc-900/60 dark:to-zinc-900/20 backdrop-blur-xl px-5 py-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
@@ -166,11 +167,18 @@
             <div v-else class="px-4 pb-4">
               <!-- Exibe itens se tiver quadra vinculada -->
               <div>
+                <!-- Loader leve ao paginar quando já há itens -->
+                <v-progress-linear
+                  v-if="state.loading && state.items.length"
+                  color="success"
+                  indeterminate
+                  class="mb-2"
+                />
                 <v-row>
-                  <v-col v-for="file in state.items" :key="file.path" cols="12" sm="6" md="4" lg="3">
+                  <v-col v-for="file in state.items" :key="getKey(file)" cols="12" sm="6" md="4" lg="3">
                     <VideoCard
                       :clip="toClip(file)"
-                      :show-disabled="state.loading || previewMap[file.path] === null"
+                      :show-disabled="state.loading || previewMap[getKey(file)] === null || file.missing"
                       @show="() => onShow(file)"
                       @download="() => onDownload(file)"
                     ></VideoCard>
@@ -178,12 +186,14 @@
                 </v-row>
 
                 <!-- Pagination controls -->
-                <div class="d-flex align-center justify-space-between mt-2 px-1">
-                  <v-btn variant="outlined" :disabled="state.page === 1 || state.loading" @click="prevPage">
-                    Anterior
-                  </v-btn>
-                  <div class="text-caption text-medium-emphasis">Página {{ state.page }}</div>
-                  <v-btn variant="outlined" :disabled="!state.hasMore || state.loading" @click="nextPage">
+                <div class="d-flex align-center justify-end mt-2 px-1 ga-2">
+                  <v-btn variant="outlined" :disabled="state.loading" @click="prevPage"> Voltar ao início </v-btn>
+                  <v-btn
+                    variant="outlined"
+                    :disabled="!state.hasMore || state.loading"
+                    :loading="state.loading"
+                    @click="nextPage"
+                  >
                     Próxima
                   </v-btn>
                 </div>
@@ -203,6 +213,7 @@ import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
 import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
+import { fetchVideos, type VideoListItem, type VideoListResponse } from "@/services/videos";
 
 // type LocalLocation = { estado: string; cidade: string; quadra: string };
 const userData = ref({} as any);
@@ -215,24 +226,21 @@ const quadraSelectRef = ref();
 function focusQuadra() {
   quadraSelectRef.value?.focus?.();
 }
+const listTopRef = ref<HTMLElement | null>(null);
+
+function scrollToListTop() {
+  const el = listTopRef.value as HTMLElement | null;
+  if (!el) return;
+  const root = document.documentElement;
+  const varPx = getComputedStyle(root).getPropertyValue('--gn-sticky-top').trim();
+  const offset = Number.parseInt(varPx || '64', 10) || 64;
+  const rect = el.getBoundingClientRect();
+  const absoluteTop = rect.top + window.scrollY - offset - 8; // pequeno respiro visual
+  window.scrollTo({ top: absoluteTop, behavior: 'smooth' });
+}
 
 /** ================= Tipos ================= */
-type VideoFile = {
-  name: string;
-  path: string;
-  bucket: string;
-  size: number | null;
-  last_modified: string | null;
-};
-
-type VideosListResponse = {
-  bucket: string;
-  prefix: string;
-  count: number;
-  files: VideoFile[];
-  hasMore: boolean;
-  nextOffset: number;
-};
+type VideoFile = VideoListItem;
 
 /** ================= Estado ================= */
 const state = reactive({
@@ -240,7 +248,7 @@ const state = reactive({
   loading: false,
   error: null as string | null,
   hasMore: true,
-  page: 1,
+  token: undefined as string | undefined,
   pageSize: 5,
 });
 
@@ -252,13 +260,14 @@ const downloadMap = reactive<Record<string, string | null | undefined>>({});
 function getApiBase() {
   const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
   if (envBase) return envBase.replace(/\/$/, "");
-  return "https://---";
+  return "";
 }
 
 function toClip(file: VideoFile): SportClip {
-  const recordedAt = file.last_modified || new Date().toISOString();
+  const key = file.path || file.clip_id;
+  const recordedAt = file.captured_at || file.last_modified || new Date().toISOString();
   return {
-    id: file.path,
+    id: key,
     sport: "futebol",
     durationSec: 10,
     priceCents: 0,
@@ -268,8 +277,12 @@ function toClip(file: VideoFile): SportClip {
     camera: "Cam-01",
     venue: "Grava Nóis",
     thumbUrl: thumbVideo as unknown as string,
-    videoUrl: previewMap[file.path] || "",
+    videoUrl: key ? previewMap[key as string] || "" : "",
   };
+}
+
+function getKey(file: VideoFile): string {
+  return (file.path || file.clip_id) as string;
 }
 
 /** ================= Data Fetch ================= */
@@ -277,32 +290,23 @@ const isRefreshing = ref(false);
 async function fetchPage(quadraId: string | null = null) {
   if (!selectedQuadra.value) return;
 
-  console.log(quadraId);
-
   isRefreshing.value = true;
 
-  if (state.loading) return;
   state.loading = true;
   state.error = null;
   try {
-    const clientId = "86015dcb-cdbe-406b-8ef8-f7cc6d5a6887";
-    const venueId = quadraId;
+    const venueId = (quadraId ?? selectedQuadra.value.id) as string;
 
-    const base = getApiBase();
-    const url = new URL(`${base}/api/videos/list`);
-    url.searchParams.set("bucket", "temp");
-    url.searchParams.set("prefix", `temp/${clientId}/${venueId}`);
-    url.searchParams.set("limit", String(state.pageSize));
-    const offset = (state.page - 1) * state.pageSize;
-    url.searchParams.set("offset", String(offset));
-    url.searchParams.set("order", "desc");
-    url.searchParams.set("ttl", "3600");
+    const data = (await fetchVideos({
+      limit: state.pageSize,
+      token: state.token,
+      includeSignedUrl: false,
+      venueId,
+    })) as VideoListResponse;
 
-    const res = await fetch(url, { credentials: "include" });
-    if (!res.ok) throw new Error(`Falha ao listar vídeos: ${res.status}`);
-    const data = (await res.json()) as VideosListResponse;
-    state.items = data.files;
+    state.items = data.items;
     state.hasMore = data.hasMore;
+    state.token = data.nextToken || undefined;
   } catch (e: any) {
     state.error = e?.message ?? "Erro ao carregar vídeos";
   } finally {
@@ -314,7 +318,7 @@ async function fetchPage(quadraId: string | null = null) {
 function refresh() {
   if (!selectedQuadra.value) return;
 
-  state.page = 1;
+  state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
   return fetchPage(selectedQuadra.value.id);
@@ -322,15 +326,22 @@ function refresh() {
 
 function nextPage() {
   if (state.loading || !state.hasMore) return;
-  state.page += 1;
-  Object.keys(previewMap).forEach((k) => delete previewMap[k]);
-  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
-  fetchPage(selectedQuadra.value.id);
+  // Scroll para o topo da listagem com offset do header fixo
+  scrollToListTop();
+  state.loading = true;
+  state.items = [];
+
+  setTimeout(() => {
+    Object.keys(previewMap).forEach((k) => delete previewMap[k]);
+    Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+    fetchPage(selectedQuadra.value.id);
+  }, 500);
 }
 
 function prevPage() {
-  if (state.loading || state.page <= 1) return;
-  state.page -= 1;
+  if (state.loading) return;
+  // Como a API fornece apenas paginação forward (nextToken), voltar reseta para o início
+  state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
   fetchPage(selectedQuadra.value.id);
@@ -339,14 +350,15 @@ function prevPage() {
 function onChangePageSize(size: number) {
   if (!size || size === state.pageSize) return;
   state.pageSize = size;
-  state.page = 1;
+  state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
   fetchPage(selectedQuadra.value.id);
 }
 
 /** ================= Assinatura sob demanda ================= */
-async function ensurePreview(path: string, bucket = "temp") {
+async function ensurePreview(path: string | null, bucket = "temp") {
+  if (!path) return;
   if (previewMap[path] !== undefined) return; // já buscado (sucesso ou falha)
   previewMap[path] = null; // marca como em progresso
   try {
@@ -366,7 +378,8 @@ async function ensurePreview(path: string, bucket = "temp") {
   }
 }
 
-async function signDownload(path: string, bucket = "temp") {
+async function signDownload(path: string | null, bucket = "temp") {
+  if (!path) return null;
   if (downloadMap[path]) return downloadMap[path]; // cache
   const base = getApiBase();
   const url = new URL(`${base}/api/videos/sign`);
@@ -383,12 +396,14 @@ async function signDownload(path: string, bucket = "temp") {
 }
 
 async function onDownload(file: VideoFile) {
+  if (file.missing) return;
   const u = await signDownload(file.path, file.bucket);
   if (u) window.open(u, "_blank");
 }
 
 function onShow(file: VideoFile) {
   // dispara o carregamento sob demanda da prévia
+  if (file.missing) return;
   ensurePreview(file.path, file.bucket);
 }
 
