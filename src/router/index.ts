@@ -51,6 +51,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: "/maintenance",
+    name: "Maintenance",
+    component: () => import("@/pages/MaintenanceMode.vue"),
+    meta: { requiresAuth: false },
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/pages/NotFoundPage.vue"),
@@ -66,9 +72,8 @@ const router = createRouter({
 // Evita tela branca quando um chunk dinâmico falha ao carregar (PWA/atualização)
 router.onError((err) => {
   const msg = String((err && (err as any).message) || err || "");
-  const isChunkLoadError = /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(
-    msg
-  );
+  const isChunkLoadError =
+    /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(msg);
   if (isChunkLoadError) {
     try {
       if ("serviceWorker" in navigator) {
@@ -87,6 +92,14 @@ router.onError((err) => {
 
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
+  // Redireciona toda navegação para a página de manutenção quando habilitado por env var
+  const isMaintenance = ["true", "1", "on", "yes"].includes(
+    String(import.meta.env.VITE_MAINTENANCE_MODE || "").toLowerCase()
+  );
+  if (isMaintenance && to.path !== "/maintenance") {
+    return next("/maintenance");
+  }
+
   const authStore = useAuthStore();
   const { showSnackbar } = useSnackbar();
   // Aguarda a inicialização do auth store para evitar falsos negativos em refresh direto
