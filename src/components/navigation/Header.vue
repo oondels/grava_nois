@@ -34,8 +34,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { defineComponent, h, resolveComponent } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import { prefetchRoute } from '@/utils/prefetchRoute'
-import LogoGravaNois from "@/assets/icons/grava-nois-branco.webp";
+import { prefetchRoute } from "@/utils/prefetchRoute";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 
 const baseLink =
@@ -65,21 +64,29 @@ onBeforeUnmount(() => {
 });
 
 const HeaderLink = defineComponent({
+  name: "HeaderLink",
   props: { to: { type: String, required: true }, label: { type: String, required: true } },
-  setup(props) {
+  setup(props, { attrs }) {
     const route = useRoute();
     const isActive = () => route.path === props.to;
-    return () =>
-      h(
+
+    return () => {
+      const aria = isActive() ? { "aria-current": "page" as const } : {}; // omite atributo quando inativo
+
+      return h(
         RouterLink,
         {
+          ...attrs, // forward de coisas como aria-disabled, class extra etc.
           to: props.to,
-          class: `${baseLink} ${
-            isActive() ? "text-green-600 dark:text-green-400" : "text-white-800 dark:text-white-100"
-          }`,
-          "aria-current": isActive() ? "page" : null,
+          class: `${baseLink} group ${
+            isActive()
+              ? "text-green-600 dark:text-green-400"
+              : // 'white-800' não existe no Tailwind — use neutral/slate
+                "text-neutral-800 dark:text-neutral-100"
+          } ${typeof attrs.class === "string" ? attrs.class : ""}`,
           onMouseenter: () => prefetchRoute(props.to),
           onFocus: () => prefetchRoute(props.to),
+          ...aria,
         },
         {
           default: () => [
@@ -92,6 +99,7 @@ const HeaderLink = defineComponent({
           ],
         }
       );
+    };
   },
 });
 </script>
@@ -110,7 +118,7 @@ const HeaderLink = defineComponent({
   transform: translateY(-8px);
 }
 
-.nav-cta {
+/* .nav-cta {
   @apply inline-flex items-center px-3 py-2 rounded-lg font-semibold text-white bg-gradient-to-br from-green-500 to-green-700 shadow-sm hover:brightness-110 active:scale-[.99] transition;
-}
+} */
 </style>
