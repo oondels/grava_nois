@@ -1,11 +1,12 @@
 <template>
-  <div v-if="userData && userData.quadras && userData.quadras.length > 0" class="page-container">
+  <!-- <div v-if="userData && userData.quadras && userData.quadras.length > 0" class="page-container">
     <VideoPageQuadra :available-quadras="availableQuadras" />
   </div>
 
   <div v-else>
     <VideoPageSemQuadra />
-  </div>
+  </div> -->
+  <VideoPageQuadra :available-quadras="availableQuadras" />
 </template>
 
 <script setup lang="ts">
