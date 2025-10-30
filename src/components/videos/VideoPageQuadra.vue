@@ -113,7 +113,7 @@
           </div>
         </section>
 
-        <section v-if="selectedQuadra">
+        <section>
           <v-sheet class="mb-6" color="surface" rounded="lg" border>
             <!-- Info barra superior -->
             <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
@@ -288,7 +288,8 @@ function getKey(file: VideoFile): string {
 /** ================= Data Fetch ================= */
 const isRefreshing = ref(false);
 async function fetchPage(quadraId: string | null = null) {
-  if (!selectedQuadra.value) return;
+  // TODO: Remover este paleativo tecnico
+  // if (!selectedQuadra.value) return;
 
   isRefreshing.value = true;
 
@@ -301,7 +302,7 @@ async function fetchPage(quadraId: string | null = null) {
       limit: state.pageSize,
       token: state.token,
       includeSignedUrl: false,
-      venueId,
+      venueId: "5b388420-8379-4418-80d9-5a9f7b2023cf",
     })) as VideoListResponse;
 
     state.items = data.items;
@@ -407,7 +408,10 @@ function onShow(file: VideoFile) {
   ensurePreview(file.path, file.bucket);
 }
 
-const selectedQuadra = ref<any>(null);
+const selectedQuadra = ref<any>({
+  id:"5b388420-8379-4418-80d9-5a9f7b2023cf",
+  name: "Quadra Areia Lagoa Plínio",
+});
 
 /**
  * Retrieves the last selected quadra or a unique quadra from available quadras.
@@ -459,8 +463,9 @@ onMounted(() => {
 
   userLoaded.value = true;
 
-  setTimeout(() => {
-    focusQuadra();
+  setTimeout(async () => {
+    // focusQuadra();
+    fetchPage()
   }, 500);
 
   getLastOrUniqueQuadra();
