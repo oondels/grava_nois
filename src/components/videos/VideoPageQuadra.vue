@@ -207,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, watch } from "vue";
+import { reactive, ref, onMounted, computed, watch } from "vue";
 import { customIcons } from "@/utils/icons";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
@@ -215,12 +215,12 @@ import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
 import { fetchVideos, type VideoListItem, type VideoListResponse } from "@/services/videos";
 
-// type LocalLocation = { estado: string; cidade: string; quadra: string };
-const userData = ref({} as any);
-const userLoaded = ref(false);
+import { useAuthStore } from "@/store/auth";
+const authStore = useAuthStore();
+const user = computed(() => authStore.safeUser);
 
-// Aviso sutil de fase inicial
-const showEarlyNotice = ref(true);
+// type LocalLocation = { estado: string; cidade: string; quadra: string };
+const userLoaded = ref(false);
 
 const quadraSelectRef = ref();
 function focusQuadra() {
@@ -286,8 +286,7 @@ function getKey(file: VideoFile): string {
 /** ================= Data Fetch ================= */
 const isRefreshing = ref(false);
 async function fetchPage(quadraId: string | null = null) {
-  // TODO: Remover este paleativo tecnico
-  // if (!selectedQuadra.value) return;
+  if (!selectedQuadra.value) return;
 
   isRefreshing.value = true;
 
@@ -300,7 +299,7 @@ async function fetchPage(quadraId: string | null = null) {
       limit: state.pageSize,
       token: state.token,
       includeSignedUrl: false,
-      venueId: "5b388420-8379-4418-80d9-5a9f7b2023cf",
+      venueId: venueId,
     })) as VideoListResponse;
 
     state.items = data.items;
@@ -406,10 +405,7 @@ function onShow(file: VideoFile) {
   ensurePreview(file.path, file.bucket);
 }
 
-const selectedQuadra = ref<any>({
-  id:"5b388420-8379-4418-80d9-5a9f7b2023cf",
-  name: "Quadra Areia Lagoa Plínio",
-});
+const selectedQuadra = ref<any>({});
 
 /**
  * Retrieves the last selected quadra or a unique quadra from available quadras.
@@ -448,22 +444,14 @@ watch(
 const availableQuadras = ref([] as any[]);
 
 onMounted(() => {
-  const storageUser = localStorage.getItem("grn-user");
-
-  try {
-    userData.value = storageUser ? JSON.parse(storageUser) : {};
-  } catch {
-    userData.value = {};
-  }
-
-  const q = (userData.value as any)?.quadras;
-  availableQuadras.value = Array.isArray(q) ? q : q && typeof q === "object" ? Object.values(q) : [];
+  const quadras = (user.value as any)?.quadrasFiliadas;
+  availableQuadras.value = Array.isArray(quadras) ? quadras : quadras && typeof quadras === "object" ? Object.values(quadras) : [];
 
   userLoaded.value = true;
 
   setTimeout(async () => {
     // focusQuadra();
-    // fetchPage()
+    fetchPage()
   }, 500);
 
   getLastOrUniqueQuadra();
@@ -475,7 +463,7 @@ onMounted(() => {
  */
 function verificaQuadrasUser(): boolean {
   if (!userLoaded.value) return false;
-  const quadras = (userData.value as any)?.quadras;
+  const quadras = (user.value as any)?.quadrasFiliadas;
   return Array.isArray(quadras) && quadras.length > 0;
 }
 </script>
