@@ -7,6 +7,7 @@ import { BASE_URL } from "@/config/ip";
 export type AuthRole = "common" | "admin" | string;
 
 export interface AuthUser {
+  id: string;
   email: string;
   username: string | null;
   name: string | null;
@@ -50,6 +51,7 @@ export const useAuthStore = defineStore("auth", () => {
   const safeUser = computed(() =>
     user.value
       ? {
+        id: user.value.id,
         email: user.value.email,
         name: user.value.name,
         avatarUrl: user.value.avatarUrl,
@@ -75,6 +77,7 @@ export const useAuthStore = defineStore("auth", () => {
           emailVerified: user.emailVerified,
           role: user.role,
           avatarUrl: user.avatarUrl,
+          id: user.id,
         },
         loggedAt: new Date().toISOString(),
         provider: data.provider || 'email'

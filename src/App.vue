@@ -1,5 +1,4 @@
 <template>
-  <!-- Skip link para acessibilidade -->
   <ReloadPrompt/>
   <InstallPrompt/>
   <AppLayout />

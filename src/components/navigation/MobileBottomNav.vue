@@ -32,7 +32,7 @@
         <XIcon class="w-6 h-6 text-red drop-shadow-sm" />
       </button>
 
-      <!-- <RouterLink
+      <RouterLink
         v-if="!isUserPage"
         :to="auth.isAuthenticated ? '/user-page' : '/login'"
         class="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition active:scale-[.98]"
@@ -58,7 +58,7 @@
 
           <LogInIcon v-else role="button" />
         </div>
-      </RouterLink> -->
+      </RouterLink>
 
       <RouterLink
 
@@ -217,7 +217,7 @@ const navigationItems = computed<NavItem[]>(() => [
     label: auth.isAuthenticated ? "Perfil" : "Login",
     to: auth.isAuthenticated ? "/user-page" : "/login",
     icon: LogInIcon,  
-    disabled: true,
+    disabled: false,
   },
   { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false },
   { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false },
