@@ -47,5 +47,4 @@
 
 <script setup lang="ts">
 import { MapPinOffIcon } from "lucide-vue-next";
-// 'availableQuadras' vem do escopo/página pai (mantido como no seu exemplo)
 </script>

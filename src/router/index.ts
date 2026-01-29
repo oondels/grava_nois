@@ -11,7 +11,7 @@ const routes = [
     path: "/lances-gravanois",
     name: "Lances GravaNois",
     component: () => import("@/pages/VideosPage.vue"),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
   {
     path: "/login",
@@ -29,13 +29,13 @@ const routes = [
     path: "/auth/update-password",
     name: "Mudar Senha",
     component: () => import("@/pages/auth/ResetPassword.vue"),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
   {
     path: "/user-page",
     name: "Usuário",
     component: () => import("@/pages/UserPage.vue"),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: true },
   },
   {
     path: "/contato",
@@ -102,24 +102,25 @@ router.beforeEach(async (to, from, next) => {
 
   const authStore = useAuthStore();
   const { showSnackbar } = useSnackbar();
-  // Aguarda a inicialização do auth store para evitar falsos negativos em refresh direto
-  await authStore.ensureReady?.();
+
+  await authStore.ensureReady();
+
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     try {
       if (typeof window !== "undefined" && to.fullPath) {
         localStorage.setItem("postAuthRedirect", to.fullPath);
       }
-    } catch {}
+    } catch { }
     console.log("usuario nao autenticado, redirecionando para /login");
     // Notifica o usuário sobre a necessidade de login
     showSnackbar("Faça login para acessar esta sessão", "warning", 3500);
 
-    next("/login");
+    return next("/login");
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next("/lances-gravanois");
+    return next("/lances-gravanois");
   } else {
-    next();
+    return next();
   }
 });
 

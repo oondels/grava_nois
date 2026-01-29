@@ -465,7 +465,7 @@ onMounted(() => {
 
   setTimeout(async () => {
     // focusQuadra();
-    fetchPage()
+    // fetchPage()
   }, 500);
 
   getLastOrUniqueQuadra();
