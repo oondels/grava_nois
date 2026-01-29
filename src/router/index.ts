@@ -71,10 +71,17 @@ const router = createRouter({
 
 // Evita tela branca quando um chunk dinâmico falha ao carregar (PWA/atualização)
 router.onError((err) => {
-  const msg = String((err && (err as any).message) || err || "");
+  const anyErr: any = err as any;
+  const msg = String((anyErr && anyErr.message) || err || "");
+  const name = String((anyErr && anyErr.name) || "");
   const isChunkLoadError =
-    /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(msg);
+    /Loading chunk|ChunkLoadError|Failed to fetch dynamically imported module|Importing a module script failed|ERR_MODULE_NOT_FOUND/i.test(
+      msg
+    ) || /ChunkLoadError/i.test(name);
   if (isChunkLoadError) {
+    // Em produção isso pode ocorrer após atualização do app/PWA.
+    // Recarrega para alinhar HTML/assets com os chunks corretos.
+    console.warn("[router] chunk load error; reloading", { name, msg });
     try {
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker

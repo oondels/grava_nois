@@ -305,6 +305,14 @@ import { useSnackbar } from "@/composables/useSnackbar";
 import axios from "axios";
 import { BASE_URL } from "@/config/ip";
 
+function safeJsonParse<T = any>(raw: string): T | null {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -383,7 +391,7 @@ async function fetchUserQuadras() {
     let fromLs: any = null;
     try {
       const raw = localStorage.getItem("grn-user");
-      if (raw) fromLs = JSON.parse(raw);
+      if (raw) fromLs = safeJsonParse(raw);
     } catch {}
 
     let quadras: any[] = Array.isArray(fromLs?.quadras) ? fromLs.quadras : [];
@@ -437,7 +445,7 @@ function fetchUserLocations() {
     let fromLs: any = null;
     try {
       const raw = localStorage.getItem("grn-user");
-      if (raw) fromLs = JSON.parse(raw);
+      if (raw) fromLs = safeJsonParse(raw);
     } catch {}
 
     if (fromLs) {
@@ -483,9 +491,11 @@ async function linkSelectedQuadra() {
     // Atualiza cache local, se existir
     const userDataRaw = localStorage.getItem("grn-user");
     if (userDataRaw) {
-      const userData = JSON.parse(userDataRaw);
-      userData.quadras = next;
-      localStorage.setItem("grn-user", JSON.stringify(userData));
+      const userData = safeJsonParse<any>(userDataRaw);
+      if (userData) {
+        userData.quadras = next;
+        localStorage.setItem("grn-user", JSON.stringify(userData));
+      }
     }
     selectedQuadra.value = null;
     showAddQuadra.value = false;
@@ -695,7 +705,7 @@ const saveLocation = async () => {
     // Atualiza cache local, se existir
     try {
       const raw = localStorage.getItem("grn-user");
-      const stored = raw ? JSON.parse(raw) : null;
+      const stored = raw ? safeJsonParse<any>(raw) : null;
       if (stored) {
         const next = { ...stored, ...payload };
         localStorage.setItem("grn-user", JSON.stringify(next));
@@ -735,7 +745,7 @@ const goBack = () => {
 
 onMounted(() => {
   const storedUser = localStorage.getItem("grn-user");
-  userData.value = storedUser ? JSON.parse(storedUser) : null;
+  userData.value = storedUser ? safeJsonParse(storedUser) : null;
 
   fetchUserQuadras();
   fetchUserLocations();

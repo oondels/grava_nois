@@ -6,7 +6,11 @@ export function prefetchRoute(path: string) {
     const comp: any = (rec as any)?.components?.default || (rec as any)?.component
     if (typeof comp === 'function') {
       // dispara o dynamic import
-      comp()
+      const p = comp()
+      // Evita unhandled promise rejection se o chunk falhar (offline/SW/cache)
+      if (p && typeof p.then === 'function') {
+        p.catch(() => {})
+      }
     }
   } catch {
     // silencioso
