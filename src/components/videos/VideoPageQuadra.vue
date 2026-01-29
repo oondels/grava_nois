@@ -18,7 +18,7 @@
         <h1 class="text-h4 font-weight-bold mb-1 page-title">Replays e Lances</h1>
 
         <!-- Aviso sutil: fase inicial (ao lado do título) -->
-        <v-dialog max-width="500">
+        <!-- <v-dialog max-width="500">
           <template v-slot:activator="{ props: activatorProps }">
             <v-btn
               v-bind="activatorProps"
@@ -51,7 +51,7 @@
               </v-card-text>
             </v-card>
           </template>
-        </v-dialog>
+        </v-dialog> -->
 
         <p class="text-medium-emphasis mb-0 w-100 text-center">Resgate seus melhores lances</p>
       </div>
@@ -239,10 +239,8 @@ function scrollToListTop() {
   window.scrollTo({ top: absoluteTop, behavior: 'smooth' });
 }
 
-/** ================= Tipos ================= */
 type VideoFile = VideoListItem;
 
-/** ================= Estado ================= */
 const state = reactive({
   items: [] as VideoFile[],
   loading: false,

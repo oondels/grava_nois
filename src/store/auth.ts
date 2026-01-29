@@ -18,6 +18,7 @@ export interface AuthUser {
   state?: string;
   city?: string;
   cep?: string;
+  quadrasFiliadas?: string[];
 }
 
 export interface AuthSession {
@@ -67,7 +68,8 @@ export const useAuthStore = defineStore("auth", () => {
           state: user.value.state,
           city: user.value.city,
           cep: user.value.cep,
-        }
+        },
+        quadrasFiliadas: user.value.quadrasFiliadas || [],
       }
       : null
   );
@@ -92,6 +94,7 @@ export const useAuthStore = defineStore("auth", () => {
           state: user.state,
           city: user.city,
           cep: user.cep,
+          quadrasFiliadas: user.quadrasFiliadas || [],
         },
         loggedAt: new Date().toISOString(),
         provider: data.provider || 'email'
