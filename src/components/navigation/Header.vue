@@ -16,7 +16,7 @@
         <HeaderLink to="/contato" label="Instalar no meu campo" class="nav-cta" />
         <!-- <HeaderLink to="#faq" label="FAQ" class="opacity-50 pointer-events-none select-none" /> -->
         <span class="relative">
-          <HeaderLink to="/login" label="Login" aria-disabled="true" />
+          <!-- <HeaderLink to="/login" label="Login" aria-disabled="true" /> -->
           <HeaderLink to="/register" label="Registrar" aria-disabled="true" />
           <!-- class="opacity-50 pointer-events-none select-none" -->
           <!-- <span

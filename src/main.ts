@@ -5,6 +5,7 @@ import App from "@/App.vue";
 import "./style.css";
 // Removido @mdi/font: usaremos ícones SVG (mdi-svg)
 
+// @ts-ignore
 import "vuetify/styles";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
@@ -60,6 +61,6 @@ app.use(notivue)
 const auth = useAuthStore()
 
   ; (async () => {
-    await auth.init()      // await válido aqui, pois está dentro de uma função async
+    await auth.ensureReady()
     app.mount('#app')
   })()

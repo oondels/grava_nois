@@ -18,7 +18,7 @@
         <h1 class="text-h4 font-weight-bold mb-1 page-title">Replays e Lances</h1>
 
         <!-- Aviso sutil: fase inicial (ao lado do título) -->
-        <v-dialog max-width="500">
+        <!-- <v-dialog max-width="500">
           <template v-slot:activator="{ props: activatorProps }">
             <v-btn
               v-bind="activatorProps"
@@ -51,7 +51,7 @@
               </v-card-text>
             </v-card>
           </template>
-        </v-dialog>
+        </v-dialog> -->
 
         <p class="text-medium-emphasis mb-0 w-100 text-center">Resgate seus melhores lances</p>
       </div>
@@ -113,7 +113,7 @@
           </div>
         </section>
 
-        <section v-if="selectedQuadra">
+        <section>
           <v-sheet class="mb-6" color="surface" rounded="lg" border>
             <!-- Info barra superior -->
             <div class="d-flex align-center justify-space-between px-4 py-3 ga-3 flex-wrap">
@@ -207,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, watch } from "vue";
+import { reactive, ref, onMounted, computed, watch } from "vue";
 import { customIcons } from "@/utils/icons";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
@@ -215,12 +215,12 @@ import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
 import { fetchVideos, type VideoListItem, type VideoListResponse } from "@/services/videos";
 
-// type LocalLocation = { estado: string; cidade: string; quadra: string };
-const userData = ref({} as any);
-const userLoaded = ref(false);
+import { useAuthStore } from "@/store/auth";
+const authStore = useAuthStore();
+const user = computed(() => authStore.safeUser);
 
-// Aviso sutil de fase inicial
-const showEarlyNotice = ref(true);
+// type LocalLocation = { estado: string; cidade: string; quadra: string };
+const userLoaded = ref(false);
 
 const quadraSelectRef = ref();
 function focusQuadra() {
@@ -239,10 +239,8 @@ function scrollToListTop() {
   window.scrollTo({ top: absoluteTop, behavior: 'smooth' });
 }
 
-/** ================= Tipos ================= */
 type VideoFile = VideoListItem;
 
-/** ================= Estado ================= */
 const state = reactive({
   items: [] as VideoFile[],
   loading: false,
@@ -301,7 +299,7 @@ async function fetchPage(quadraId: string | null = null) {
       limit: state.pageSize,
       token: state.token,
       includeSignedUrl: false,
-      venueId,
+      venueId: venueId,
     })) as VideoListResponse;
 
     state.items = data.items;
@@ -407,7 +405,7 @@ function onShow(file: VideoFile) {
   ensurePreview(file.path, file.bucket);
 }
 
-const selectedQuadra = ref<any>(null);
+const selectedQuadra = ref<any>({});
 
 /**
  * Retrieves the last selected quadra or a unique quadra from available quadras.
@@ -446,21 +444,14 @@ watch(
 const availableQuadras = ref([] as any[]);
 
 onMounted(() => {
-  const storageUser = localStorage.getItem("grn-user");
-
-  try {
-    userData.value = storageUser ? JSON.parse(storageUser) : {};
-  } catch {
-    userData.value = {};
-  }
-
-  const q = (userData.value as any)?.quadras;
-  availableQuadras.value = Array.isArray(q) ? q : q && typeof q === "object" ? Object.values(q) : [];
+  const quadras = (user.value as any)?.quadrasFiliadas;
+  availableQuadras.value = Array.isArray(quadras) ? quadras : quadras && typeof quadras === "object" ? Object.values(quadras) : [];
 
   userLoaded.value = true;
 
-  setTimeout(() => {
-    focusQuadra();
+  setTimeout(async () => {
+    // focusQuadra();
+    fetchPage()
   }, 500);
 
   getLastOrUniqueQuadra();
@@ -472,7 +463,7 @@ onMounted(() => {
  */
 function verificaQuadrasUser(): boolean {
   if (!userLoaded.value) return false;
-  const quadras = (userData.value as any)?.quadras;
+  const quadras = (user.value as any)?.quadrasFiliadas;
   return Array.isArray(quadras) && quadras.length > 0;
 }
 </script>

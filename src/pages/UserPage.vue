@@ -10,7 +10,7 @@
     <!-- Header com foto e informações básicas -->
     <div class="user-header">
       <div class="user-avatar-container">
-        <img :src="user?.avatar_url || LogoGravaNoisSimbol" alt="Foto de perfil" class="user-avatar" />
+        <img :src="user?.avatarUrl || LogoGravaNoisSimbol" alt="Foto de perfil" class="user-avatar" />
 
         <button
           @click="showProfileEdit = true"
@@ -23,7 +23,7 @@
       </div>
 
       <div class="user-info">
-        <h1 class="user-name">{{ formatUserName(user?.name) || "Usuário" }}</h1>
+        <h1 class="user-name">{{ formatUserName(user?.name ? user?.name : null) || "Usuário" }}</h1>
         <p class="user-email">{{ user?.email || "email@exemplo.com" }}</p>
         <div class="user-status"></div>
       </div>
@@ -278,7 +278,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, toRaw } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import {
@@ -304,6 +304,14 @@ import { getSportColor, getSportLabel } from "@/utils/formatters";
 import { useSnackbar } from "@/composables/useSnackbar";
 import axios from "axios";
 import { BASE_URL } from "@/config/ip";
+
+function safeJsonParse<T = any>(raw: string): T | null {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -349,7 +357,7 @@ const locationForm = reactive({
   state: "",
 });
 
-const formatUserName = (name: string) => {
+const formatUserName = (name: string | null) => {
   if (!name) return "Usuário";
   return name.split(" ")[0] + " " + name.split(" ")[name.split(" ").length - 1];
 };
@@ -383,18 +391,19 @@ async function fetchUserQuadras() {
     let fromLs: any = null;
     try {
       const raw = localStorage.getItem("grn-user");
-      if (raw) fromLs = JSON.parse(raw);
+      if (raw) fromLs = safeJsonParse(raw);
     } catch {}
 
-    let quadras: any[] = Array.isArray(fromLs?.quadras) ? fromLs.quadras : [];
+    let quadras: any[] = Array.isArray(fromLs?.quadrasFiliadas) ? fromLs.quadrasFiliadas : [];
 
     // Se vazio ou sem LS, busca do backend para garantir frescor
     if (!quadras.length) {
-      const uid = authStore.user?.id || authStore.safeUser?.id;
-      if (uid) {
-        const res = await axios.get(`${BASE_URL}/users/${uid}`);
+      const userId = authStore.user?.id || authStore.safeUser?.id;
+      if (userId) {
+        const res = await axios.get(`${BASE_URL}/users/${userId}`, { withCredentials: true });
+
         const profile = res.data?.user ?? null;
-        if (Array.isArray(profile?.quadras)) quadras = profile.quadras;
+        if (Array.isArray(profile?.quadrasFiliadas)) quadras = profile.quadrasFiliadas;
       }
     }
 
@@ -433,27 +442,19 @@ async function fetchUserQuadras() {
 }
 
 function fetchUserLocations() {
-  try {
-    let fromLs: any = null;
-    try {
-      const raw = localStorage.getItem("grn-user");
-      if (raw) fromLs = JSON.parse(raw);
-    } catch {}
+  if (user.value) {
+    const userLocation = user?.value?.localization
 
-    if (fromLs) {
-      locationForm.cep = fromLs.cep || "";
-      locationForm.city = fromLs.city || "";
-      locationForm.state = fromLs.state || "";
-    }
-  } catch (e) {
-    console.error("Erro ao buscar localização do usuário:", e);
+    locationForm.cep = userLocation.cep || "";
+      locationForm.city = userLocation.city || "";
+      locationForm.state = userLocation.state || "";
   }
 }
 
 async function linkSelectedQuadra() {
   if (!selectedQuadra.value) return;
-  const uid = authStore.user?.id || authStore.safeUser?.id;
-  if (!uid) {
+  const userId = authStore.user?.id || authStore.safeUser?.id;
+  if (!userId) {
     notify("É necessário estar logado.", "error");
     return;
   }
@@ -468,7 +469,15 @@ async function linkSelectedQuadra() {
 
   try {
     linkingQuadra.value = true;
-    await axios.patch(`${BASE_URL}/users/${uid}`, { quadras: next });
+    const response = await axios.patch(
+      `${BASE_URL}/users/${userId}`,
+      { quadrasFiliadas: next },
+      { withCredentials: true },
+    );
+    
+    // Atualiza estado do pinia com as quadras atualizadas
+    const updatedQuadras = response.data?.quadrasFiliadas || next;
+    authStore.updateQuadrasFiliadas(updatedQuadras);
 
     quadrasVinculadas.value = next;
     // Atualiza subtitle
@@ -483,9 +492,11 @@ async function linkSelectedQuadra() {
     // Atualiza cache local, se existir
     const userDataRaw = localStorage.getItem("grn-user");
     if (userDataRaw) {
-      const userData = JSON.parse(userDataRaw);
-      userData.quadras = next;
-      localStorage.setItem("grn-user", JSON.stringify(userData));
+      const userData = safeJsonParse<any>(userDataRaw);
+      if (userData) {
+        userData.quadras = next;
+        localStorage.setItem("grn-user", JSON.stringify(userData));
+      }
     }
     selectedQuadra.value = null;
     showAddQuadra.value = false;
@@ -636,8 +647,8 @@ const handleItemClick = (item: any) => {
   }
 };
 
-const handleLogout = () => {
-  authStore.signOut();
+const handleLogout = async () => {
+  await authStore.signOut();
   router.push("/login");
   notify("Logout realizado com sucesso!", "success");
 };
@@ -664,8 +675,8 @@ const saveProfile = async () => {
 };
 
 const saveLocation = async () => {
-  const uid = authStore.user?.id || authStore.safeUser?.id;
-  if (!uid) {
+  const userId = authStore.user?.id || authStore.safeUser?.id;
+  if (!userId) {
     notify("É necessário estar logado.", "error");
     return;
   }
@@ -685,19 +696,19 @@ const saveLocation = async () => {
   try {
     const payload = {
       cep: cepOnlyDigits,
-      address: locationForm.address,
       city: locationForm.city,
       state: locationForm.state,
+      country: "BR",
     };
 
-    const { data } = await axios.patch(`${BASE_URL}/users/${uid}`, payload);
+    await axios.patch(`${BASE_URL}/users/${userId}/location`, payload, { withCredentials: true });
 
     // Atualiza cache local, se existir
     try {
       const raw = localStorage.getItem("grn-user");
-      const stored = raw ? JSON.parse(raw) : null;
+      const stored = raw ? safeJsonParse<any>(raw) : null;
       if (stored) {
-        const next = { ...stored, ...payload };
+        const next = { ...stored, location: payload };
         localStorage.setItem("grn-user", JSON.stringify(next));
       }
     } catch {}
@@ -735,7 +746,7 @@ const goBack = () => {
 
 onMounted(() => {
   const storedUser = localStorage.getItem("grn-user");
-  userData.value = storedUser ? JSON.parse(storedUser) : null;
+  userData.value = storedUser ? safeJsonParse(storedUser) : null;
 
   fetchUserQuadras();
   fetchUserLocations();

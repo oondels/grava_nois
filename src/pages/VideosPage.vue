@@ -1,34 +1,27 @@
 <template>
-  <!-- <div v-if="userData && userData.quadras && userData.quadras.length > 0" class="page-container">
+  <div v-if="userData && userData.quadrasFiliadas && userData.quadrasFiliadas.length > 0" class="page-container">
     <VideoPageQuadra :available-quadras="availableQuadras" />
   </div>
 
   <div v-else>
     <VideoPageSemQuadra />
-  </div> -->
-  <VideoPageQuadra :available-quadras="availableQuadras" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed } from "vue";
 import VideoPageQuadra from "@/components/videos/VideoPageQuadra.vue";
 import VideoPageSemQuadra from "@/components/videos/VideoPageSemQuadra.vue";
+import { useAuthStore } from "@/store/auth";
 
+const authStore = useAuthStore();
+const userData = computed(() => authStore.safeUser);
 
-const userData = ref({} as any);
 const userLoaded = ref(false);
 const availableQuadras = ref([] as any[]);
 
 onMounted(async () => {
-  const storageUser = localStorage.getItem("grn-user");
-
-  try {
-    userData.value = storageUser ? JSON.parse(storageUser) : {};
-  } catch {
-    userData.value = {};
-  }
-
-  const q = (userData.value as any)?.quadras;
+  const q = (userData.value as any)?.quadrasFiliadas || [];
   availableQuadras.value = Array.isArray(q) ? q : q && typeof q === "object" ? Object.values(q) : [];
 
   userLoaded.value = true;

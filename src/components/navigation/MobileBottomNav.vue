@@ -216,7 +216,7 @@ const navigationItems = computed<NavItem[]>(() => [
   {
     label: auth.isAuthenticated ? "Perfil" : "Login",
     to: auth.isAuthenticated ? "/user-page" : "/login",
-    icon: LogInIcon,
+    icon: LogInIcon,  
     disabled: false,
   },
   { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false },
