@@ -104,12 +104,12 @@
                 </RouterLink>
               </div>
 
-              <v-btn 
-                @click="onRegister" 
-                color="primary" 
-                variant="flat" 
-                size="large" 
-                block 
+              <v-btn
+                @click="onRegister"
+                color="primary"
+                variant="flat"
+                size="large"
+                block
                 class="mb-4 auth-action"
                 :loading="loading"
                 :disabled="loading || !isValid"
@@ -176,11 +176,7 @@ async function onRegister() {
 
   loading.value = true;
   try {
-    await auth.signUpNewUser(
-      registerData.email,
-      registerData.password,
-      { name: registerData.name }
-    );
+    await auth.signUpNewUser(registerData.email, registerData.password, { name: registerData.name });
 
     showSnackbar("Cadastro realizado com sucesso!", "success");
     router.push("/lances-gravanois");
@@ -203,10 +199,16 @@ const handleGoogleCredential = async (credential: string) => {
   }
 };
 
-
 // Carrega script do Google apenas nesta rota (opcional)
 onMounted(async () => {
   try {
+    const isLogged = auth.isAuthenticated;
+
+    if (isLogged) {
+      router.push("/lances-gravanois");
+      return;
+    }
+
     const { ensureGoogleClientScript } = await import("@/utils/loadGoogleScript");
     await ensureGoogleClientScript();
 
@@ -229,7 +231,7 @@ onMounted(async () => {
       });
     }
   } catch {}
-})
+});
 </script>
 
 <style scoped>
