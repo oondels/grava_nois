@@ -80,19 +80,6 @@
                   Entrar
                 </v-btn>
 
-                <!-- <v-btn
-                  color="red"
-                  variant="outlined"
-                  size="large"
-                  block
-                  :loading="loadingAuth"
-                  class="mb-4 d-flex align-center justify-center"
-                  @click="auth.signInWithGoogle"
-                >
-                  <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
-                  Entrar com Google
-                </v-btn> -->
-
                 <div ref="googleBtnEl" class="google-btn"></div>
               </v-form>
             </v-card-text>
@@ -104,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, onUnmounted, nextTick } from "vue";
 import { useAuthStore } from "@/store/auth";
 
 import { useSnackbar } from "@/composables/useSnackbar";
@@ -147,6 +134,27 @@ const submitLogin = async () => {
 };
 
 const googleBtnEl = ref<HTMLElement | null>(null);
+let googleBtnResizeObserver: ResizeObserver | null = null;
+
+function renderGoogleButton() {
+  if (!googleBtnEl.value) return;
+  // Limpa renderizações anteriores (ex.: resize)
+  googleBtnEl.value.innerHTML = "";
+
+  const width = Math.floor(googleBtnEl.value.getBoundingClientRect().width);
+  const safeWidth = Number.isFinite(width) && width > 0 ? width : 320;
+
+  // @ts-ignore
+  google.accounts.id.renderButton(googleBtnEl.value, {
+    theme: "outline",
+    size: "large",
+    width: safeWidth,
+    text: "signin_with",
+    shape: "rectangular",
+    logo_alignment: "center",
+  });
+}
+
 const handleGoogleCredential = async (credential: string) => {
   try {
     await auth.signInWithGoogleCredential(credential);
@@ -180,17 +188,22 @@ onMounted(async () => {
     });
 
     if (googleBtnEl.value) {
-      // @ts-ignore
-      google.accounts.id.renderButton(googleBtnEl.value, {
-        theme: "outline",
-        size: "large",
-        width: 300,
-        text: "signin_with",
-        shape: "rectangular",
-        logo_alignment: "center",
-      });
+      await nextTick();
+      renderGoogleButton();
+
+      if (typeof ResizeObserver !== "undefined") {
+        googleBtnResizeObserver = new ResizeObserver(() => {
+          renderGoogleButton();
+        });
+        googleBtnResizeObserver.observe(googleBtnEl.value);
+      }
     }
   } catch {}
+});
+
+onUnmounted(() => {
+  googleBtnResizeObserver?.disconnect();
+  googleBtnResizeObserver = null;
 });
 
 // const handleForgotPassword = () => {
@@ -234,5 +247,16 @@ onMounted(async () => {
   height: 80px;
   width: auto;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+}
+
+.google-btn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-btn :deep(iframe) {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 </style>

@@ -13,7 +13,7 @@ O **Grava Nóis** é um ecossistema de captura e distribuição de replays espor
 
 Este projeto entrega a experiência web/PWA consumida por atletas e administradores:
 
-- Autenticação com **Supabase** (email/senha e login social via Google).
+- Autenticação via **API do Grava Nóis** (email/senha e login social via Google).
 - Dashboard de vídeos por quadra, com paginação, preview sob demanda e download com URLs temporárias.
 - Notificações globais via [Notivue](https://vue-notification.netlify.app/).
 - Layout responsivo com **Vuetify 3**, Tailwind utilities e design focado em tema escuro.
@@ -28,7 +28,6 @@ Este projeto entrega a experiência web/PWA consumida por atletas e administrado
 - [Vite](https://vitejs.dev/) + `vite-plugin-pwa`
 - [Vuetify 3](https://vuetifyjs.com/) e [Tailwind CSS](https://tailwindcss.com/) (classes utilitárias)
 - [Pinia](https://pinia.vuejs.org/) para gerenciamento de estado
-- [Supabase JS](https://supabase.com/docs/reference/javascript/introduction) para autenticação
 - [Axios](https://axios-http.com/) para chamadas HTTP
 
 ## Configuração do ambiente
@@ -36,13 +35,12 @@ Este projeto entrega a experiência web/PWA consumida por atletas e administrado
 Crie um arquivo `.env` (ou `.env.local`) na raiz com as variáveis necessárias para build e execução:
 
 ```dotenv
-VITE_SUPABASE_URL=https://<sua-instancia>.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=<chave-publica>
 VITE_API_BASE=https://api.gravanois.com
+VITE_GOOGLE_CLIENT_ID=<google_oauth_client_id>
 ```
 
-- `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` habilitam o fluxo de autenticação (PKCE + persistência). 
 - `VITE_API_BASE` aponta para a API que expõe as rotas de vídeos (`/api/videos/list`, `/api/videos/sign`) e serviços auxiliares (`/send-report`, `/send-email`).
+- `VITE_GOOGLE_CLIENT_ID` é usado para renderizar o botão de login Google (Google Identity Services).
 
 > Em ambiente de desenvolvimento, caso a API ainda não esteja disponível, defina `VITE_API_BASE` para um mock server local ou utilize os dados mockados da store.
 
@@ -74,14 +72,15 @@ src/
 ├── services/           # Chamadas HTTP (reportes, instalação, vídeos)
 ├── store/              # Pinia stores (auth, clips mock, tema)
 ├── utils/              # Utilitários (formatters, loaders, ícones)
-└── lib/                # Configurações de SDKs (Supabase)
+└── config/             # Configs do app (ex.: base URL)
 ```
 
 ## 🔐 Fluxo de autenticação
 
-1. O aplicativo inicializa o Pinia e aguarda `auth.init()` antes de montar a Vue app.
-2. O store `auth` consulta a sessão atual no Supabase, sincroniza mudanças com `onAuthStateChange` e persiste dados do usuário em `localStorage` (`grn-user`).
-3. Guardas de rota asseguram que páginas como `/lances-gravanois` sejam acessadas apenas após login; usuários não autenticados são redirecionados para `/login` e o destino desejado é salvo em `postAuthRedirect`.
+1. O store `auth` consulta a sessão atual via API (`GET /auth/me`) usando cookies (`withCredentials`).
+2. Login por email/senha usa `POST /auth/sign-in`; cadastro usa `POST /auth/sign-up`; logout usa `POST /auth/sign-out`.
+3. Login com Google usa Google Identity Services para obter o `credential` (ID token) e envia para `POST /auth/google`.
+4. Guardas de rota asseguram que páginas como `/lances-gravanois` sejam acessadas apenas após login.
 
 ## 🌐 Integração com vídeos
 

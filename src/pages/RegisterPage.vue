@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, onUnmounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { Mail, Lock, Eye, EyeOff, User, UserPlus } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
@@ -147,6 +147,7 @@ const showConfirmPassword = ref(false);
 const formRef = ref();
 const isValid = ref(false);
 const googleBtnEl = ref<HTMLElement | null>(null);
+let googleBtnResizeObserver: ResizeObserver | null = null;
 
 const registerData = reactive({
   name: "",
@@ -164,6 +165,25 @@ const rules = {
   min: (n: number) => (value: string) => (value?.length ?? 0) >= n || `Mínimo de ${n} caracteres`,
   samePassword: (value: string) => value === registerData.password || "Senhas não conferem",
 };
+
+function renderGoogleButton() {
+  if (!googleBtnEl.value) return;
+  // Limpa renderizações anteriores (ex.: resize)
+  googleBtnEl.value.innerHTML = "";
+
+  const width = Math.floor(googleBtnEl.value.getBoundingClientRect().width);
+  const safeWidth = Number.isFinite(width) && width > 0 ? width : 320;
+
+  // @ts-ignore
+  google.accounts.id.renderButton(googleBtnEl.value, {
+    theme: "outline",
+    size: "large",
+    width: safeWidth,
+    text: "signup_with",
+    shape: "rectangular",
+    logo_alignment: "center",
+  });
+}
 
 async function onRegister() {
   // Dispara validação do formulário
@@ -220,17 +240,22 @@ onMounted(async () => {
     });
 
     if (googleBtnEl.value) {
-      // @ts-ignore
-      google.accounts.id.renderButton(googleBtnEl.value, {
-        theme: "outline",
-        size: "large",
-        width: 300,
-        text: "signup_with",
-        shape: "rectangular",
-        logo_alignment: "center",
-      });
+      await nextTick();
+      renderGoogleButton();
+
+      if (typeof ResizeObserver !== "undefined") {
+        googleBtnResizeObserver = new ResizeObserver(() => {
+          renderGoogleButton();
+        });
+        googleBtnResizeObserver.observe(googleBtnEl.value);
+      }
     }
   } catch {}
+});
+
+onUnmounted(() => {
+  googleBtnResizeObserver?.disconnect();
+  googleBtnResizeObserver = null;
 });
 </script>
 
@@ -264,5 +289,16 @@ onMounted(async () => {
   height: 80px;
   width: auto;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+}
+
+.google-btn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-btn :deep(iframe) {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 </style>
