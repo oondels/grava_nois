@@ -122,7 +122,42 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   // Register New User
-  async function signUpNewUser(email: string, pass: string, metadata?: Record<string, any>) {
+  async function signUpNewUser(email: string, pass: string, metadata?: Record<string, any>) { 
+    loading.value = true;
+    try {
+      await axios.post(
+        `${BASE_URL}/auth/sign-up`,
+        { email, password: pass, name: metadata?.name },
+        { withCredentials: true }
+      );
+
+      // Backend sets grn_access_token cookie, now fetch full user profile
+      await init();
+
+      return {
+        user: session.value?.user || null,
+        session: session.value
+      };
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message = error.response?.data?.error?.message;
+
+      if (status === 409) {
+        throw new Error("Este email já está cadastrado.");
+      }
+      else if (status === 422) {
+        throw new Error(message || "Dados inválidos. Verifique e tente novamente.");
+      }
+      else if (status === 400) {
+        throw new Error(message || "Preencha todos os campos obrigatórios.");
+      } else if (status === 429) {
+        throw new Error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+      } else {
+        throw new Error(message || "Erro ao criar conta. Tente novamente.");
+      }
+    } finally {
+      loading.value = false;
+    }
   }
 
   async function signInWithGoogleCredential(credential: string): Promise<GoogleLoginResponse> {
@@ -146,12 +181,51 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function signInWithEmail(email: string, password: string) {
+    loading.value = true;
+    try {
+      const { data } = await axios.post(
+        `${BASE_URL}/auth/sign-in`,
+        { email, password },
+        { withCredentials: true }
+      );
+
+      // Backend sets grn_access_token cookie, now fetch full user profile
+      await init();
+      
+      return session.value;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
+
+      if (status === 401 || status === 404) {
+        throw new Error("Email ou senha incorretos.");
+      } else if (status === 403) {
+        throw new Error("Usuário inativo. Entre em contato com o suporte.");
+      } else if (status === 429) {
+        throw new Error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+      } else {
+        throw new Error(message || "Erro ao fazer login. Tente novamente.");
+      }
+    } finally {
+      loading.value = false;
+    }
   }
 
   async function updatePassword(newPassword: string) {
   }
 
+  /**
+   * Atualiza as quadras filiadas do usuário no estado pinia
+   * @param quadras Array de quadras filiadas
+   */
+  function updateQuadrasFiliadas(quadras: any[]) {
+    if (session.value && session.value.user) {
+      session.value.user.quadrasFiliadas = quadras || [];
+    }
+  }
+
   async function signOut() {
+    await axios.post(`${BASE_URL}/auth/sign-out`, {}, { withCredentials: true });
     session.value = null;
     isReady.value = true;
   }
@@ -172,5 +246,6 @@ export const useAuthStore = defineStore("auth", () => {
     signOut,
     updatePassword,
     signUpNewUser,
+    updateQuadrasFiliadas,
   };
 });

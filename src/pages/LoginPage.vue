@@ -111,7 +111,7 @@ import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 
 const rules = {
   required: (value: string) => !!value || "Campo obrigatório",
@@ -122,7 +122,6 @@ const rules = {
 };
 
 const router = useRouter();
-const route = useRoute();
 const auth = useAuthStore();
 
 const loadingAuth = ref(false);
@@ -137,12 +136,8 @@ const submitLogin = async () => {
   loadingAuth.value = true;
   try {
     await auth.signInWithEmail(loginData.email, loginData.password);
-
-    // Redirect after successful email login
-    const desired = (localStorage.getItem("postAuthRedirect") || "").trim();
-    const target = desired && desired.startsWith("/") ? desired : "/lances-gravanois";
-    localStorage.removeItem("postAuthRedirect");
-    router.replace(target);
+    showSnackbar("Login efetuado com sucesso!", "success");
+    router.push("/lances-gravanois");
   } catch (error: any) {
     showSnackbar(error.message, "error");
     console.error("signIn error:", error);
@@ -166,6 +161,13 @@ const handleGoogleCredential = async (credential: string) => {
 
 // Carrega script do Google apenas nesta rota
 onMounted(async () => {
+  const isLogged = auth.isAuthenticated;
+
+  if (isLogged) {
+    router.push("/lances-gravanois");
+    return;
+  }
+
   try {
     const { ensureGoogleClientScript } = await import("@/utils/loadGoogleScript");
     await ensureGoogleClientScript();

@@ -474,6 +474,10 @@ async function linkSelectedQuadra() {
       { quadrasFiliadas: next },
       { withCredentials: true },
     );
+    
+    // Atualiza estado do pinia com as quadras atualizadas
+    const updatedQuadras = response.data?.quadrasFiliadas || next;
+    authStore.updateQuadrasFiliadas(updatedQuadras);
 
     quadrasVinculadas.value = next;
     // Atualiza subtitle
@@ -643,8 +647,8 @@ const handleItemClick = (item: any) => {
   }
 };
 
-const handleLogout = () => {
-  authStore.signOut();
+const handleLogout = async () => {
+  await authStore.signOut();
   router.push("/login");
   notify("Logout realizado com sucesso!", "success");
 };

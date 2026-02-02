@@ -20,7 +20,7 @@
                   label="Nome"
                   variant="outlined"
                   class="mb-4"
-                  :rules="[rules.required, rules.min(2)]"
+                  :rules="[rules.required, rules.min(3)]"
                   autocomplete="name"
                 >
                   <template #prepend-inner>
@@ -48,7 +48,7 @@
                   label="Senha"
                   variant="outlined"
                   class="mb-3"
-                  :rules="[rules.required, rules.min(6)]"
+                  :rules="[rules.required, rules.min(8)]"
                   autocomplete="new-password"
                 >
                   <template #prepend-inner>
@@ -120,17 +120,7 @@
                 Criar conta
               </v-btn>
 
-              <v-btn
-                color="red"
-                variant="outlined"
-                size="large"
-                block
-                class="mb-4 d-flex align-center justify-center"
-                @click="auth.signInWithGoogle"
-              >
-                <img src="@/assets/google.svg" alt="Google" width="18" height="18" class="me-2" />
-                Cadastrar com Google
-              </v-btn>
+              <div ref="googleBtnEl" class="google-btn"></div>
             </v-card-text>
           </v-card>
         </transition>
@@ -156,6 +146,7 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const formRef = ref();
 const isValid = ref(false);
+const googleBtnEl = ref<HTMLElement | null>(null);
 
 const registerData = reactive({
   name: "",
@@ -185,19 +176,14 @@ async function onRegister() {
 
   loading.value = true;
   try {
-    const { user, session } = await auth.signUpNewUser(
+    await auth.signUpNewUser(
       registerData.email,
       registerData.password,
       { name: registerData.name }
     );
 
-    if (session) {
-      showSnackbar("Cadastro realizado com sucesso!", "success");
-      router.push("/lances-gravanois");
-    } else {
-      showSnackbar("Verifique seu e-mail para confirmar a conta.", "info");
-      router.push("/login");
-    }
+    showSnackbar("Cadastro realizado com sucesso!", "success");
+    router.push("/lances-gravanois");
   } catch (e: any) {
     console.error("Registration error:", e);
     showSnackbar(e?.message || "Erro ao cadastrar. Tente novamente.", "error");
@@ -205,12 +191,43 @@ async function onRegister() {
     loading.value = false;
   }
 }
+const handleGoogleCredential = async (credential: string) => {
+  try {
+    await auth.signInWithGoogleCredential(credential);
+    showSnackbar("Cadastro com Google efetuado com sucesso!", "success");
+    router.push("/lances-gravanois");
+  } catch (error) {
+    showSnackbar("Erro ao efetuar cadastro com Google, tente novamente!", "error");
+    console.error("Erro ao efetuar cadastro com google, tente novamente!");
+    console.error(error);
+  }
+};
+
 
 // Carrega script do Google apenas nesta rota (opcional)
 onMounted(async () => {
   try {
-    const { ensureGoogleClientScript } = await import('@/utils/loadGoogleScript')
-    await ensureGoogleClientScript()
+    const { ensureGoogleClientScript } = await import("@/utils/loadGoogleScript");
+    await ensureGoogleClientScript();
+
+    // Inicializa o botão para cadastrar com o google
+    // @ts-ignore
+    google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      callback: (response: any) => handleGoogleCredential(response.credential),
+    });
+
+    if (googleBtnEl.value) {
+      // @ts-ignore
+      google.accounts.id.renderButton(googleBtnEl.value, {
+        theme: "outline",
+        size: "large",
+        width: 300,
+        text: "signup_with",
+        shape: "rectangular",
+        logo_alignment: "center",
+      });
+    }
   } catch {}
 })
 </script>
