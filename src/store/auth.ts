@@ -266,7 +266,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function logout() {
     try {
-      await api.post("/auth/sign-out");
+      await api.post("/auth/sign-out", {}, { _skipRefresh: true } as any);
     } finally {
       session.value = null;
       token.value = null;
