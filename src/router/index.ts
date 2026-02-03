@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import type { NavigationGuardNext, RouteLocationNormalized } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { useSnackbar } from "@/composables/useSnackbar";
 
@@ -55,6 +56,47 @@ const routes = [
     name: "Maintenance",
     component: () => import("@/pages/MaintenanceMode.vue"),
     meta: { requiresAuth: false },
+  },
+  {
+    path: "/admin",
+    component: () => import("@/layouts/AdminLayout.vue"),
+    beforeEnter: async (
+      _to: RouteLocationNormalized,
+      _from: RouteLocationNormalized,
+      next: NavigationGuardNext
+    ) => {
+      const authStore = useAuthStore();
+      await authStore.ensureReady();
+
+      if (!authStore.isAdmin) return next("/");
+      return next();
+    },
+    children: [
+      {
+        path: "",
+        name: "AdminDashboard",
+        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
+        props: { title: "Dashboard" },
+      },
+      {
+        path: "users",
+        name: "AdminUsers",
+        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
+        props: { title: "Usuários" },
+      },
+      {
+        path: "clients",
+        name: "AdminClients",
+        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
+        props: { title: "Clientes" },
+      },
+      {
+        path: "venues",
+        name: "AdminVenues",
+        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
+        props: { title: "Quadras" },
+      },
+    ],
   },
   {
     path: "/:pathMatch(.*)*",

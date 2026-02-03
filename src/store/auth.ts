@@ -42,6 +42,7 @@ export const useAuthStore = defineStore("auth", () => {
   let initPromise: Promise<void> | null = null;
 
   const user = computed<AuthUser | null>(() => session?.value?.user ?? null);
+  const isAdmin = computed(() => user.value?.role === "admin");
   const isAuthenticated = computed(() => session.value !== null);
   const isGoogleUser = computed(() => session.value?.provider === "google");
 
@@ -285,6 +286,7 @@ export const useAuthStore = defineStore("auth", () => {
     token,
     user,
     safeUser,
+    isAdmin,
     isAuthenticated,
     isGoogleUser,
     needsGoogleSyncPrompt,
