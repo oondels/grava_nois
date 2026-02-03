@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from "@/services/api";
 
 export type ReportPayload = {
   name?: string;
@@ -14,10 +14,11 @@ export type ReportPayload = {
 
 export const sendReport = async (payload: ReportPayload) => {
   try {
-    const base = ((import.meta as any).env?.VITE_API_BASE as string | undefined) || 'http://82.29.56.105:2399'
-    const api = base.replace(/\/$/, '') + '/send-report'
-    const response = await axios.post(api, payload, {
-      headers: { 'Content-Type': 'application/json' },
+    const base = ((import.meta as any).env?.VITE_API_BASE as string | undefined) || "http://82.29.56.105:2399";
+    const endpoint = base.replace(/\/$/, "") + "/send-report";
+    const response = await api.post(endpoint, payload, {
+      withCredentials: false,
+      headers: { "Content-Type": "application/json", "X-Skip-Auth": true },
     });
     return response.data;
   } catch (error: any) {

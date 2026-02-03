@@ -1,7 +1,7 @@
 {
   "name": "sport-clips-platform",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Plataforma de download de vídeos de lances esportivos",
   "scripts": {

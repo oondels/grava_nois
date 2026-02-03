@@ -1,8 +1,7 @@
 // stores/auth.ts
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import axios from "axios";
-import { BASE_URL } from "@/config/ip";
+import { api } from "@/services/api";
 
 export type AuthRole = "common" | "admin" | string;
 
@@ -35,6 +34,7 @@ export interface GoogleLoginResponse {
 
 export const useAuthStore = defineStore("auth", () => {
   const session = ref<AuthSession | null>(null);
+  const token = ref<string | null>(null);
   const loading = ref(false);
 
   const isCheckingUser = ref(false)
@@ -42,6 +42,7 @@ export const useAuthStore = defineStore("auth", () => {
   let initPromise: Promise<void> | null = null;
 
   const user = computed<AuthUser | null>(() => session?.value?.user ?? null);
+  const isAdmin = computed(() => user.value?.role === "admin");
   const isAuthenticated = computed(() => session.value !== null);
   const isGoogleUser = computed(() => session.value?.provider === "google");
 
@@ -74,28 +75,72 @@ export const useAuthStore = defineStore("auth", () => {
       : null
   );
 
+  function buildAuthUser(raw: any): AuthUser {
+    return {
+      email: raw.email,
+      name: raw.name,
+      username: raw.username,
+      emailVerified: raw.emailVerified,
+      role: raw.role,
+      avatarUrl: raw.avatarUrl,
+      id: raw.id,
+      country: raw.country,
+      state: raw.state,
+      city: raw.city,
+      cep: raw.cep,
+      quadrasFiliadas: raw.quadrasFiliadas || [],
+    };
+  }
+
+  async function refreshUserData() {
+    try {
+      const { data } = await api.get("/auth/me");
+      const foundedUser = data.foundedUser;
+      if (!foundedUser) return null;
+
+      session.value = {
+        user: buildAuthUser(foundedUser),
+        loggedAt: new Date().toISOString(),
+        provider: data.provider || session.value?.provider || "email",
+      };
+
+      isReady.value = true;
+      return session.value;
+    } catch {
+      return null;
+    }
+  }
+
+  async function afterAuthSuccess(sessionOrUser?: AuthSession | AuthUser | null, providerOverride?: string) {
+    if (sessionOrUser) {
+      const provider =
+        providerOverride ||
+        ("provider" in sessionOrUser ? sessionOrUser.provider : undefined) ||
+        session.value?.provider ||
+        "email";
+
+      const nextUser = "user" in sessionOrUser ? sessionOrUser.user : sessionOrUser;
+      session.value = {
+        user: buildAuthUser(nextUser),
+        loggedAt: new Date().toISOString(),
+        provider,
+      };
+
+      isReady.value = true;
+    }
+
+    await refreshUserData();
+  }
+
   async function init() {
     isCheckingUser.value = true;
 
     try {
-      const { data } = await axios.get(`${BASE_URL}/auth/me`, { withCredentials: true });
+      const { data } = await api.get("/auth/me");
       const user = data.foundedUser;
 
       session.value = {
-        user: {
-          email: user.email,
-          name: user.name,
-          username: user.username,
-          emailVerified: user.emailVerified,
-          role: user.role,
-          avatarUrl: user.avatarUrl,
-          id: user.id,
-          country: user.country,
-          state: user.state,
-          city: user.city,
-          cep: user.cep,
-          quadrasFiliadas: user.quadrasFiliadas || [],
-        },
+        user: buildAuthUser(user),
         loggedAt: new Date().toISOString(),
         provider: data.provider || 'email'
       }
@@ -125,10 +170,9 @@ export const useAuthStore = defineStore("auth", () => {
   async function signUpNewUser(email: string, pass: string, metadata?: Record<string, any>) { 
     loading.value = true;
     try {
-      await axios.post(
-        `${BASE_URL}/auth/sign-up`,
+      await api.post(
+        "/auth/sign-up",
         { email, password: pass, name: metadata?.name },
-        { withCredentials: true }
       );
 
       // Backend sets grn_access_token cookie, now fetch full user profile
@@ -163,17 +207,9 @@ export const useAuthStore = defineStore("auth", () => {
   async function signInWithGoogleCredential(credential: string): Promise<GoogleLoginResponse> {
     loading.value = true;
     try {
-      const { data } = await axios.post<GoogleLoginResponse>(`${BASE_URL}/auth/google`,
-        { idToken: credential },
-        { withCredentials: true });
+      const { data } = await api.post<GoogleLoginResponse>("/auth/google", { idToken: credential });
 
-      session.value = {
-        user: data.user,
-        loggedAt: new Date().toISOString(),
-        provider: 'google'
-      }
-
-      isReady.value = true;
+      await afterAuthSuccess(data.user, "google");
       return data;
     } finally {
       loading.value = false;
@@ -183,14 +219,13 @@ export const useAuthStore = defineStore("auth", () => {
   async function signInWithEmail(email: string, password: string) {
     loading.value = true;
     try {
-      const { data } = await axios.post(
-        `${BASE_URL}/auth/sign-in`,
+      await api.post(
+        "/auth/sign-in",
         { email, password },
-        { withCredentials: true }
       );
 
       // Backend sets grn_access_token cookie, now fetch full user profile
-      await init();
+      await afterAuthSuccess();
       
       return session.value;
     } catch (error: any) {
@@ -198,6 +233,8 @@ export const useAuthStore = defineStore("auth", () => {
       const message = error.response?.data?.message;
 
       if (status === 401 || status === 404) {
+        console.log(error);
+        
         throw new Error("Email ou senha incorretos.");
       } else if (status === 403) {
         throw new Error("Usuário inativo. Entre em contato com o suporte.");
@@ -224,26 +261,42 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  function setToken(nextToken: string | null) {
+    token.value = nextToken;
+  }
+
+  async function logout() {
+    try {
+      await api.post("/auth/sign-out", {}, { _skipRefresh: true } as any);
+    } finally {
+      session.value = null;
+      token.value = null;
+      isReady.value = true;
+    }
+  }
+
   async function signOut() {
-    await axios.post(`${BASE_URL}/auth/sign-out`, {}, { withCredentials: true });
-    session.value = null;
-    isReady.value = true;
+    await logout();
   }
 
   return {
     init,
     ensureReady,
     session,
+    token,
     user,
     safeUser,
+    isAdmin,
     isAuthenticated,
     isGoogleUser,
     needsGoogleSyncPrompt,
     googleSyncSuggestion,
     loading,
+    setToken,
     signInWithGoogleCredential,
     signInWithEmail,
     signOut,
+    logout,
     updatePassword,
     signUpNewUser,
     updateQuadrasFiliadas,

@@ -1,107 +1,101 @@
-# Grava Nóis – Plataforma de Replays Esportivos
+# Grava Nóis – Plataforma Web de Replays Esportivos
 
-O **Grava Nóis** é um ecossistema de captura e distribuição de replays esportivos pensado para quadras e campos amadores. O hardware instalado na quadra registra continuamente a partida; quando um atleta aciona o botão físico no local, o sistema recorta automaticamente os **25 segundos anteriores** e os **10 segundos posteriores** ao acionamento, concatena o trecho e envia o clipe final para armazenamento em nuvem (Amazon S3). Esses vídeos ficam imediatamente disponíveis para visualização e download pelos atletas no aplicativo web/PWA descrito neste repositório.
+Versão: 1.1.0
 
-## Como o fluxo funciona
+## Visão geral
+O **Grava Nóis** é um ecossistema de captura e distribuição de replays esportivos para quadras e campos amadores. Um dispositivo local grava continuamente o jogo e, quando um atleta aciona o botão físico, o sistema recorta um trecho (antes/depois do evento), monta o clipe e envia para a nuvem. Esta aplicação web/PWA consome a API do Grava Nóis para autenticação, listagem e entrega dos vídeos.
 
-1. **Captura local** – Um dispositivo dedicado permanece gravando o jogo e monitora o botão físico da quadra.
-2. **Gatilho do atleta** – Ao identificar um lance marcante, o atleta pressiona o botão. O dispositivo separa o intervalo configurado (25s anteriores + 10s posteriores) e monta o clipe final.
-3. **Envio para a nuvem** – O clipe é processado e enviado automaticamente para um bucket S3. Metadados de identificação (quadra, atleta/time, timestamp) são registrados na API do Grava Nóis.
-4. **Disponibilização** – A API notifica a plataforma web/mobile, que lista os novos vídeos, disponibiliza URLs assinadas para preview e download e gerencia o acesso de cada usuário autenticado.
+## O que este repositório entrega
+- Web app e PWA para atletas e administradores.
+- Login por email/senha e Google (OAuth via Google Identity Services).
+- Listagem de clipes por quadra com paginação, prévia sob demanda e download com URLs assinadas.
+- Área administrativa com dashboard e gestão de usuários, clientes e quadras.
+- Páginas de suporte: relatório de erro e solicitação de instalação.
+- Notificações globais e UI responsiva com Vuetify + utilitários Tailwind.
 
-## Aplicação Web (este repositório)
+## Stack principal
+- Vue 3 + TypeScript
+- Vite + `vite-plugin-pwa`
+- Vuetify 3 + Tailwind CSS
+- Pinia (estado)
+- Axios (HTTP)
+- Notivue (notificações)
 
-Este projeto entrega a experiência web/PWA consumida por atletas e administradores:
-
-- Autenticação via **API do Grava Nóis** (email/senha e login social via Google).
-- Dashboard de vídeos por quadra, com paginação, preview sob demanda e download com URLs temporárias.
-- Notificações globais via [Notivue](https://vue-notification.netlify.app/).
-- Layout responsivo com **Vuetify 3**, Tailwind utilities e design focado em tema escuro.
-- Suporte a PWA (instalação, cache offline básico, prompts de atualização).
-- Integração com endpoints REST do backend (`/api/videos/list` e `/api/videos/sign`) para listar e assinar clipes.
-
->  O conteúdo de mock na `useClipsStore` serve apenas para prototipagem offline; em produção, a listagem provém da API e dos arquivos gerados pelo sistema de captura.
-
-## 🏗️ Tecnologias principais
-
-- [Vue 3](https://vuejs.org/) + [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/) + `vite-plugin-pwa`
-- [Vuetify 3](https://vuetifyjs.com/) e [Tailwind CSS](https://tailwindcss.com/) (classes utilitárias)
-- [Pinia](https://pinia.vuejs.org/) para gerenciamento de estado
-- [Axios](https://axios-http.com/) para chamadas HTTP
+## Fluxo de alto nível
+1. Dispositivo local grava continuamente o jogo.
+2. Atleta aciona o botão e o sistema gera o clipe.
+3. O clipe é enviado para storage (ex.: S3) e a API registra metadados.
+4. A web app lista os clipes e solicita URLs assinadas para preview/download.
 
 ## Configuração do ambiente
-
-Crie um arquivo `.env` (ou `.env.local`) na raiz com as variáveis necessárias para build e execução:
+Crie um arquivo `.env` (ou `.env.local`) na raiz:
 
 ```dotenv
 VITE_API_BASE=https://api.gravanois.com
 VITE_GOOGLE_CLIENT_ID=<google_oauth_client_id>
+VITE_MAINTENANCE_MODE=false
 ```
 
-- `VITE_API_BASE` aponta para a API que expõe as rotas de vídeos (`/api/videos/list`, `/api/videos/sign`) e serviços auxiliares (`/send-report`, `/send-email`).
-- `VITE_GOOGLE_CLIENT_ID` é usado para renderizar o botão de login Google (Google Identity Services).
+- `VITE_API_BASE`: base da API. Necessário para autenticação, listagem de vídeos e endpoints administrativos. A API usa cookies (`withCredentials`).
+- `VITE_GOOGLE_CLIENT_ID`: usado no login Google.
+- `VITE_MAINTENANCE_MODE`: se `true`, `1`, `on` ou `yes`, força o redirecionamento para `/maintenance`.
 
-> Em ambiente de desenvolvimento, caso a API ainda não esteja disponível, defina `VITE_API_BASE` para um mock server local ou utilize os dados mockados da store.
-
-## 🖥️ Scripts
-
+## Scripts
 ```bash
-# Instalar dependências
-default npm install
-
-# Rodar em modo desenvolvimento com HMR
+npm install
 npm run dev
-
-# Gerar build de produção
 npm run build
-
-# Servir a build para verificação
 npm run preview
 ```
 
-## 🗂️ Estrutura resumida
+## Rotas principais
+- `/` Home
+- `/lances-gravanois` Listagem de vídeos (requer login)
+- `/login` e `/register` Autenticação
+- `/auth/callback` Callback OAuth
+- `/user-page` Perfil
+- `/contato` Solicitação de instalação
+- `/reportar-erro` Relatório de erro
+- `/admin/*` Área administrativa (requer `role=admin`)
+- `/maintenance` Modo manutenção
 
+## Integração com API
+Principais endpoints consumidos pela aplicação:
+- `GET /auth/me`, `POST /auth/sign-in`, `POST /auth/sign-up`, `POST /auth/sign-out`, `POST /auth/google`, `POST /auth/refresh`
+- `GET /api/videos/list` (paginação por `nextToken`)
+- `GET /api/videos/sign` (URLs assinadas para `preview` e `download`)
+- `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/clients`, `GET /admin/venues`
+- `PATCH /admin/users/:id`, `PATCH /admin/clients/:id`
+- `POST /send-report` e `POST /send-email`
+
+Observação: os serviços de relatório e solicitação de instalação usam `X-Skip-Auth` para não exigir sessão.
+
+## PWA
+- Registro automático de Service Worker com atualização.
+- Cache de imagens e fontes via Workbox.
+- Prompt de instalação customizado e alerta de atualização.
+
+## Estrutura de pastas
 ```
 src/
 ├── assets/             # Logos, imagens e ícones
-├── components/         # Componentes Vue reutilizáveis (AppShell, VideoCard, prompts PWA…)
-├── layouts/            # Layouts globais
-├── pages/              # Páginas da aplicação (Home, Login, Videos, etc.)
-├── router/             # Rotas e guards de autenticação
-├── services/           # Chamadas HTTP (reportes, instalação, vídeos)
-├── store/              # Pinia stores (auth, clips mock, tema)
-├── utils/              # Utilitários (formatters, loaders, ícones)
-└── config/             # Configs do app (ex.: base URL)
+├── components/         # Componentes reutilizáveis
+├── components/home-sections/ # Seções da home
+├── components/videos/  # Cards e views de vídeos
+├── layouts/            # Layouts globais (App/Admin)
+├── pages/              # Páginas (home, auth, vídeos, admin, suporte)
+├── router/             # Rotas e guards
+├── services/           # Integrações HTTP e API
+├── store/              # Pinia stores
+├── styles/             # Variáveis e utilitários
+├── utils/              # Helpers e ícones
+└── config/             # Configs locais
 ```
 
-## 🔐 Fluxo de autenticação
+## Versionamento
+- Seguimos SemVer (`MAJOR.MINOR.PATCH`).
+- Versão atual: `1.1.0`.
+- Histórico de mudanças em `CHANGELOG.md`.
 
-1. O store `auth` consulta a sessão atual via API (`GET /auth/me`) usando cookies (`withCredentials`).
-2. Login por email/senha usa `POST /auth/sign-in`; cadastro usa `POST /auth/sign-up`; logout usa `POST /auth/sign-out`.
-3. Login com Google usa Google Identity Services para obter o `credential` (ID token) e envia para `POST /auth/google`.
-4. Guardas de rota asseguram que páginas como `/lances-gravanois` sejam acessadas apenas após login.
-
-## 🌐 Integração com vídeos
-
-- A página `VideosPage.vue` carrega os dados do usuário autenticado e suas quadras vinculadas.
-- Ao selecionar uma quadra (`VideoPageQuadra.vue`), a app usa `VITE_API_BASE` para buscar a lista paginada de clipes.
-- A prévia (preview) é carregada apenas sob demanda, através de URLs assinadas (`/api/videos/sign?kind=preview`). Downloads utilizam o mesmo endpoint com `kind=download`.
-- A aplicação armazena o último local escolhido em `localStorage` (`grn-last-quadra-id`) para agilizar o acesso do usuário em revisitas.
-
-## 📲 PWA
-
-- Prompt personalizado para instalação (`InstallPrompt.vue`) com suporte a Android/Web e instruções específicas para iOS.
-- Componente `ReloadPrompt` monitora atualizações de Service Worker e oferece botão de “Atualizar”.
-- Configuração do `VitePWA` inclui cache para imagens, fontes e fallbacks padrão de SPA.
-
-## 🛠️ Futuro e próximos passos
-
-- Conectar a listagem mockada ao pipeline completo de ingestão, incluindo metadados de atletas e eventos.
-- Disponibilizar comandos e documentação para o dispositivo de captura (edge device) e para o backend que recebe os vídeos.
-- Adicionar testes automatizados (unitários/E2E) e checklist de deploy.
-- Revisar estilos compartilhados e consolidar o design system entre Vuetify e Tailwind.
-
----
-
-Para dúvidas ou sugestões, abra uma issue ou entre em contato com a equipe Grava Nóis.
+## Licença
+MIT.
