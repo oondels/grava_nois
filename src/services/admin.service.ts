@@ -31,6 +31,7 @@ export type AdminClient = {
   responsibleName?: string | null;
   responsibleEmail?: string | null;
   responsiblePhone?: string | null;
+  retentionDays?: number | null;
   venueCount?: number;
   generalStatus?: "ok" | "attention" | string;
   [key: string]: unknown;
@@ -38,6 +39,10 @@ export type AdminClient = {
 
 export type AdminVenue = {
   id?: string;
+  name?: string | null;
+  venueName?: string | null;
+  paymentStatus?: string | null;
+  isOnline?: boolean;
   client?: AdminClient | null;
   [key: string]: unknown;
 };
@@ -91,6 +96,7 @@ export type UpdateClientPayload = {
   responsibleName?: string | null;
   responsibleEmail?: string | null;
   responsiblePhone?: string | null;
+  retentionDays?: number;
 };
 
 export type UpdateUserResponse = {

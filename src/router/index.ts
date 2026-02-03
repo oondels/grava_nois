@@ -85,14 +85,12 @@ const routes = [
       {
         path: "clients",
         name: "AdminClients",
-        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
-        props: { title: "Clientes" },
+        component: () => import("@/pages/admin/AdminClients.vue"),
       },
       {
         path: "venues",
         name: "AdminVenues",
-        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
-        props: { title: "Quadras" },
+        component: () => import("@/pages/admin/AdminVenues.vue"),
       },
     ],
   },
