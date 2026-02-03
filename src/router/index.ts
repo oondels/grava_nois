@@ -75,8 +75,7 @@ const routes = [
       {
         path: "",
         name: "AdminDashboard",
-        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
-        props: { title: "Dashboard" },
+        component: () => import("@/pages/admin/AdminDashboard.vue"),
       },
       {
         path: "users",
