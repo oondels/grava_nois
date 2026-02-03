@@ -302,8 +302,7 @@ import {
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { getSportColor, getSportLabel } from "@/utils/formatters";
 import { useSnackbar } from "@/composables/useSnackbar";
-import axios from "axios";
-import { BASE_URL } from "@/config/ip";
+import { api } from "@/services/api";
 
 function safeJsonParse<T = any>(raw: string): T | null {
   try {
@@ -400,7 +399,7 @@ async function fetchUserQuadras() {
     if (!quadras.length) {
       const userId = authStore.user?.id || authStore.safeUser?.id;
       if (userId) {
-        const res = await axios.get(`${BASE_URL}/users/${userId}`, { withCredentials: true });
+        const res = await api.get(`/users/${userId}`);
 
         const profile = res.data?.user ?? null;
         if (Array.isArray(profile?.quadrasFiliadas)) quadras = profile.quadrasFiliadas;
@@ -469,10 +468,9 @@ async function linkSelectedQuadra() {
 
   try {
     linkingQuadra.value = true;
-    const response = await axios.patch(
-      `${BASE_URL}/users/${userId}`,
+    const response = await api.patch(
+      `/users/${userId}`,
       { quadrasFiliadas: next },
-      { withCredentials: true },
     );
     
     // Atualiza estado do pinia com as quadras atualizadas
@@ -701,7 +699,7 @@ const saveLocation = async () => {
       country: "BR",
     };
 
-    await axios.patch(`${BASE_URL}/users/${userId}/location`, payload, { withCredentials: true });
+    await api.patch(`/users/${userId}/location`, payload);
 
     // Atualiza cache local, se existir
     try {

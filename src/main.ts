@@ -13,6 +13,7 @@ import * as directives from "vuetify/directives";
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 
 import { useAuthStore } from './store/auth'
+import { setupInterceptors } from "@/services/api";
 
 // Notivue styles for notifications
 import { createNotivue } from 'notivue'
@@ -58,7 +59,8 @@ app.use(router);
 app.use(vuetify);
 app.use(notivue)
 
-const auth = useAuthStore()
+const auth = useAuthStore(pinia)
+setupInterceptors(auth, router)
 
   ; (async () => {
     await auth.ensureReady()

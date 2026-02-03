@@ -1,10 +1,12 @@
-import axios from 'axios';
+import { api } from "@/services/api";
 
 export const solicitarInstalacao = async (form: Record<string, any>) => {
   try {
-    const response = await axios.post("http://82.29.56.105:2399/send-email", form, {
+    const response = await api.post("http://82.29.56.105:2399/send-email", form, {
+      withCredentials: false,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        "X-Skip-Auth": true,
       },
     });
 
