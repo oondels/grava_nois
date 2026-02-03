@@ -74,6 +74,63 @@ export const useAuthStore = defineStore("auth", () => {
       : null
   );
 
+  function buildAuthUser(raw: any): AuthUser {
+    return {
+      email: raw.email,
+      name: raw.name,
+      username: raw.username,
+      emailVerified: raw.emailVerified,
+      role: raw.role,
+      avatarUrl: raw.avatarUrl,
+      id: raw.id,
+      country: raw.country,
+      state: raw.state,
+      city: raw.city,
+      cep: raw.cep,
+      quadrasFiliadas: raw.quadrasFiliadas || [],
+    };
+  }
+
+  async function refreshUserData() {
+    try {
+      const { data } = await axios.get(`${BASE_URL}/auth/me`, { withCredentials: true });
+      const foundedUser = data.foundedUser;
+      if (!foundedUser) return null;
+
+      session.value = {
+        user: buildAuthUser(foundedUser),
+        loggedAt: new Date().toISOString(),
+        provider: data.provider || session.value?.provider || "email",
+      };
+
+      isReady.value = true;
+      return session.value;
+    } catch {
+      return null;
+    }
+  }
+
+  async function afterAuthSuccess(sessionOrUser?: AuthSession | AuthUser | null, providerOverride?: string) {
+    if (sessionOrUser) {
+      const provider =
+        providerOverride ||
+        ("provider" in sessionOrUser ? sessionOrUser.provider : undefined) ||
+        session.value?.provider ||
+        "email";
+
+      const nextUser = "user" in sessionOrUser ? sessionOrUser.user : sessionOrUser;
+      session.value = {
+        user: buildAuthUser(nextUser),
+        loggedAt: new Date().toISOString(),
+        provider,
+      };
+
+      isReady.value = true;
+    }
+
+    await refreshUserData();
+  }
+
   async function init() {
     isCheckingUser.value = true;
 
@@ -82,20 +139,7 @@ export const useAuthStore = defineStore("auth", () => {
       const user = data.foundedUser;
 
       session.value = {
-        user: {
-          email: user.email,
-          name: user.name,
-          username: user.username,
-          emailVerified: user.emailVerified,
-          role: user.role,
-          avatarUrl: user.avatarUrl,
-          id: user.id,
-          country: user.country,
-          state: user.state,
-          city: user.city,
-          cep: user.cep,
-          quadrasFiliadas: user.quadrasFiliadas || [],
-        },
+        user: buildAuthUser(user),
         loggedAt: new Date().toISOString(),
         provider: data.provider || 'email'
       }
@@ -167,13 +211,7 @@ export const useAuthStore = defineStore("auth", () => {
         { idToken: credential },
         { withCredentials: true });
 
-      session.value = {
-        user: data.user,
-        loggedAt: new Date().toISOString(),
-        provider: 'google'
-      }
-
-      isReady.value = true;
+      await afterAuthSuccess(data.user, "google");
       return data;
     } finally {
       loading.value = false;
@@ -183,14 +221,14 @@ export const useAuthStore = defineStore("auth", () => {
   async function signInWithEmail(email: string, password: string) {
     loading.value = true;
     try {
-      const { data } = await axios.post(
+      await axios.post(
         `${BASE_URL}/auth/sign-in`,
         { email, password },
         { withCredentials: true }
       );
 
       // Backend sets grn_access_token cookie, now fetch full user profile
-      await init();
+      await afterAuthSuccess();
       
       return session.value;
     } catch (error: any) {
