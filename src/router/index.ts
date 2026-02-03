@@ -80,8 +80,7 @@ const routes = [
       {
         path: "users",
         name: "AdminUsers",
-        component: () => import("@/pages/admin/AdminPlaceholderPage.vue"),
-        props: { title: "Usuários" },
+        component: () => import("@/pages/admin/AdminUsers.vue"),
       },
       {
         path: "clients",
