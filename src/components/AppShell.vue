@@ -32,23 +32,6 @@
       Aviso
     </v-btn> -->
 
-    <!-- Diálogo de manutenção -->
-    <!-- <v-dialog v-model="maintenanceDialog" max-width="480">
-      <v-card class="rounded-xl" elevation="12">
-        <v-card-title class="text-h6 d-flex align-center">
-          <AlertTriangle class="me-2" />
-          Aviso de manutenção
-        </v-card-title>
-        <v-card-text> O sistema está em manutenção e já já estará de volta. </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="maintenanceDialog = false">Fechar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
-
-    <!-- Footer -->
-
     <!-- Bottom nav mobile -->
     <MobileBottomNav v-if="!isAdminRoute && !isClientRoute" />
     <AppFooter v-if="showFooter && !isAdminRoute && !isClientRoute" />
@@ -56,12 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { useAuthStore } from "@/store/auth";
-import { useThemeStore } from "@/store/theme";
-import { useClipsStore } from "@/store/clips";
-// import { AlertCircle, AlertTriangle } from "lucide-vue-next";
 
 const showFooter = ref(true);
 const showFooterComponent = () => {
@@ -96,17 +75,4 @@ watch(
   },
   { immediate: true }
 );
-
-
-const authStore = useAuthStore();
-const themeStore = useThemeStore();
-const clipsStore = useClipsStore();
-
-// Handler para filtros de busca
-const handleSearch = (value: string | null) => {
-  clipsStore.updateFilters({ search: value || "" });
-};
-
-// Controle do diálogo de manutenção
-const maintenanceDialog = ref(false);
 </script>

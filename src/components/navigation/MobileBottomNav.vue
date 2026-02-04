@@ -194,6 +194,7 @@ import {
   Bell,
   CircleUserIcon,
   ShieldCheckIcon,
+  LayoutDashboard,
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
@@ -210,6 +211,7 @@ type NavItem = {
   icon: any;
   disabled?: boolean;
   requiresAdminAccess?: boolean;
+  requiresClientAccess?: boolean;
 };
 
 // Mantém os itens reativos ao estado de autenticação
@@ -222,17 +224,31 @@ const navigationItems = computed<NavItem[]>(() => [
     disabled: false,
     requiresAdminAccess: false,
   },
+  {
+    label: "Cliente",
+    to: "/client",
+    icon: LayoutDashboard,
+    disabled: false,
+    requiresAdminAccess: false,
+    requiresClientAccess: true,
+  },
   { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false, requiresAdminAccess: false },
   { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false, requiresAdminAccess: false },
   { label: "Reportar", to: "/reportar-erro", icon: BadgeAlertIcon, disabled: false, requiresAdminAccess: false },
   { label: "Admin", to: "/admin", icon: ShieldCheckIcon, disabled: false, requiresAdminAccess: true },
 ]);
 
-const visibleItems = computed(() => 
-  navigationItems.value.filter(item => 
-    !item.requiresAdminAccess || (auth.isAuthenticated && auth.isAdmin)
-  )
-);
+const visibleItems = computed(() => {
+  const user = auth.user as { role?: string; clientId?: string } | null;
+  const isClientAccess =
+    auth.isAuthenticated && (user?.role === "client" || Boolean(user?.clientId) || auth.isAdmin);
+
+  return navigationItems.value.filter((item) => {
+    if (item.requiresAdminAccess && !(auth.isAuthenticated && auth.isAdmin)) return false;
+    if (item.requiresClientAccess && !isClientAccess) return false;
+    return true;
+  });
+});
 
 function prefetchUserOrLogin() {
   prefetch(auth.isAuthenticated ? '/user-page' : '/login')
