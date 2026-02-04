@@ -261,9 +261,6 @@
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import {
-  VideoIcon,
-  ClockPlus,
-  CloudDownload,
   AppWindow,
   Zap,
   ShieldCheckIcon,
