@@ -193,6 +193,7 @@ import {
   UserPlus2Icon,
   Bell,
   CircleUserIcon,
+  ShieldCheckIcon,
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
@@ -208,23 +209,30 @@ type NavItem = {
   to: string;
   icon: any;
   disabled?: boolean;
+  requiresAdminAccess?: boolean;
 };
 
 // Mantém os itens reativos ao estado de autenticação
 const navigationItems = computed<NavItem[]>(() => [
-  { label: "Home", to: "/", icon: Home, disabled: false },
+  { label: "Home", to: "/", icon: Home, disabled: false, requiresAdminAccess: false },
   {
     label: auth.isAuthenticated ? "Perfil" : "Login",
     to: auth.isAuthenticated ? "/user-page" : "/login",
     icon: LogInIcon,  
     disabled: false,
+    requiresAdminAccess: false,
   },
-  { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false },
-  { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false },
-  { label: "Reportar", to: "/reportar-erro", icon: BadgeAlertIcon, disabled: false },
+  { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false, requiresAdminAccess: false },
+  { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false, requiresAdminAccess: false },
+  { label: "Reportar", to: "/reportar-erro", icon: BadgeAlertIcon, disabled: false, requiresAdminAccess: false },
+  { label: "Admin", to: "/admin", icon: ShieldCheckIcon, disabled: false, requiresAdminAccess: true },
 ]);
 
-const visibleItems = computed(() => navigationItems.value);
+const visibleItems = computed(() => 
+  navigationItems.value.filter(item => 
+    !item.requiresAdminAccess || (auth.isAuthenticated && auth.isAdmin)
+  )
+);
 
 function prefetchUserOrLogin() {
   prefetch(auth.isAuthenticated ? '/user-page' : '/login')
