@@ -14,7 +14,7 @@ export type ClientDashboardStats = {
 };
 
 async function getDashboardStats(): Promise<ApiResponse<ClientDashboardStats>> {
-  const { data } = await api.get<ApiResponse<ClientDashboardStats>>("/client/dashboard");
+  const { data } = await api.get<ApiResponse<ClientDashboardStats>>("/api/clients/me/stats");
   return data;
 }
 

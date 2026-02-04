@@ -109,7 +109,7 @@ watch(
 
 const navItems = [
   { title: "Visão Geral", to: "/client", icon: LayoutDashboard },
-  { title: "Minha Quadra", to: "/client/quadra", icon: MapPin },
+  // { title: "Minha Quadra", to: "/client/quadra", icon: MapPin },
   { title: "Financeiro", to: "/client/financeiro", icon: Wallet },
 ];
 
