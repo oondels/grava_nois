@@ -432,7 +432,7 @@ watch(
   (newVal, oldVal) => {
     if (newVal === oldVal) return;
 
-    refresh();
+    // refresh();
     if (newVal && newVal.id) {
       localStorage.setItem("grn-last-quadra-id", newVal.id);
     } else {
@@ -451,7 +451,7 @@ onMounted(() => {
 
   setTimeout(async () => {
     // focusQuadra();
-    fetchPage()
+    // fetchPage()
   }, 500);
 
   getLastOrUniqueQuadra();
