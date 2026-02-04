@@ -1,6 +1,6 @@
 <template>
   <!-- Desktop -->
-  <Header v-if="!isAdminRoute" class="hidden md:block" />
+  <Header v-if="!isAdminRoute && !isClientRoute" class="hidden md:block" />
 
   <v-app>
     <!-- Main Content -->
@@ -8,7 +8,10 @@
       id="main"
       class="d-flex flex-column"
       :class="{
-        'pb-20': isMobile && !isAdminRoute /* espaço para a bottom nav fixa no mobile */,
+        'pb-20':
+          isMobile &&
+          !isAdminRoute &&
+          !isClientRoute /* espaço para a bottom nav fixa no mobile */,
       }"
     >
       <slot />
@@ -47,8 +50,8 @@
     <!-- Footer -->
 
     <!-- Bottom nav mobile -->
-    <MobileBottomNav v-if="!isAdminRoute" />
-    <AppFooter v-if="showFooter && !isAdminRoute" />
+    <MobileBottomNav v-if="!isAdminRoute && !isClientRoute" />
+    <AppFooter v-if="showFooter && !isAdminRoute && !isClientRoute" />
   </v-app>
 </template>
 
@@ -62,7 +65,12 @@ import { useClipsStore } from "@/store/clips";
 
 const showFooter = ref(true);
 const showFooterComponent = () => {
-  if (route.path === "/login" || route.path === "/user-page" || route.path.startsWith("/admin")) {
+  if (
+    route.path === "/login" ||
+    route.path === "/user-page" ||
+    route.path.startsWith("/admin") ||
+    route.path.startsWith("/client")
+  ) {
     showFooter.value = false;
     return;
   }
@@ -77,6 +85,7 @@ import AppFooter from "@/components/navigation/AppFooter.vue";
 const isMobile = computed(() => window.matchMedia("(max-width: 660px)").matches);
 
 const isAdminRoute = computed(() => route.path.startsWith("/admin"));
+const isClientRoute = computed(() => route.path.startsWith("/client"));
 
 // Store instances
 const route = useRoute();
