@@ -4,7 +4,7 @@
       <!-- Brand / Intro -->
       <div class="brand-col">
         <h3 class="logo-text">Grava Nóis</h3>
-        <p class="tagline">Seu lance, sua história.</p>
+        <p class="tagline">Seu lance, nossa história.</p>
 
         <div class="" aria-label="Redes sociais">
           <a href="https://www.instagram.com/grava_nois/?igsh=MWhhczl3dGRpN25waw%3D%3D#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="social-link" title="Instagram">
@@ -33,10 +33,10 @@
     <div class="legal">
       <small>
         Construído com ❤️ para o esporte amador.
-        <!-- <span class="sep">•</span>
+        <span class="sep">•</span>
         <a href="#" aria-disabled="true" class="disabled-link">Termos</a>
         <span class="sep">•</span>
-        <a href="#" aria-disabled="true" class="disabled-link">Privacidade</a> -->
+        <a href="#" aria-disabled="true" class="disabled-link">Privacidade</a>
       </small>
     </div>
   </footer>

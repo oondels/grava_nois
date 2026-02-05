@@ -139,7 +139,7 @@
           <div class="inner">
             <p class="badge">Pré-visualização</p>
             <h2>Espaço para imagem</h2>
-            <p class="muted">Adicione aqui futuramente uma foto do ambiente ou mockup da instalação.</p>
+            <p class="muted">Visualização futura</p>
           </div>
         </div>
       </aside>
@@ -210,11 +210,11 @@ const cpfCnpjRule = (v: string) => v.replace(/\D/g, "").length >= 11 || "CNPJ/CP
 const qtdCamerasRule = [(v: number) => v == null || v >= 1 || "Mínimo 1"];
 
 const handleSubmit = async () => {
-  // const valid = await formRef.value?.validate();
-  // if (!valid) {
-  //   console.warn("Formulário inválido");
-  //   return;
-  // }
+  const valid = await formRef.value?.validate();
+  if (!valid) {
+    console.warn("Formulário inválido");
+    return;
+  }
 
   submitting.value = true;
   try {
@@ -222,24 +222,24 @@ const handleSubmit = async () => {
     await solicitarInstalacao(form);
 
     //! Fix
-    // showSnackbar("Solicitação enviada! Entraremos em contato em breve.", "success");
+    showSnackbar("Solicitação enviada! Entraremos em contato em breve.", "success");
 
     // reset
-    // Object.assign(form, {
-    //   estabelecimento: "",
-    //   cnpjCpf: "",
-    //   cep: "",
-    //   endereco: "",
-    //   estado: "",
-    //   cidade: "",
-    //   nome: "",
-    //   telefone: "",
-    //   email: "",
-    //   segmento: "",
-    //   qtdCameras: 1,
-    //   obs: "",
-    // });
-    // formRef.value?.resetValidation();
+    Object.assign(form, {
+      estabelecimento: "",
+      cnpjCpf: "",
+      cep: "",
+      endereco: "",
+      estado: "",
+      cidade: "",
+      nome: "",
+      telefone: "",
+      email: "",
+      segmento: "",
+      qtdCameras: 1,
+      obs: "",
+    });
+    formRef.value?.resetValidation();
   } catch (e) {
     console.error("Erro ao enviar formulário:", e);
 

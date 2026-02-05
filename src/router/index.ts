@@ -145,6 +145,14 @@ const router = createRouter({
   // usa a base do Vite para suportar deploy em subpaths
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // Preserve scroll position on browser back/forward
+    if (savedPosition) {
+      return savedPosition;
+    }
+    // Scroll to top on all new navigations
+    return { top: 0, behavior: 'smooth' };
+  },
 });
 
 // Evita tela branca quando um chunk dinâmico falha ao carregar (PWA/atualização)
