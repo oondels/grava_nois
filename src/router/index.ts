@@ -95,6 +95,46 @@ const routes = [
     ],
   },
   {
+    path: "/client",
+    component: () => import("@/layouts/ClientLayout.vue"),
+    beforeEnter: async (
+      _to: RouteLocationNormalized,
+      _from: RouteLocationNormalized,
+      next: NavigationGuardNext
+    ) => {
+      const authStore = useAuthStore();
+      await authStore.ensureReady();
+
+      if (!authStore.isAuthenticated) return next("/login");
+
+      const user = authStore.user as { role?: string; clientId?: string } | null;
+      const isClient = user?.role === "client" || Boolean(user?.clientId) || user?.role === "admin";
+
+      if (!isClient) return next("/login");
+      return next();
+    },
+    children: [
+      {
+        path: "",
+        name: "ClientDashboard",
+        component: () => import("@/pages/client/ClientDashboard.vue"),
+        props: { title: "Visão Geral" },
+      },
+      {
+        path: "quadra",
+        name: "ClientVenue",
+        component: () => import("@/pages/client/ClientDashboard.vue"),
+        props: { title: "Minha Quadra" },
+      },
+      {
+        path: "financeiro",
+        name: "ClientFinance",
+        component: () => import("@/pages/client/ClientFinance.vue"),
+        props: { title: "Financeiro" },
+      },
+    ],
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/pages/NotFoundPage.vue"),
@@ -105,6 +145,14 @@ const router = createRouter({
   // usa a base do Vite para suportar deploy em subpaths
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // Preserve scroll position on browser back/forward
+    if (savedPosition) {
+      return savedPosition;
+    }
+    // Scroll to top on all new navigations
+    return { top: 0, behavior: 'smooth' };
+  },
 });
 
 // Evita tela branca quando um chunk dinâmico falha ao carregar (PWA/atualização)

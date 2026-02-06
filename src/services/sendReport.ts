@@ -14,9 +14,7 @@ export type ReportPayload = {
 
 export const sendReport = async (payload: ReportPayload) => {
   try {
-    const base = ((import.meta as any).env?.VITE_API_BASE as string | undefined) || "http://82.29.56.105:2399";
-    const endpoint = base.replace(/\/$/, "") + "/send-report";
-    const response = await api.post(endpoint, payload, {
+    const response = await api.post("/notifications/report", payload, {
       withCredentials: false,
       headers: { "Content-Type": "application/json", "X-Skip-Auth": true },
     });

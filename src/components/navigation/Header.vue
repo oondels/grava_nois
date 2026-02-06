@@ -11,37 +11,39 @@
 
       <nav class="hidden md:flex items-center gap-2">
         <HeaderLink to="/" label="Início" />
-        <!-- <HeaderLink to="/contato" label="Contato" /> -->
         <HeaderLink to="/lances-gravanois" label="Meus Vídeos" />
+        <HeaderLink v-if="isClientAccess" to="/client" label="Painel Cliente" />
+        <HeaderLink v-if="auth.isAdmin" to="/admin" label="Painel Admin" />
         <HeaderLink to="/contato" label="Instalar no meu campo" class="nav-cta" />
-        <!-- <HeaderLink to="#faq" label="FAQ" class="opacity-50 pointer-events-none select-none" /> -->
-        <span class="relative">
-          <!-- <HeaderLink to="/login" label="Login" aria-disabled="true" /> -->
-          <HeaderLink to="/register" label="Registrar" aria-disabled="true" />
-          <!-- class="opacity-50 pointer-events-none select-none" -->
-          <!-- <span
-            class="absolute -right-3 -top-2 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/90 text-black font-semibold"
-            >
-            em breve</span
-          > -->
-        </span>
+        
+        <!-- Mostrar Perfil quando autenticado, senão mostrar Login/Registrar -->
+        <HeaderLink v-if="auth.isAuthenticated" to="/user-page" label="Perfil" />
+        <HeaderLink v-else to="/login" label="Login" />
+        <HeaderLink v-if="!auth.isAuthenticated" to="/register" label="Registrar" />
       </nav>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { defineComponent, h, resolveComponent } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { prefetchRoute } from "@/utils/prefetchRoute";
 import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
+import { useAuthStore } from "@/store/auth";
 
 const baseLink =
   "nav-link relative inline-flex items-center px-3 py-2 rounded-lg font-semibold transition hover:bg-black/5 dark:hover:bg-white/10";
 
 const isOpen = ref(false);
 const route = useRoute();
+const auth = useAuthStore();
+
+const isClientAccess = computed(() => {
+  const user = auth.user as { role?: string; clientId?: string } | null;
+  return auth.isAuthenticated && (user?.role === "client" || Boolean(user?.clientId) || auth.isAdmin);
+});
 
 function toggleMenu() {
   isOpen.value = !isOpen.value;

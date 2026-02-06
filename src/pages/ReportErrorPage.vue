@@ -96,7 +96,6 @@ const form = reactive({
   severity: "Média" as "Baixa" | "Média" | "Alta",
   description: "",
   steps: "",
-  name: "",
   email: "",
   page: "Lances / Grava Nóis",
   url: "",
