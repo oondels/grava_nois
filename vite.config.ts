@@ -17,24 +17,65 @@ export default defineConfig({
         "apple-touch-icon-180x180.png",
       ],
       manifest: {
-        name: "Grava Nóis",
-        short_name: "Grava Nóis",
-        description:
-          "Replays esportivos instantâneos — capture, compartilhe e baixe seus melhores lances.",
-        lang: "pt-BR",
-        // start_url e scope absolutos garantem assets corretos mesmo quando iniciado em /auth/*
-        start_url: "/",
-        scope: "/",
-        display: "standalone",
-        background_color: "#0b0b0b",
-        theme_color: "#0b0b0b",
-        icons: [
-          { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
-          { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
-          { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
-          { src: "maskable-icon-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        "name": "Grava Nóis",
+        "short_name": "Grava Nóis",
+        "description": "Replays esportivos instantâneos — capture, compartilhe e baixe seus melhores lances.",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#0b0b0b",
+        "theme_color": "#0b0b0b",
+        "lang": "pt-BR",
+        "scope": "/",
+        "orientation": "portrait",
+        "screenshots": [
+          {
+            "src": "screenshots/home_view.jpeg",
+            "sizes": "783x1600",
+            "type": "image/jpeg",
+            "form_factor": "narrow"
+          },
+          {
+            "src": "screenshots/replays_view.jpeg",
+            "sizes": "783x1600",
+            "type": "image/jpeg",
+            "form_factor": "narrow"
+          }
         ],
-      },
+        "shortcuts": [
+          {
+            "name": "Contato",
+            "url": "/contato"
+          },
+          {
+            "name": "Lances GravaNois",
+            "url": "/lances-gravanois",
+            "description": "Listagem de vídeos gerados e disponíveis para download."
+          },
+          {
+            "name": "Login",
+            "url": "/login"
+          },
+          {
+            "name": "Cadastro",
+            "url": "/register"
+          },
+          {
+            "name": "Página do Usuário",
+            "url": "/user-page"
+          },
+          {
+            "name": "Reportar Problemas",
+            "url": "/reportar-erro"
+          }
+        ],
+        "icons": [
+          { "src": "pwa-64x64.png", "sizes": "64x64", "type": "image/png" },
+          { "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" },
+          { "src": "pwa-512x512.png", "sizes": "512x512", "type": "image/png" },
+          { "src": "maskable-icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+        ]
+      }
+      ,
       workbox: {
         globIgnores: ["**/assets/volleysvg-*.svg", "**/*.ttf", "**/*.eot"],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp}"],
