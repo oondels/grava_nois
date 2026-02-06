@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "br.com.gravanois.twa",
+        "sha256_cert_fingerprints": ["EA:89:9C:3B:97:93:50:7A:3A:05:F7:E7:FA:89:F2:12:52:08:B2:99:81:E5:EF:6E:FE:80:29:5B:40:02:3A:D7"]
+      }
+    }]
