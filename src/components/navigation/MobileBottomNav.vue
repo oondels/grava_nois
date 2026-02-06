@@ -195,6 +195,7 @@ import {
   CircleUserIcon,
   ShieldCheckIcon,
   LayoutDashboard,
+  ContactIcon,
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { useAuthStore } from "@/store/auth";
@@ -234,6 +235,7 @@ const navigationItems = computed<NavItem[]>(() => [
   },
   { label: "Registrar", to: "/register", icon: UserPlus2Icon, disabled: false, requiresAdminAccess: false },
   { label: "Lances", to: "/lances-gravanois", icon: ClapperboardIcon, disabled: false, requiresAdminAccess: false },
+  { label: "Solicitar Instalação", to: "/contato", icon: ContactIcon, disabled: false, requiresAdminAccess: false },
   { label: "Reportar", to: "/reportar-erro", icon: BadgeAlertIcon, disabled: false, requiresAdminAccess: false },
   { label: "Admin", to: "/admin", icon: ShieldCheckIcon, disabled: false, requiresAdminAccess: true },
 ]);

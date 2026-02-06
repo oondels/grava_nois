@@ -39,7 +39,7 @@
         <v-card class="pa-4 d-flex align-center justify-space-between">
           <div>
             <div class="text-medium-emphasis mb-1">Armazenamento</div>
-            <div class="text-h4 font-weight-bold">{{ stats?.storageUsed || "—" }}</div>
+            <div class="text-h4 font-weight-bold">{{ formatStorage(stats?.storageUsed) }}</div>
           </div>
           <div class="rounded-lg bg-black/5 dark:bg-white/10 pa-2">
             <HardDrive :size="28" class="text-info" />
@@ -70,6 +70,20 @@ const mockStats: ClientDashboardStats = {
 function formatNumber(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return value.toLocaleString("pt-BR");
+}
+
+function formatStorage(value?: string | number | null) {
+  if (value === null || value === undefined) return "—";
+  
+  // Se já é uma string formatada (ex: "12.4 GB"), retorna diretamente
+  if (typeof value === "string" && value.includes("GB")) return value;
+  
+  // Converte bytes para GB
+  const bytes = typeof value === "string" ? parseFloat(value) : value;
+  if (Number.isNaN(bytes)) return "—";
+  
+  const gb = bytes / (1024 * 1024 * 1024);
+  return `${gb.toFixed(2)} GB`;
 }
 
 onMounted(async () => {
