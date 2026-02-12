@@ -119,7 +119,7 @@ async function loadProfile() {
   error.value = null;
   try {
     const response = await clientService.getMyProfile();
-    fillForm(response.data);
+    fillForm(response);
   } catch (err: any) {
     error.value = err?.message || "Não foi possível carregar o perfil do cliente.";
   } finally {

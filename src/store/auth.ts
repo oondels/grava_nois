@@ -27,23 +27,25 @@ export interface AuthSession {
 }
 
 export interface GoogleLoginResponse {
-  user: AuthUser;
+  user?: AuthUser;
+  data?: {
+    user: AuthUser;
+  },
   status: number;
   message: string;
 }
 
 export const useAuthStore = defineStore("auth", () => {
   const session = ref<AuthSession | null>(null);
-  const token = ref<string | null>(null);
   const loading = ref(false);
 
-  const isCheckingUser = ref(false)
+  const isCheckingUser = ref(false);
   const isReady = ref(false);
+  const isAuthenticated = ref(false);
   let initPromise: Promise<void> | null = null;
 
-  const user = computed<AuthUser | null>(() => session?.value?.user ?? null);
+  const user = computed<AuthUser | null>(() => session.value?.user ?? null);
   const isAdmin = computed(() => user.value?.role === "admin");
-  const isAuthenticated = computed(() => session.value !== null);
   const isGoogleUser = computed(() => session.value?.provider === "google");
 
   // Sinalização para sugerir sincronização de dados do Google -> Perfil
@@ -92,73 +94,67 @@ export const useAuthStore = defineStore("auth", () => {
     };
   }
 
-  async function refreshUserData() {
-    try {
-      const { data } = await api.get("/auth/me");
-      const foundedUser = data.foundedUser;
-      if (!foundedUser) return null;
-
-      session.value = {
-        user: buildAuthUser(foundedUser),
-        loggedAt: new Date().toISOString(),
-        provider: data.provider || session.value?.provider || "email",
-      };
-
-      isReady.value = true;
-      return session.value;
-    } catch {
-      return null;
-    }
+  function setAuthenticatedSession(rawUser: any, provider = "email") {
+    session.value = {
+      user: buildAuthUser(rawUser),
+      loggedAt: new Date().toISOString(),
+      provider,
+    };
+    isAuthenticated.value = true;
   }
 
-  async function afterAuthSuccess(sessionOrUser?: AuthSession | AuthUser | null, providerOverride?: string) {
-    if (sessionOrUser) {
-      const provider =
-        providerOverride ||
-        ("provider" in sessionOrUser ? sessionOrUser.provider : undefined) ||
-        session.value?.provider ||
-        "email";
-
-      const nextUser = "user" in sessionOrUser ? sessionOrUser.user : sessionOrUser;
-      session.value = {
-        user: buildAuthUser(nextUser),
-        loggedAt: new Date().toISOString(),
-        provider,
-      };
-
-      isReady.value = true;
-    }
-
-    await refreshUserData();
+  function clearSession() {
+    console.log('Clearing session...');
+    
+    session.value = null;
+    isAuthenticated.value = false;
   }
 
-  async function init() {
+  async function checkAuth() {
     isCheckingUser.value = true;
 
     try {
       const { data } = await api.get("/auth/me");
-      const user = data.foundedUser;
+      const foundedUser = data?.data?.user
 
-      session.value = {
-        user: buildAuthUser(user),
-        loggedAt: new Date().toISOString(),
-        provider: data.provider || 'email'
+      if (!foundedUser) {
+        if (import.meta.env.DEV) console.log('[/auth/me] - Clearing sesison');
+        
+        clearSession();
+        return null;
       }
+
+      setAuthenticatedSession(foundedUser, data?.provider || session.value?.provider || "email");
+      return session.value;
     } catch (error: any) {
-      session.value = null;
-    }
-    finally {
+      // Só limpa a sessão se o servidor respondeu explicitamente 401/403
+      // Erros de rede (sem response) não devem deslogar o usuário
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        if (import.meta.env.DEV) console.log('[401/403] - Clearing sesison');
+        clearSession();
+      } else if (!error?.response) {
+        // Erro de rede — mantém sessão existente (se houver), não desloga
+        console.warn("[auth] checkAuth falhou por erro de rede, mantendo sessão atual");
+      } else {
+        // Outros erros do servidor (500, etc.) — mantém sessão por segurança
+        console.warn(`[auth] checkAuth falhou com status ${status}, mantendo sessão atual`);
+      }
+      return null;
+    } finally {
       isCheckingUser.value = false;
       isReady.value = true;
     }
   }
+
+  const init = checkAuth;
 
   async function ensureReady(): Promise<void> {
     if (isReady.value) return;
     if (initPromise) return initPromise;
 
     initPromise = (async () => {
-      await init();
+      await checkAuth();
     })().finally(() => {
       initPromise = null;
     });
@@ -175,8 +171,7 @@ export const useAuthStore = defineStore("auth", () => {
         { email, password: pass, name: metadata?.name },
       );
 
-      // Backend sets grn_access_token cookie, now fetch full user profile
-      await init();
+      await checkAuth();
 
       return {
         user: session.value?.user || null,
@@ -209,32 +204,44 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const { data } = await api.post<GoogleLoginResponse>("/auth/google", { idToken: credential });
 
-      await afterAuthSuccess(data.user, "google");
+      const userData = data?.data?.user;
+      if (userData) {
+        setAuthenticatedSession(userData, "google");
+      } else {
+        await checkAuth();
+      }
+
       return data;
     } finally {
       loading.value = false;
     }
   }
-
-  async function signInWithEmail(email: string, password: string) {
+  
+  async function login(email: string, password: string) {
     loading.value = true;
     try {
-      await api.post(
+      const { data } = await api.post(
         "/auth/sign-in",
         { email, password },
       );
 
-      // Backend sets grn_access_token cookie, now fetch full user profile
-      await afterAuthSuccess();
-      
+      const foundedUser = data?.data?.user;
+      if (foundedUser) {
+        if (import.meta.env.DEV) {
+          console.log('[login] - Usuario logado');
+          console.log(foundedUser);
+        }
+        setAuthenticatedSession(foundedUser, foundedUser.provider || "email");
+      } else {
+        await checkAuth();
+      }
+
       return session.value;
     } catch (error: any) {
       const status = error.response?.status;
       const message = error.response?.data?.message;
 
       if (status === 401 || status === 404) {
-        console.log(error);
-        
         throw new Error("Email ou senha incorretos.");
       } else if (status === 403) {
         throw new Error("Usuário inativo. Entre em contato com o suporte.");
@@ -246,6 +253,10 @@ export const useAuthStore = defineStore("auth", () => {
     } finally {
       loading.value = false;
     }
+  }
+
+  async function signInWithEmail(email: string, password: string) {
+    return login(email, password);
   }
 
   async function updatePassword(newPassword: string) {
@@ -261,16 +272,18 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  function setToken(nextToken: string | null) {
-    token.value = nextToken;
-  }
-
-  async function logout() {
+  /**
+   * Desloga o usuário. 
+   * @param skipApi Se true, apenas limpa o estado local sem chamar a API (usado pelo interceptor em falha de refresh)
+   */
+  async function logout(skipApi = false) {
     try {
-      await api.post("/auth/sign-out", {}, { _skipRefresh: true } as any);
+      if (!skipApi) {
+        await api.post("/auth/sign-out", {}, { _skipRefresh: true } as any);
+      }
     } finally {
-      session.value = null;
-      token.value = null;
+      clearSession();
+      if (import.meta.env.DEV) console.log('[logout] - Clearing sesison');
       isReady.value = true;
     }
   }
@@ -281,9 +294,9 @@ export const useAuthStore = defineStore("auth", () => {
 
   return {
     init,
+    checkAuth,
     ensureReady,
     session,
-    token,
     user,
     safeUser,
     isAdmin,
@@ -292,7 +305,7 @@ export const useAuthStore = defineStore("auth", () => {
     needsGoogleSyncPrompt,
     googleSyncSuggestion,
     loading,
-    setToken,
+    login,
     signInWithGoogleCredential,
     signInWithEmail,
     signOut,

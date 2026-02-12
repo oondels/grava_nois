@@ -302,7 +302,7 @@ async function fetchPage(quadraId: string | null = null) {
       venueId: venueId,
     })) as VideoListResponse;
 
-    state.items = data.items;
+    state.items = data.videos;
     state.hasMore = data.hasMore;
     state.token = data.nextToken || undefined;
   } catch (e: any) {
@@ -432,7 +432,7 @@ watch(
   (newVal, oldVal) => {
     if (newVal === oldVal) return;
 
-    refresh();
+    if (!import.meta.env.DEV) refresh();
     if (newVal && newVal.id) {
       localStorage.setItem("grn-last-quadra-id", newVal.id);
     } else {
@@ -451,7 +451,7 @@ onMounted(() => {
 
   setTimeout(async () => {
     // focusQuadra();
-    fetchPage()
+    if (!import.meta.env.DEV) fetchPage()
   }, 500);
 
   getLastOrUniqueQuadra();

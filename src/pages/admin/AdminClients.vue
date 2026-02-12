@@ -142,8 +142,8 @@ async function fetchClients() {
       limit: itemsPerPage.value,
       search: search.value || undefined,
     });
-    items.value = response.data.clients;
-    total.value = response.data.total;
+    items.value = response.clients;
+    total.value = response.total;
   } finally {
     loading.value = false;
   }
@@ -196,4 +196,3 @@ watch(search, () => {
 
 onMounted(fetchClients);
 </script>
-

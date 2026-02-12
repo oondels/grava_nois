@@ -1,11 +1,5 @@
 import { api } from "@/services/api";
-
-export type ApiResponse<T> = {
-  success: boolean;
-  data: T;
-  requestId?: string;
-  message?: string;
-};
+import type { ApiResponse } from "@/types/Api";
 
 export type ClientProfile = {
   id?: string;
@@ -25,14 +19,14 @@ export type ClientProfileUpdate = {
   responsiblePhone?: string | null;
 };
 
-async function getMyProfile(): Promise<ApiResponse<ClientProfile>> {
-  const { data } = await api.get<ApiResponse<ClientProfile>>("/client/profile");
-  return data;
+async function getMyProfile(): Promise<ClientProfile> {
+  const response = await api.get<ApiResponse<ClientProfile>>("/client/profile");
+  return response.data.data;
 }
 
-async function updateProfile(payload: ClientProfileUpdate): Promise<ApiResponse<ClientProfile>> {
-  const { data } = await api.patch<ApiResponse<ClientProfile>>("/client/profile", payload);
-  return data;
+async function updateProfile(payload: ClientProfileUpdate): Promise<ClientProfile> {
+  const response = await api.patch<ApiResponse<ClientProfile>>("/client/profile", payload);
+  return response.data.data;
 }
 
 export const clientService = {

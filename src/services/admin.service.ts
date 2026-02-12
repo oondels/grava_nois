@@ -1,11 +1,5 @@
 import { api } from "@/services/api";
-
-export type ApiResponse<T> = {
-  success: boolean;
-  data: T;
-  requestId?: string;
-  message?: string;
-};
+import type { ApiResponse } from "@/types/Api";
 
 export type DashboardStats = {
   totalUsers: { active: number; inactive: number };
@@ -100,47 +94,63 @@ export type UpdateClientPayload = {
 };
 
 export type UpdateUserResponse = {
-  success: boolean;
-  message: string;
   user: AdminUser;
-  requestId?: string;
 };
 
 export type UpdateClientResponse = {
-  success: boolean;
-  message: string;
   client: AdminClient;
-  requestId?: string;
 };
 
-async function getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
-  const { data } = await api.get<ApiResponse<DashboardStats>>("/admin/dashboard");
-  return data;
+async function getDashboardStats(): Promise<DashboardStats> {
+  const response = await api.get<ApiResponse<DashboardStats>>("/admin/dashboard");
+  return response.data.data;
 }
 
-async function getUsers(params?: UsersQuery) {
-  const { data } = await api.get<ApiResponse<UsersList>>("/admin/users", { params });
-  return data;
+async function getUsers(params?: UsersQuery): Promise<UsersList> {
+  const response = await api.get<ApiResponse<UsersList>>("/admin/users", { params });
+  const payload = response.data.data;
+  const meta = response.data.meta;
+
+  return {
+    users: payload?.users ?? [],
+    total: payload?.total ?? meta?.total ?? 0,
+    page: payload?.page ?? meta?.page ?? params?.page ?? 1,
+    limit: payload?.limit ?? meta?.limit ?? params?.limit ?? 20,
+  };
 }
 
-async function getClients(params?: ClientsQuery) {
-  const { data } = await api.get<ApiResponse<ClientsList>>("/admin/clients", { params });
-  return data;
+async function getClients(params?: ClientsQuery): Promise<ClientsList> {
+  const response = await api.get<ApiResponse<ClientsList>>("/admin/clients", { params });
+  const payload = response.data.data;
+  const meta = response.data.meta;
+
+  return {
+    clients: payload?.clients ?? [],
+    total: payload?.total ?? meta?.total ?? 0,
+    page: payload?.page ?? meta?.page ?? params?.page ?? 1,
+    limit: payload?.limit ?? meta?.limit ?? params?.limit ?? 20,
+  };
 }
 
-async function getVenues(params?: VenuesQuery) {
-  const { data } = await api.get<ApiResponse<AdminVenue[]>>("/admin/venues", { params });
-  return data;
+async function getVenues(params?: VenuesQuery): Promise<AdminVenue[]> {
+  const response = await api.get<ApiResponse<AdminVenue[] | { items?: AdminVenue[] }>>("/admin/venues", { params });
+  const payload = response.data.data;
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  return payload?.items ?? [];
 }
 
-async function updateUser(id: string, payload: UpdateUserPayload) {
-  const { data } = await api.patch<UpdateUserResponse>(`/admin/users/${id}`, payload);
-  return data;
+async function updateUser(id: string, payload: UpdateUserPayload): Promise<UpdateUserResponse> {
+  const response = await api.patch<ApiResponse<UpdateUserResponse>>(`/admin/users/${id}`, payload);
+  return response.data.data;
 }
 
-async function updateClient(id: string, payload: UpdateClientPayload) {
-  const { data } = await api.patch<UpdateClientResponse>(`/admin/clients/${id}`, payload);
-  return data;
+async function updateClient(id: string, payload: UpdateClientPayload): Promise<UpdateClientResponse> {
+  const response = await api.patch<ApiResponse<UpdateClientResponse>>(`/admin/clients/${id}`, payload);
+  return response.data.data;
 }
 
 export const adminService = {

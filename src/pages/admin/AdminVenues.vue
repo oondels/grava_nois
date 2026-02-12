@@ -94,7 +94,7 @@ async function fetchVenues() {
   error.value = null;
   try {
     const response = await adminService.getVenues();
-    items.value = response.data;
+    items.value = response;
   } catch (err: any) {
     error.value = err?.message || "Não foi possível carregar as quadras.";
   } finally {
@@ -104,4 +104,3 @@ async function fetchVenues() {
 
 onMounted(fetchVenues);
 </script>
-

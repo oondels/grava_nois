@@ -132,8 +132,8 @@ async function fetchUsers() {
       search: search.value || undefined,
       role: roleFilter.value || undefined,
     });
-    items.value = response.data.users;
-    total.value = response.data.total;
+    items.value = response.users;
+    total.value = response.total;
   } finally {
     loading.value = false;
   }
@@ -173,4 +173,3 @@ async function saveUser() {
 
 onMounted(fetchUsers);
 </script>
-

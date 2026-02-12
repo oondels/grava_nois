@@ -1,4 +1,5 @@
 // Tipos e cliente HTTP para listagem de vídeos
+import type { ApiResponse } from "@/types/Api";
 
 export type VideoListItem = {
   clip_id: string;
@@ -13,7 +14,7 @@ export type VideoListItem = {
 };
 
 export type VideoListResponse = {
-  items: VideoListItem[];
+  videos: VideoListItem[];
   count: number;
   hasMore: boolean;
   nextToken: string | null;
@@ -55,10 +56,24 @@ export async function fetchVideos({
   const url = `${baseUrl}/api/videos/list?${params.toString()}`;
 
   const res = await fetch(url, { credentials: 'include' });
+  const body = await res.json().catch(() => null as ApiResponse<VideoListResponse> | VideoListResponse | null);
   if (!res.ok) {
-    const err = await res.json().catch(() => ({} as any));
-    throw new Error((err as any).error || 'Falha ao listar vídeos');
+    const message =
+      (body && "message" in body && typeof body.message === "string" ? body.message : undefined) ||
+      (body && "error" in body && body.error && typeof body.error === "object" && "code" in body.error
+        ? String(body.error.code)
+        : undefined) ||
+      'Falha ao listar vídeos';
+    throw new Error(message);
   }
-  return res.json();
-}
 
+  if (!body) {
+    throw new Error('Resposta vazia ao listar vídeos');
+  }
+
+  if ("data" in body && body.data && typeof body.data === "object") {
+    return body.data as VideoListResponse;
+  }
+
+  return body as VideoListResponse;
+}

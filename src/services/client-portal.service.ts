@@ -1,11 +1,5 @@
 import { api } from "@/services/api";
-
-export type ApiResponse<T> = {
-  success: boolean;
-  data: T;
-  requestId?: string;
-  message?: string;
-};
+import type { ApiResponse } from "@/types/Api";
 
 export type ClientDashboardStats = {
   totalVideos: number;
@@ -26,16 +20,16 @@ export type ClientInvoice = {
   status: "paid" | "pending";
 };
 
-async function getDashboardStats(): Promise<ApiResponse<ClientDashboardStats>> {
-  const { data } = await api.get<ApiResponse<ClientDashboardStats>>("/api/clients/me/stats");
-  return data;
+async function getDashboardStats(): Promise<ClientDashboardStats> {
+  const response = await api.get<ApiResponse<ClientDashboardStats>>("/api/clients/me/stats");
+  return response.data.data;
 }
 
-async function getSubscriptionStatus(): Promise<ApiResponse<ClientSubscriptionStatus>> {
+async function getSubscriptionStatus(): Promise<ClientSubscriptionStatus> {
   throw new Error("Not implemented");
 }
 
-async function getInvoices(): Promise<ApiResponse<ClientInvoice[]>> {
+async function getInvoices(): Promise<ClientInvoice[]> {
   throw new Error("Not implemented");
 }
 

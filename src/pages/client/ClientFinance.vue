@@ -180,8 +180,8 @@ onMounted(async () => {
       clientPortalService.getSubscriptionStatus(),
       clientPortalService.getInvoices(),
     ]);
-    subscription.value = subscriptionResponse.data;
-    invoices.value = invoicesResponse.data;
+    subscription.value = subscriptionResponse;
+    invoices.value = invoicesResponse;
   } catch {
     usingMock.value = true;
     subscription.value = mockSubscription;
