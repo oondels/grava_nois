@@ -14,7 +14,7 @@ export type VideoListItem = {
 };
 
 export type VideoListResponse = {
-  items: VideoListItem[];
+  videos: VideoListItem[];
   count: number;
   hasMore: boolean;
   nextToken: string | null;

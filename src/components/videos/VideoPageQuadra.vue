@@ -302,7 +302,7 @@ async function fetchPage(quadraId: string | null = null) {
       venueId: venueId,
     })) as VideoListResponse;
 
-    state.items = data.items;
+    state.items = data.videos;
     state.hasMore = data.hasMore;
     state.token = data.nextToken || undefined;
   } catch (e: any) {
