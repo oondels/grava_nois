@@ -66,9 +66,30 @@ Principais endpoints consumidos pela aplicação:
 - `GET /api/videos/sign` (URLs assinadas para `preview` e `download`)
 - `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/clients`, `GET /admin/venues`
 - `PATCH /admin/users/:id`, `PATCH /admin/clients/:id`
-- `POST /send-report` e `POST /send-email`
+- `POST /notifications/report` e `POST /notifications/contact`
 
 Observação: os serviços de relatório e solicitação de instalação usam `X-Skip-Auth` para não exigir sessão.
+
+### Padrão de resposta (Envelope)
+A API adota o formato padrão abaixo:
+
+```ts
+type ApiResponse<T> = {
+  success: boolean;
+  data: T;
+  message?: string;
+  error?: { code: string; details?: any };
+  requestId?: string;
+  meta?: { page?: number; limit?: number; total?: number };
+};
+```
+
+Regras implementadas no frontend:
+- Tipar as chamadas com `ApiResponse<T>` (ex.: `api.get<ApiResponse<User[]>>()`).
+- Extrair o payload real com `response.data.data`.
+- Em endpoints paginados, considerar também `response.data.meta` para `page`, `limit` e `total`.
+- No interceptor de erro, priorizar `response.data.message` e fallback para `response.data.error.code`, expondo a mensagem amigável em `error.message`.
+- A estratégia de autenticação com cookies HttpOnly (`withCredentials`) permanece inalterada.
 
 ## PWA
 - Registro automático de Service Worker com atualização.

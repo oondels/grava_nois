@@ -196,7 +196,7 @@ export const useAuthStore = defineStore("auth", () => {
       loading.value = false;
     }
   }
-
+  
   async function login(email: string, password: string) {
     loading.value = true;
     try {
@@ -205,7 +205,9 @@ export const useAuthStore = defineStore("auth", () => {
         { email, password },
       );
 
-      const foundedUser = data?.foundedUser ?? data?.user;
+      const foundedUser = data?.data?.user;
+      console.log("usuario logado");
+      console.log(foundedUser);
       if (foundedUser) {
         setAuthenticatedSession(foundedUser, data?.provider || "email");
       } else {
@@ -218,8 +220,6 @@ export const useAuthStore = defineStore("auth", () => {
       const message = error.response?.data?.message;
 
       if (status === 401 || status === 404) {
-        console.log(error);
-        
         throw new Error("Email ou senha incorretos.");
       } else if (status === 403) {
         throw new Error("Usuário inativo. Entre em contato com o suporte.");

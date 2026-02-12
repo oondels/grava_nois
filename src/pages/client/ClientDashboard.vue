@@ -90,7 +90,7 @@ onMounted(async () => {
   loading.value = true;
   try {
     const response = await clientPortalService.getDashboardStats();
-    stats.value = response.data;
+    stats.value = response;
   } catch {
     usingMock.value = true;
     stats.value = mockStats;
