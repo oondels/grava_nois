@@ -34,16 +34,15 @@ export interface GoogleLoginResponse {
 
 export const useAuthStore = defineStore("auth", () => {
   const session = ref<AuthSession | null>(null);
-  const token = ref<string | null>(null);
   const loading = ref(false);
 
-  const isCheckingUser = ref(false)
+  const isCheckingUser = ref(false);
   const isReady = ref(false);
+  const isAuthenticated = ref(false);
   let initPromise: Promise<void> | null = null;
 
-  const user = computed<AuthUser | null>(() => session?.value?.user ?? null);
+  const user = computed<AuthUser | null>(() => session.value?.user ?? null);
   const isAdmin = computed(() => user.value?.role === "admin");
-  const isAuthenticated = computed(() => session.value !== null);
   const isGoogleUser = computed(() => session.value?.provider === "google");
 
   // Sinalização para sugerir sincronização de dados do Google -> Perfil
@@ -92,73 +91,51 @@ export const useAuthStore = defineStore("auth", () => {
     };
   }
 
-  async function refreshUserData() {
-    try {
-      const { data } = await api.get("/auth/me");
-      const foundedUser = data.foundedUser;
-      if (!foundedUser) return null;
-
-      session.value = {
-        user: buildAuthUser(foundedUser),
-        loggedAt: new Date().toISOString(),
-        provider: data.provider || session.value?.provider || "email",
-      };
-
-      isReady.value = true;
-      return session.value;
-    } catch {
-      return null;
-    }
+  function setAuthenticatedSession(rawUser: any, provider = "email") {
+    session.value = {
+      user: buildAuthUser(rawUser),
+      loggedAt: new Date().toISOString(),
+      provider,
+    };
+    isAuthenticated.value = true;
   }
 
-  async function afterAuthSuccess(sessionOrUser?: AuthSession | AuthUser | null, providerOverride?: string) {
-    if (sessionOrUser) {
-      const provider =
-        providerOverride ||
-        ("provider" in sessionOrUser ? sessionOrUser.provider : undefined) ||
-        session.value?.provider ||
-        "email";
-
-      const nextUser = "user" in sessionOrUser ? sessionOrUser.user : sessionOrUser;
-      session.value = {
-        user: buildAuthUser(nextUser),
-        loggedAt: new Date().toISOString(),
-        provider,
-      };
-
-      isReady.value = true;
-    }
-
-    await refreshUserData();
+  function clearSession() {
+    session.value = null;
+    isAuthenticated.value = false;
   }
 
-  async function init() {
+  async function checkAuth() {
     isCheckingUser.value = true;
 
     try {
       const { data } = await api.get("/auth/me");
-      const user = data.foundedUser;
+      const foundedUser = data?.foundedUser ?? data?.user;
 
-      session.value = {
-        user: buildAuthUser(user),
-        loggedAt: new Date().toISOString(),
-        provider: data.provider || 'email'
+      if (!foundedUser) {
+        clearSession();
+        return null;
       }
-    } catch (error: any) {
-      session.value = null;
-    }
-    finally {
+
+      setAuthenticatedSession(foundedUser, data?.provider || session.value?.provider || "email");
+      return session.value;
+    } catch {
+      clearSession();
+      return null;
+    } finally {
       isCheckingUser.value = false;
       isReady.value = true;
     }
   }
+
+  const init = checkAuth;
 
   async function ensureReady(): Promise<void> {
     if (isReady.value) return;
     if (initPromise) return initPromise;
 
     initPromise = (async () => {
-      await init();
+      await checkAuth();
     })().finally(() => {
       initPromise = null;
     });
@@ -175,8 +152,7 @@ export const useAuthStore = defineStore("auth", () => {
         { email, password: pass, name: metadata?.name },
       );
 
-      // Backend sets grn_access_token cookie, now fetch full user profile
-      await init();
+      await checkAuth();
 
       return {
         user: session.value?.user || null,
@@ -209,24 +185,33 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const { data } = await api.post<GoogleLoginResponse>("/auth/google", { idToken: credential });
 
-      await afterAuthSuccess(data.user, "google");
+      if (data?.user) {
+        setAuthenticatedSession(data.user, "google");
+      } else {
+        await checkAuth();
+      }
+
       return data;
     } finally {
       loading.value = false;
     }
   }
 
-  async function signInWithEmail(email: string, password: string) {
+  async function login(email: string, password: string) {
     loading.value = true;
     try {
-      await api.post(
+      const { data } = await api.post(
         "/auth/sign-in",
         { email, password },
       );
 
-      // Backend sets grn_access_token cookie, now fetch full user profile
-      await afterAuthSuccess();
-      
+      const foundedUser = data?.foundedUser ?? data?.user;
+      if (foundedUser) {
+        setAuthenticatedSession(foundedUser, data?.provider || "email");
+      } else {
+        await checkAuth();
+      }
+
       return session.value;
     } catch (error: any) {
       const status = error.response?.status;
@@ -248,6 +233,10 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
+  async function signInWithEmail(email: string, password: string) {
+    return login(email, password);
+  }
+
   async function updatePassword(newPassword: string) {
   }
 
@@ -261,16 +250,11 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  function setToken(nextToken: string | null) {
-    token.value = nextToken;
-  }
-
   async function logout() {
     try {
       await api.post("/auth/sign-out", {}, { _skipRefresh: true } as any);
     } finally {
-      session.value = null;
-      token.value = null;
+      clearSession();
       isReady.value = true;
     }
   }
@@ -281,9 +265,9 @@ export const useAuthStore = defineStore("auth", () => {
 
   return {
     init,
+    checkAuth,
     ensureReady,
     session,
-    token,
     user,
     safeUser,
     isAdmin,
@@ -292,7 +276,7 @@ export const useAuthStore = defineStore("auth", () => {
     needsGoogleSyncPrompt,
     googleSyncSuggestion,
     loading,
-    setToken,
+    login,
     signInWithGoogleCredential,
     signInWithEmail,
     signOut,
