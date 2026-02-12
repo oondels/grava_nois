@@ -6,6 +6,12 @@ export type DashboardStats = {
   totalClients: number;
   totalVenues: { online: number; offline: number };
   totalVideos: number;
+  dashboard?: {
+    totalUsers: { active: number; inactive: number };
+    totalClients: number;
+    totalVenues: { online: number; offline: number };
+    totalVideos: number;
+  }
 };
 
 export type AdminUser = {
@@ -39,6 +45,7 @@ export type AdminVenue = {
   isOnline?: boolean;
   client?: AdminClient | null;
   [key: string]: unknown;
+  venues?: AdminVenue[];
 };
 
 export type UsersList = {
@@ -133,14 +140,15 @@ async function getClients(params?: ClientsQuery): Promise<ClientsList> {
 }
 
 async function getVenues(params?: VenuesQuery): Promise<AdminVenue[]> {
-  const response = await api.get<ApiResponse<AdminVenue[] | { items?: AdminVenue[] }>>("/admin/venues", { params });
-  const payload = response.data.data;
+  const response = await api.get<ApiResponse<AdminVenue[] | { venues?: AdminVenue[] }>>("/admin/venues", { params });
+  const data = response?.data?.data;
+  const payload = Array.isArray(data) ? data : data?.venues;
 
   if (Array.isArray(payload)) {
     return payload;
   }
 
-  return payload?.items ?? [];
+  return payload ?? [];
 }
 
 async function updateUser(id: string, payload: UpdateUserPayload): Promise<UpdateUserResponse> {

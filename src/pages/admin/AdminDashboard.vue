@@ -48,7 +48,8 @@ onMounted(async () => {
   error.value = null;
   try {
     const response = await adminService.getDashboardStats();
-    stats.value = response;
+    const dashData = response.dashboard
+    stats.value = dashData ?? null;
   } catch (err: any) {
     error.value = err?.message || "Não foi possível carregar o dashboard.";
   } finally {
