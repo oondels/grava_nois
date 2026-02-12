@@ -27,7 +27,10 @@ export interface AuthSession {
 }
 
 export interface GoogleLoginResponse {
-  user: AuthUser;
+  user?: AuthUser;
+  data?: {
+    user: AuthUser;
+  },
   status: number;
   message: string;
 }
@@ -101,6 +104,8 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function clearSession() {
+    console.log('Clearing session...');
+    
     session.value = null;
     isAuthenticated.value = false;
   }
@@ -110,17 +115,31 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       const { data } = await api.get("/auth/me");
-      const foundedUser = data?.foundedUser ?? data?.user;
+      const foundedUser = data?.data?.user
 
       if (!foundedUser) {
+        if (import.meta.env.DEV) console.log('[/auth/me] - Clearing sesison');
+        
         clearSession();
         return null;
       }
 
       setAuthenticatedSession(foundedUser, data?.provider || session.value?.provider || "email");
       return session.value;
-    } catch {
-      clearSession();
+    } catch (error: any) {
+      // Só limpa a sessão se o servidor respondeu explicitamente 401/403
+      // Erros de rede (sem response) não devem deslogar o usuário
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        if (import.meta.env.DEV) console.log('[401/403] - Clearing sesison');
+        clearSession();
+      } else if (!error?.response) {
+        // Erro de rede — mantém sessão existente (se houver), não desloga
+        console.warn("[auth] checkAuth falhou por erro de rede, mantendo sessão atual");
+      } else {
+        // Outros erros do servidor (500, etc.) — mantém sessão por segurança
+        console.warn(`[auth] checkAuth falhou com status ${status}, mantendo sessão atual`);
+      }
       return null;
     } finally {
       isCheckingUser.value = false;
@@ -185,8 +204,9 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const { data } = await api.post<GoogleLoginResponse>("/auth/google", { idToken: credential });
 
-      if (data?.user) {
-        setAuthenticatedSession(data.user, "google");
+      const userData = data?.data?.user;
+      if (userData) {
+        setAuthenticatedSession(userData, "google");
       } else {
         await checkAuth();
       }
@@ -206,10 +226,12 @@ export const useAuthStore = defineStore("auth", () => {
       );
 
       const foundedUser = data?.data?.user;
-      console.log("usuario logado");
-      console.log(foundedUser);
       if (foundedUser) {
-        setAuthenticatedSession(foundedUser, data?.provider || "email");
+        if (import.meta.env.DEV) {
+          console.log('[login] - Usuario logado');
+          console.log(foundedUser);
+        }
+        setAuthenticatedSession(foundedUser, foundedUser.provider || "email");
       } else {
         await checkAuth();
       }
@@ -250,11 +272,18 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  async function logout() {
+  /**
+   * Desloga o usuário. 
+   * @param skipApi Se true, apenas limpa o estado local sem chamar a API (usado pelo interceptor em falha de refresh)
+   */
+  async function logout(skipApi = false) {
     try {
-      await api.post("/auth/sign-out", {}, { _skipRefresh: true } as any);
+      if (!skipApi) {
+        await api.post("/auth/sign-out", {}, { _skipRefresh: true } as any);
+      }
     } finally {
       clearSession();
+      if (import.meta.env.DEV) console.log('[logout] - Clearing sesison');
       isReady.value = true;
     }
   }

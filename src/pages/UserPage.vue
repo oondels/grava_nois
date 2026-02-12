@@ -284,15 +284,10 @@ import { useAuthStore } from "@/store/auth";
 import {
   UserIcon,
   MapPinIcon,
-  SettingsIcon,
   MapIcon,
   BuildingIcon,
   PlusIcon,
-  ShieldIcon,
-  LockIcon,
-  SmartphoneIcon,
   HelpCircleIcon,
-  MessageCircleIcon,
   MailIcon,
   LogOutIcon,
   Edit3Icon,
@@ -317,8 +312,6 @@ const authStore = useAuthStore();
 
 // Dados do usuário (sanitizados pos login)
 const user = computed(() => authStore.safeUser);
-// Dados filtrados do usuário (do localStorage)
-const userData = ref({} as any);
 
 // Estados dos modais
 const showProfileEdit = ref(false);
@@ -374,8 +367,6 @@ const rules = {
   },
 };
 
-// Quadras vinculadas ao usuário (vêm do backend grn_auth.profiles.quadras)
-const quadrasVinculadas = ref<QuadraItem[]>([]);
 
 const canLinkSelected = computed(() => {
   if (!selectedQuadra.value) return false;
@@ -383,25 +374,19 @@ const canLinkSelected = computed(() => {
 });
 
 const linkingQuadra = ref(false);
+// Quadras vinculadas ao usuário (vêm do backend grn_auth.profiles.quadras)
+const quadrasVinculadas = ref<QuadraItem[]>([]);
 
 async function fetchUserQuadras() {
   try {
-    // Tenta localStorage primeiro (rápido)
-    let fromLs: any = null;
-    try {
-      const raw = localStorage.getItem("grn-user");
-      if (raw) fromLs = safeJsonParse(raw);
-    } catch {}
+    let quadras = user.value?.quadrasFiliadas
 
-    let quadras: any[] = Array.isArray(fromLs?.quadrasFiliadas) ? fromLs.quadrasFiliadas : [];
-
-    // Se vazio ou sem LS, busca do backend para garantir frescor
-    if (!quadras.length) {
-      const userId = authStore.user?.id || authStore.safeUser?.id;
+    if (!quadras?.length) {
+      const userId = user?.value?.id;
       if (userId) {
         const res = await api.get(`/users/${userId}`);
 
-        const profile = res.data?.user ?? null;
+        const profile = res.data?.data?.user ?? null;
         if (Array.isArray(profile?.quadrasFiliadas)) quadras = profile.quadrasFiliadas;
       }
     }
@@ -452,7 +437,7 @@ function fetchUserLocations() {
 
 async function linkSelectedQuadra() {
   if (!selectedQuadra.value) return;
-  const userId = authStore.user?.id || authStore.safeUser?.id;
+  const userId = user?.value?.id
   if (!userId) {
     notify("É necessário estar logado.", "error");
     return;
@@ -486,16 +471,6 @@ async function linkSelectedQuadra() {
     }
 
     notify("Quadra vinculada com sucesso!", "success");
-
-    // Atualiza cache local, se existir
-    const userDataRaw = localStorage.getItem("grn-user");
-    if (userDataRaw) {
-      const userData = safeJsonParse<any>(userDataRaw);
-      if (userData) {
-        userData.quadras = next;
-        localStorage.setItem("grn-user", JSON.stringify(userData));
-      }
-    }
     selectedQuadra.value = null;
     showAddQuadra.value = false;
   } catch (e: any) {
@@ -673,7 +648,7 @@ const saveProfile = async () => {
 };
 
 const saveLocation = async () => {
-  const userId = authStore.user?.id || authStore.safeUser?.id;
+  const userId = user?.value?.id
   if (!userId) {
     notify("É necessário estar logado.", "error");
     return;
@@ -700,16 +675,6 @@ const saveLocation = async () => {
     };
 
     await api.patch(`/users/${userId}/location`, payload);
-
-    // Atualiza cache local, se existir
-    try {
-      const raw = localStorage.getItem("grn-user");
-      const stored = raw ? safeJsonParse<any>(raw) : null;
-      if (stored) {
-        const next = { ...stored, location: payload };
-        localStorage.setItem("grn-user", JSON.stringify(next));
-      }
-    } catch {}
 
     showLocationEdit.value = false;
     notify("Localização atualizada com sucesso!", "success");
@@ -743,9 +708,6 @@ const goBack = () => {
 };
 
 onMounted(() => {
-  const storedUser = localStorage.getItem("grn-user");
-  userData.value = storedUser ? safeJsonParse(storedUser) : null;
-
   fetchUserQuadras();
   fetchUserLocations();
 });

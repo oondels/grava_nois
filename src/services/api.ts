@@ -121,9 +121,13 @@ export function setupInterceptors(store: any, router: any) {
         } catch (refreshError) {
           const normalizedRefreshError = enrichAxiosErrorMessage(refreshError);
           processQueue(normalizedRefreshError, null);
+          // skipApi=true: apenas limpa estado local, sem cascata de requests
           try {
-            await store?.logout?.();
-          } finally {
+            await store?.logout?.(true);
+          } catch { /* ignora erro no logout */ }
+
+          // Só redireciona se o app já inicializou (evita conflito com navegação inicial)
+          if (store?.isReady || store?.isReady?.value) {
             router?.push?.("/login");
           }
 

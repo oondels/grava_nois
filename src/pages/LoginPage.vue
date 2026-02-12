@@ -119,12 +119,23 @@ const loginData = reactive({
   password: "",
 });
 
+function getPostAuthRedirect(): string {
+  try {
+    const saved = localStorage.getItem("postAuthRedirect");
+    localStorage.removeItem("postAuthRedirect");
+    if (saved && saved.startsWith("/") && saved !== "/login" && saved !== "/register") {
+      return saved;
+    }
+  } catch { /* ignore */ }
+  return "/lances-gravanois";
+}
+
 const submitLogin = async () => {
   loadingAuth.value = true;
   try {
     await auth.signInWithEmail(loginData.email, loginData.password);
     showSnackbar("Login efetuado com sucesso!", "success");
-    router.push("/lances-gravanois");
+    router.push(getPostAuthRedirect());
   } catch (error: any) {
     showSnackbar(error.message, "error");
     console.error("signIn error:", error);
@@ -159,7 +170,7 @@ const handleGoogleCredential = async (credential: string) => {
   try {
     await auth.signInWithGoogleCredential(credential);
     showSnackbar("Login com Google efetuado com sucesso!", "success");
-    router.push("/lances-gravanois");
+    router.push(getPostAuthRedirect());
   } catch (error) {
     showSnackbar("Erro ao efetuar login com Google, tente novamente!", "error");
     console.error("Erro ao efetuar login com google, tente novamente!");
