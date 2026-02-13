@@ -1,7 +1,7 @@
 // stores/auth.ts
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { api } from "@/services/api";
+import { api, apiNoRefresh } from "@/services/api";
 
 export type AuthRole = "common" | "admin" | string;
 
@@ -34,6 +34,144 @@ export interface GoogleLoginResponse {
   status: number;
   message: string;
 }
+
+export interface ChangePasswordPayload {
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  data: null;
+  message: string;
+  requestId?: string;
+}
+
+export type ChangePasswordField = "email" | "currentPassword" | "newPassword";
+export type ChangePasswordFieldErrors = Partial<Record<ChangePasswordField, string>>;
+export type ChangePasswordError = Error & {
+  status?: number;
+  code?: string;
+  fieldErrors?: ChangePasswordFieldErrors;
+  retryAfterSeconds?: number;
+  raw?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+const asString = (value: unknown): string | undefined => (typeof value === "string" && value.trim() ? value : undefined);
+
+const getPayloadMessage = (payload: unknown): string | undefined => {
+  if (!isRecord(payload)) {
+    return undefined;
+  }
+
+  const topLevelMessage = asString(payload.message);
+  if (topLevelMessage) {
+    return topLevelMessage;
+  }
+
+  if (!isRecord(payload.error)) {
+    return undefined;
+  }
+
+  return asString(payload.error.message);
+};
+
+const getPayloadCode = (payload: unknown): string | undefined => {
+  if (!isRecord(payload)) {
+    return undefined;
+  }
+
+  if (typeof payload.error === "string" && payload.error.trim()) {
+    return payload.error;
+  }
+
+  if (!isRecord(payload.error)) {
+    return undefined;
+  }
+
+  return asString(payload.error.code);
+};
+
+const fieldFromPath = (path: unknown): ChangePasswordField | undefined => {
+  if (Array.isArray(path)) {
+    for (const segment of path) {
+      if (segment === "email" || segment === "currentPassword" || segment === "newPassword") {
+        return segment;
+      }
+    }
+    return undefined;
+  }
+
+  if (path === "email" || path === "currentPassword" || path === "newPassword") {
+    return path;
+  }
+
+  return undefined;
+};
+
+const getValidationFieldErrors = (payload: unknown): ChangePasswordFieldErrors => {
+  if (!isRecord(payload) || !isRecord(payload.error)) {
+    return {};
+  }
+
+  const details = payload.error.details;
+  const fieldErrors: ChangePasswordFieldErrors = {};
+
+  if (isRecord(details)) {
+    const keys: ChangePasswordField[] = ["email", "currentPassword", "newPassword"];
+    for (const key of keys) {
+      const current = details[key];
+      if (typeof current === "string" && current.trim()) {
+        fieldErrors[key] = current;
+      }
+    }
+    return fieldErrors;
+  }
+
+  if (!Array.isArray(details)) {
+    return fieldErrors;
+  }
+
+  for (const issue of details) {
+    if (!isRecord(issue)) {
+      continue;
+    }
+
+    const field = fieldFromPath(issue.path);
+    const message = asString(issue.message);
+    if (!field || !message) {
+      continue;
+    }
+
+    fieldErrors[field] = message;
+  }
+
+  return fieldErrors;
+};
+
+const getRetryAfterSeconds = (headers: unknown): number | undefined => {
+  if (!isRecord(headers)) {
+    return undefined;
+  }
+
+  const raw = headers["retry-after"];
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0) {
+    return Math.floor(raw);
+  }
+
+  if (typeof raw !== "string") {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed;
+  }
+
+  return undefined;
+};
 
 export const useAuthStore = defineStore("auth", () => {
   const session = ref<AuthSession | null>(null);
@@ -259,7 +397,65 @@ export const useAuthStore = defineStore("auth", () => {
     return login(email, password);
   }
 
-  async function updatePassword(newPassword: string) {
+  async function updatePassword(payload: ChangePasswordPayload) {
+    loading.value = true;
+    try {
+      const { data } = await apiNoRefresh.post<ChangePasswordResponse>("/auth/change-password", payload);
+
+      return {
+        success: data?.success ?? true,
+        message: data?.message || "Senha alterada com sucesso.",
+        requestId: data?.requestId,
+      };
+    } catch (error: any) {
+      const status = typeof error?.response?.status === "number" ? error.response.status : undefined;
+      const responseData = error?.response?.data as unknown;
+      const fieldErrors = getValidationFieldErrors(responseData);
+      const backendMessage = getPayloadMessage(responseData);
+      const backendCode = getPayloadCode(responseData);
+
+      const parsedError = new Error(backendMessage || "Erro ao alterar senha. Tente novamente.") as ChangePasswordError;
+      parsedError.status = status;
+      parsedError.code = backendCode;
+      parsedError.raw = responseData;
+      parsedError.fieldErrors = fieldErrors;
+      parsedError.retryAfterSeconds = getRetryAfterSeconds(error?.response?.headers);
+
+      if (status === 401) {
+        parsedError.message = backendMessage || "Senha atual incorreta.";
+        parsedError.fieldErrors = {
+          ...fieldErrors,
+          currentPassword: fieldErrors.currentPassword || parsedError.message,
+        };
+      } else if (status === 404) {
+        parsedError.message = backendMessage || "Email não encontrado.";
+        parsedError.fieldErrors = {
+          ...fieldErrors,
+          email: fieldErrors.email || parsedError.message,
+        };
+      } else if (status === 403) {
+        parsedError.message = backendMessage || "Usuário inativo. Entre em contato com o suporte.";
+      } else if (status === 429) {
+        parsedError.message = backendMessage || "Muitas tentativas. Aguarde e tente novamente.";
+      } else if (status === 400) {
+        const normalizedMessage = (backendMessage || "").toLowerCase();
+        if (
+          normalizedMessage.includes("social")
+          || normalizedMessage.includes("google")
+          || normalizedMessage.includes("oauth")
+        ) {
+          parsedError.message = backendMessage || "Esta conta usa login social e não possui senha local.";
+        } else {
+          parsedError.message = backendMessage || "Não foi possível alterar a senha com os dados informados.";
+        }
+      } else if (status === 422) {
+        parsedError.message = backendMessage || "Dados inválidos. Revise os campos informados.";
+      }
+
+      throw parsedError;
+    } finally {
+      loading.value = false;
+    }
   }
 
   /**

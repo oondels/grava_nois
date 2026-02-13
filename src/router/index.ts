@@ -27,10 +27,10 @@ const routes = [
     meta: { requiresGuest: true },
   },
   {
-    path: "/auth/update-password",
+    path: "/auth/change-password",
+    alias: ["/auth/update-password"],
     name: "Mudar Senha",
     component: () => import("@/pages/auth/ResetPassword.vue"),
-    meta: { requiresAuth: true },
   },
   {
     path: "/user-page",
