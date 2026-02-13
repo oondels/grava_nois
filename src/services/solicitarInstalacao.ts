@@ -13,7 +13,6 @@ export const solicitarInstalacao = async (form: Record<string, any>): Promise<So
       },
     });
 
-    console.log("Dados enviados:", form);
     return response.data.data;
   } catch (error: any) {
     throw new Error("Erro ao solicitar instalação: " + error.message);

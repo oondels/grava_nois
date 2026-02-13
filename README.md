@@ -8,6 +8,8 @@ O **Grava Nóis** é um ecossistema de captura e distribuição de replays espor
 ## O que este repositório entrega
 - Web app e PWA para atletas e administradores.
 - Login por email/senha e Google (OAuth via Google Identity Services).
+- Fluxo de troca de senha com validação client-side, medidor de força e tratamento de erros por campo.
+- Fluxo de recuperação de senha por e-mail (solicitação de link + redefinição por token no fragmento da URL).
 - Listagem de clipes por quadra com paginação, prévia sob demanda e download com URLs assinadas.
 - Área administrativa com dashboard e gestão de usuários, clientes e quadras.
 - Páginas de suporte: relatório de erro e solicitação de instalação.
@@ -46,12 +48,16 @@ npm install
 npm run dev
 npm run build
 npm run preview
+npm run test
 ```
 
 ## Rotas principais
 - `/` Home
 - `/lances-gravanois` Listagem de vídeos (requer login)
 - `/login` e `/register` Autenticação
+- `/auth/change-password` Alteração de senha (mantém alias legado `/auth/update-password`)
+- `/auth/forgot-password` Solicitação de recuperação de senha
+- `/auth/password/reset` Redefinição por token recebido por e-mail (`#token=...`)
 - `/auth/callback` Callback OAuth
 - `/user-page` Perfil
 - `/contato` Solicitação de instalação
@@ -61,7 +67,8 @@ npm run preview
 
 ## Integração com API
 Principais endpoints consumidos pela aplicação:
-- `GET /auth/me`, `POST /auth/sign-in`, `POST /auth/sign-up`, `POST /auth/sign-out`, `POST /auth/google`, `POST /auth/refresh`
+- `GET /auth/me`, `POST /auth/sign-in`, `POST /auth/sign-up`, `POST /auth/sign-out`, `POST /auth/google`, `POST /auth/refresh`, `POST /auth/change-password`
+- `POST /auth/password/forgot`, `POST /auth/password/reset/verify`, `POST /auth/password/reset`
 - `GET /api/videos/list` (paginação por `nextToken`)
 - `GET /api/videos/sign` (URLs assinadas para `preview` e `download`)
 - `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/clients`, `GET /admin/venues`
@@ -90,6 +97,7 @@ Regras implementadas no frontend:
 - Em endpoints paginados, considerar também `response.data.meta` para `page`, `limit` e `total`.
 - No interceptor de erro, priorizar `response.data.message` e fallback para `response.data.error.code`, expondo a mensagem amigável em `error.message`.
 - A estratégia de autenticação com cookies HttpOnly (`withCredentials`) permanece inalterada.
+- Endpoints que não devem acionar refresh em `401` usam cliente dedicado (`apiNoRefresh`) para evitar tentativas de `/auth/refresh` fora do fluxo de sessão.
 
 ## PWA
 - Registro automático de Service Worker com atualização.

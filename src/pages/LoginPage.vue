@@ -43,7 +43,6 @@
                   >
                     <template #prepend-inner>
                       <Lock :size="18" class="text-medium-emphasis" />
-                      \
                     </template>
 
                     <template #append-inner>
@@ -59,10 +58,14 @@
                     </template>
                   </v-text-field>
 
-                  <!-- <span> Não possui uma conta? </span> -->
-                  <RouterLink class="absolute bottom-0 right-0" to="/register" aria-label="Ir para página de cadastro">
-                    <a class="text-blue p-1" href="#">Cadastre-se</a>
-                  </RouterLink>
+                  <div class="absolute bottom-0 left-0 right-0 d-flex justify-space-between auth-links">
+                    <RouterLink class="text-blue p-1" to="/auth/change-password" aria-label="Ir para recuperação de senha">
+                      Alterar Senha?
+                    </RouterLink>
+                    <RouterLink class="text-blue p-1" to="/register" aria-label="Ir para página de cadastro">
+                      Cadastre-se
+                    </RouterLink>
+                  </div>
                 </div>
 
                 <v-btn
@@ -98,7 +101,7 @@ import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const rules = {
   required: (value: string) => !!value || "Campo obrigatório",
@@ -109,6 +112,7 @@ const rules = {
 };
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const loadingAuth = ref(false);
@@ -180,6 +184,11 @@ const handleGoogleCredential = async (credential: string) => {
 
 // Carrega script do Google apenas nesta rota
 onMounted(async () => {
+  if (route.query.reset === "success") {
+    showSnackbar("Senha redefinida com sucesso. Faça login com sua nova senha.", "success");
+    router.replace({ path: "/login" });
+  }
+
   const isLogged = auth.isAuthenticated;
 
   if (isLogged) {
@@ -269,5 +278,9 @@ onUnmounted(() => {
 .google-btn :deep(iframe) {
   width: 100% !important;
   max-width: 100% !important;
+}
+
+.auth-links {
+  pointer-events: auto;
 }
 </style>

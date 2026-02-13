@@ -6,6 +6,12 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// Cliente para endpoints que não devem disparar refresh automático em 401.
+export const apiNoRefresh = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE,
+  withCredentials: true,
+});
+
 type RetryRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean; _skipRefresh?: boolean };
 type FailedQueueItem = {
   resolve: (token: string | null) => void;
@@ -37,11 +43,11 @@ const hasSkipAuthHeader = (config: RetryRequestConfig) => {
   }
 
   if (typeof headers.get === "function") {
-    const value = headers.get("X-Skip-Auth");
+    const value = headers.get("X-Skip-Auth") ?? headers.get("x-skip-auth");
     return value === true || value === "true" || value === "1";
   }
 
-  const value = headers["X-Skip-Auth"];
+  const value = headers["X-Skip-Auth"] ?? headers["x-skip-auth"];
   return value === true || value === "true" || value === 1 || value === "1";
 };
 

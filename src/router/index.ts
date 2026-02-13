@@ -27,10 +27,20 @@ const routes = [
     meta: { requiresGuest: true },
   },
   {
-    path: "/auth/update-password",
+    path: "/auth/change-password",
+    alias: ["/auth/update-password"],
     name: "Mudar Senha",
     component: () => import("@/pages/auth/ResetPassword.vue"),
-    meta: { requiresAuth: true },
+  },
+  {
+    path: "/auth/forgot-password",
+    name: "Esqueci Minha Senha",
+    component: () => import("@/pages/auth/ForgotPassword.vue"),
+  },
+  {
+    path: "/auth/password/reset",
+    name: "Redefinir Senha",
+    component: () => import("@/pages/auth/EmailResetPassword.vue"),
   },
   {
     path: "/user-page",
@@ -205,7 +215,6 @@ router.beforeEach(async (to, from, next) => {
         localStorage.setItem("postAuthRedirect", to.fullPath);
       }
     } catch { }
-    console.log("usuario nao autenticado, redirecionando para /login");
     // Notifica o usuário sobre a necessidade de login
     showSnackbar("Faça login para acessar esta sessão", "warning", 3500);
 

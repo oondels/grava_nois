@@ -218,7 +218,6 @@ const handleSubmit = async () => {
 
   submitting.value = true;
   try {
-    console.log("enviado");
     await solicitarInstalacao(form);
 
     //! Fix
