@@ -1,7 +1,7 @@
 <template>
-  <ReloadPrompt/>
-  <InstallPrompt/>
-  <WhatsNewDialog/>
+  <ReloadPrompt />
+  <InstallPrompt />
+  <WhatsNewDialog v-if="!isMaintenance" />
   <AppLayout />
 </template>
 
@@ -14,11 +14,14 @@ import InstallPrompt from "./components/InstallPrompt.vue";
 import WhatsNewDialog from "./components/WhatsNewDialog.vue";
 const themeStore = useThemeStore();
 
+const isMaintenance = ["true", "1", "on", "yes"].includes(
+  String(import.meta.env.VITE_MAINTENANCE_MODE || "").toLowerCase(),
+);
+
 onMounted(() => {
   themeStore.setTheme(true);
   document.documentElement.dataset.theme = "dark";
 });
-
 </script>
 
 <style>
@@ -28,7 +31,13 @@ onMounted(() => {
 @import "@/styles/utilities.scss";
 
 #app {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   width: 100% !important;
@@ -85,7 +94,9 @@ onMounted(() => {
 
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: transform 0.28s ease, opacity 0.28s ease;
+  transition:
+    transform 0.28s ease,
+    opacity 0.28s ease;
 }
 .slide-up-enter-from {
   opacity: 0;
