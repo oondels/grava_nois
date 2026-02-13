@@ -205,7 +205,6 @@ router.beforeEach(async (to, from, next) => {
         localStorage.setItem("postAuthRedirect", to.fullPath);
       }
     } catch { }
-    console.log("usuario nao autenticado, redirecionando para /login");
     // Notifica o usuário sobre a necessidade de login
     showSnackbar("Faça login para acessar esta sessão", "warning", 3500);
 

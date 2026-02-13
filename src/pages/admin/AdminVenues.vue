@@ -94,7 +94,6 @@ async function fetchVenues() {
   error.value = null;
   try {
     const response = await adminService.getVenues();
-    console.log(response);
     
     items.value = response;
   } catch (err: any) {

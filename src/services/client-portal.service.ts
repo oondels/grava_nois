@@ -5,6 +5,7 @@ export type ClientDashboardStats = {
   totalVideos: number;
   totalLinkedUsers: number;
   storageUsed: string;
+  stats?: ClientDashboardStats;
 };
 
 export type ClientSubscriptionStatus = {
