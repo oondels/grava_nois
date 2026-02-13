@@ -78,8 +78,11 @@ export default defineConfig({
       }
       ,
       workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
         globIgnores: ["**/assets/volleysvg-*.svg", "**/*.ttf", "**/*.eot"],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg,webp}"],
         // fallback de navegação segue para SPA (index.html) por padrão
         // Não negar /auth para permitir que o SPA processe o callback do OAuth
         navigateFallbackDenylist: [/^\/api\//],
