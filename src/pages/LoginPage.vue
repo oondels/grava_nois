@@ -59,8 +59,8 @@
                   </v-text-field>
 
                   <div class="absolute bottom-0 left-0 right-0 d-flex justify-space-between auth-links">
-                    <RouterLink class="text-blue p-1" to="/auth/forgot-password" aria-label="Ir para recuperação de senha">
-                      Nao lembra a senha antiga?
+                    <RouterLink class="text-blue p-1" to="/auth/change-password" aria-label="Ir para recuperação de senha">
+                      Alterar Senha?
                     </RouterLink>
                     <RouterLink class="text-blue p-1" to="/register" aria-label="Ir para página de cadastro">
                       Cadastre-se

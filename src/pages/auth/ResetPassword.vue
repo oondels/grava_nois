@@ -116,7 +116,9 @@
                     <v-btn
                       size="small"
                       variant="text"
-                      :aria-label="showConfirmPassword ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'"
+                      :aria-label="
+                        showConfirmPassword ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'
+                      "
                       @click="showConfirmPassword = !showConfirmPassword"
                     >
                       <Eye v-if="!showConfirmPassword" :size="18" />
@@ -125,13 +127,7 @@
                   </template>
                 </v-text-field>
 
-                <v-alert
-                  v-if="generalError"
-                  class="mb-4"
-                  type="error"
-                  variant="tonal"
-                  density="compact"
-                >
+                <v-alert v-if="generalError" class="mb-4" type="error" variant="tonal" density="compact">
                   {{ generalError }}
                 </v-alert>
 
@@ -155,6 +151,10 @@
                   <v-btn variant="text" size="small" class="text-primary">Entrar</v-btn>
                 </RouterLink>
               </div>
+
+              <RouterLink class="text-blue p-1" to="/auth/forgot-password" aria-label="Ir para recuperação de senha">
+                Nao lembra a senha antiga?
+              </RouterLink>
             </v-card-text>
           </v-card>
         </transition>
@@ -355,7 +355,7 @@ const stopUserWatch = watch(
       form.email = email.trim();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(() => {
