@@ -1,17 +1,17 @@
 <template>
   <ReloadPrompt/>
   <InstallPrompt/>
+  <WhatsNewDialog/>
   <AppLayout />
 </template>
 
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
 import AppLayout from "@/layouts/AppLayout.vue";
 import ReloadPrompt from "./components/ReloadPrompt.vue";
 import InstallPrompt from "./components/InstallPrompt.vue";
-const authStore = useAuthStore();
+import WhatsNewDialog from "./components/WhatsNewDialog.vue";
 const themeStore = useThemeStore();
 
 onMounted(() => {
