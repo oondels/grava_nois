@@ -33,6 +33,16 @@ const routes = [
     component: () => import("@/pages/auth/ResetPassword.vue"),
   },
   {
+    path: "/auth/forgot-password",
+    name: "Esqueci Minha Senha",
+    component: () => import("@/pages/auth/ForgotPassword.vue"),
+  },
+  {
+    path: "/auth/password/reset",
+    name: "Redefinir Senha",
+    component: () => import("@/pages/auth/EmailResetPassword.vue"),
+  },
+  {
     path: "/user-page",
     name: "Usuário",
     component: () => import("@/pages/UserPage.vue"),

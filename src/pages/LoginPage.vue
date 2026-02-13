@@ -59,8 +59,8 @@
                   </v-text-field>
 
                   <div class="absolute bottom-0 left-0 right-0 d-flex justify-space-between auth-links">
-                    <RouterLink class="text-blue p-1" to="/auth/change-password" aria-label="Ir para tela de alterar senha">
-                      Alterar senha
+                    <RouterLink class="text-blue p-1" to="/auth/forgot-password" aria-label="Ir para recuperação de senha">
+                      Nao lembra a senha antiga?
                     </RouterLink>
                     <RouterLink class="text-blue p-1" to="/register" aria-label="Ir para página de cadastro">
                       Cadastre-se
@@ -101,7 +101,7 @@ import { useSnackbar } from "@/composables/useSnackbar";
 import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-vue-next";
 import LogoGravaNoisBranco from "@/assets/icons/grava-nois-branco.webp";
 const { showSnackbar } = useSnackbar();
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const rules = {
   required: (value: string) => !!value || "Campo obrigatório",
@@ -112,6 +112,7 @@ const rules = {
 };
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const loadingAuth = ref(false);
@@ -183,6 +184,11 @@ const handleGoogleCredential = async (credential: string) => {
 
 // Carrega script do Google apenas nesta rota
 onMounted(async () => {
+  if (route.query.reset === "success") {
+    showSnackbar("Senha redefinida com sucesso. Faça login com sua nova senha.", "success");
+    router.replace({ path: "/login" });
+  }
+
   const isLogged = auth.isAuthenticated;
 
   if (isLogged) {

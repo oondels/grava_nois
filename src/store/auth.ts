@@ -242,8 +242,6 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function clearSession() {
-    console.log('Clearing session...');
-    
     session.value = null;
     isAuthenticated.value = false;
   }
