@@ -11,6 +11,14 @@
         <video class="thumb-video" :src="clip.videoUrl" controls preload="none" playsinline />
       </template>
 
+      <!-- Preview loading: replace thumbnail with loader -->
+      <template v-else-if="previewLoading">
+        <div class="thumb-loading">
+          <v-progress-circular indeterminate color="white" size="48" width="4" />
+          <span class="text-white text-caption mt-2">Carregando vídeo…</span>
+        </div>
+      </template>
+
       <template v-else>
         <!-- Foto pre carregada antes do clipe ser disponibiliado para assistir -->
         <v-img :src="clip.thumbUrl" :aspect-ratio="16 / 9" cover :eager="false" class="thumb-img">
@@ -112,6 +120,8 @@
             color="secondary"
             size="small"
             density="compact"
+            :disabled="downloadDisabled"
+            :loading="downloadLoading"
             @click.stop="$emit('download', clip)"
             class="secondary-action-btn"
           >
@@ -185,11 +195,17 @@ interface Props {
   location?: Location | null;
   hasAudio?: boolean;
   showDisabled?: boolean;
+  previewLoading?: boolean;
+  downloadDisabled?: boolean;
+  downloadLoading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   hasAudio: false,
   showDisabled: false,
+  previewLoading: false,
+  downloadDisabled: false,
+  downloadLoading: false,
 });
 
 const hover = ref(false);
@@ -314,6 +330,16 @@ function toggleFavorite() {
   width: 100%;
   aspect-ratio: 16/9;
   background: #000;
+}
+.thumb-loading {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 .thumb-gradient {
   position: absolute;
