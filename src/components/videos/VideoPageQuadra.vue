@@ -179,6 +179,9 @@
                     <VideoCard
                       :clip="toClip(file)"
                       :show-disabled="state.loading || previewMap[getKey(file)] === null || file.missing"
+                      :preview-loading="!!previewLoadingMap[getKey(file)]"
+                      :download-disabled="isDownloading || file.missing"
+                      :download-loading="activeDownloadKey === getKey(file)"
                       @show="() => onShow(file)"
                       @download="() => onDownload(file)"
                     ></VideoCard>
@@ -254,6 +257,13 @@ const state = reactive({
 const previewMap = reactive<Record<string, string | null | undefined>>({});
 const downloadMap = reactive<Record<string, string | null | undefined>>({});
 
+// Mapa de loading de preview por key (true = carregando)
+const previewLoadingMap = reactive<Record<string, boolean>>({});
+
+// Controle global de download
+const isDownloading = ref(false);
+const activeDownloadKey = ref<string | null>(null);
+
 /** ================= Utils ================= */
 function getApiBase() {
   const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
@@ -319,6 +329,7 @@ function refresh() {
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
   return fetchPage(selectedQuadra.value.id);
 }
 
@@ -332,6 +343,7 @@ function nextPage() {
   setTimeout(() => {
     Object.keys(previewMap).forEach((k) => delete previewMap[k]);
     Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+    Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
     fetchPage(selectedQuadra.value.id);
   }, 500);
 }
@@ -342,6 +354,7 @@ function prevPage() {
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
   fetchPage(selectedQuadra.value.id);
 }
 
@@ -351,6 +364,7 @@ function onChangePageSize(size: number) {
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
   fetchPage(selectedQuadra.value.id);
 }
 
@@ -358,6 +372,7 @@ function onChangePageSize(size: number) {
 async function ensurePreview(path: string | null, bucket = "temp") {
   if (!path) return;
   if (previewMap[path] !== undefined) return; // já buscado (sucesso ou falha)
+  previewLoadingMap[path] = true; // indica loading no card
   previewMap[path] = null; // marca como em progresso
   try {
     const base = getApiBase();
@@ -370,9 +385,15 @@ async function ensurePreview(path: string | null, bucket = "temp") {
     const res = await fetch(url.toString(), { credentials: "include" });
     if (!res.ok) throw new Error(`Falha ao assinar preview: ${res.status}`);
     const data = await res.json();
-    previewMap[path] = data?.url ?? null;
+    console.log('Preview');
+    
+    console.log(data);
+    
+    previewMap[path] = data?.data?.url ?? null;
   } catch {
     previewMap[path] = null; // mantém vazio para não loopar
+  } finally {
+    previewLoadingMap[path] = false;
   }
 }
 
@@ -389,14 +410,22 @@ async function signDownload(path: string | null, bucket = "temp") {
   const res = await fetch(url.toString(), { credentials: "include" });
   if (!res.ok) return null;
   const data = await res.json();
-  downloadMap[path] = data?.url ?? null;
+  downloadMap[path] = data?.data?.url ?? null;
   return downloadMap[path];
 }
 
 async function onDownload(file: VideoFile) {
-  if (file.missing) return;
-  const u = await signDownload(file.path, file.bucket);
-  if (u) window.open(u, "_blank");
+  if (file.missing || isDownloading.value) return;
+  const key = getKey(file);
+  isDownloading.value = true;
+  activeDownloadKey.value = key;
+  try {
+    const u = await signDownload(file.path, file.bucket);
+    if (u) window.open(u, "_blank");
+  } finally {
+    isDownloading.value = false;
+    activeDownloadKey.value = null;
+  }
 }
 
 function onShow(file: VideoFile) {
