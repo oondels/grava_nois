@@ -43,6 +43,21 @@ export type AdminClientPayment = {
   lastCharge?: AdminClientLastCharge | null;
 };
 
+export type AdminPayment = {
+  id: string;
+  status: string;
+  amount: string;
+  currency: string;
+  provider: string;
+  method?: string | null;
+  paymentUrl?: string | null;
+  description?: string | null;
+  dueAt?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AdminClient = AdminClientPayment & {
   id: string;
   userId?: string;
@@ -88,6 +103,13 @@ export type ClientsList = {
   limit: number;
 };
 
+export type AdminClientPaymentsResponse = {
+  payments: AdminPayment[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
 export type ListParams = Record<string, unknown>;
 
 export type UsersQuery = {
@@ -101,6 +123,11 @@ export type ClientsQuery = {
   page?: number;
   limit?: number;
   search?: string;
+};
+
+export type ClientPaymentsQuery = {
+  page?: number;
+  limit?: number;
 };
 
 export type VenuesQuery = {
@@ -165,6 +192,27 @@ async function getClients(params?: ClientsQuery): Promise<ClientsList> {
   };
 }
 
+async function getClientPayments(
+  clientId: string,
+  params?: ClientPaymentsQuery
+): Promise<AdminClientPaymentsResponse> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 5;
+  const response = await api.get<ApiResponse<AdminClientPaymentsResponse>>(
+    `/admin/clients/${clientId}/payments`,
+    { params: { page, limit } }
+  );
+  const payload = response.data.data;
+  const meta = response.data.meta;
+
+  return {
+    payments: payload?.payments ?? [],
+    total: payload?.total ?? meta?.total ?? 0,
+    page: payload?.page ?? meta?.page ?? page,
+    limit: payload?.limit ?? meta?.limit ?? limit,
+  };
+}
+
 async function getVenues(params?: VenuesQuery): Promise<AdminVenue[]> {
   const response = await api.get<ApiResponse<AdminVenue[] | { venues?: AdminVenue[] }>>("/admin/venues", { params });
   const data = response?.data?.data;
@@ -191,6 +239,7 @@ export const adminService = {
   getDashboardStats,
   getUsers,
   getClients,
+  getClientPayments,
   getVenues,
   updateUser,
   updateClient,
