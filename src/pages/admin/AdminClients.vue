@@ -614,7 +614,7 @@ function prevChargesPage(clientId: string) {
 
 function handleChargesPanelToggle(
   client: AdminClient,
-  value: number | number[] | undefined
+  value: number | number[] | undefined | unknown
 ) {
   const isOpen = Array.isArray(value) ? value.length > 0 : value === 0;
   if (!isOpen) return;
