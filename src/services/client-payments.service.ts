@@ -2,7 +2,7 @@ import { api } from "@/services/api";
 import type { ApiResponse } from "@/types/Api";
 import type { ClientPaymentsQuery, PaymentListResponse } from "@/types/payments";
 
-type PaymentListApiPayload = ApiResponse<{ payments?: PaymentListResponse }>;
+type PaymentListApiPayload = ApiResponse<{ invoices?: PaymentListResponse }>;
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -68,8 +68,8 @@ async function list(params: ClientPaymentsQuery = {}): Promise<PaymentListRespon
     return normalize(payload, requestedPage, requestedLimit);
   }
 
-  if (isApiResponseEnvelope(payload) && isPaymentListResponse(payload.data?.payments)) {
-    return normalize(payload.data.payments, requestedPage, requestedLimit);
+  if (isApiResponseEnvelope(payload) && isPaymentListResponse(payload.data?.invoices)) {
+    return normalize(payload.data.invoices, requestedPage, requestedLimit);
   }
 
   throw new Error("Não foi possível interpretar a resposta de pagamentos.");
