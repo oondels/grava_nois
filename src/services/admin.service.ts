@@ -24,14 +24,40 @@ export type AdminUser = {
   [key: string]: unknown;
 };
 
-export type AdminClient = {
+export type AdminClientLastCharge = {
   id: string;
+  status: string;
+  amount: string;
+  currency: string;
+  provider: string;
+  method: string;
+  dueAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  paymentUrl: string;
+  description: string;
+};
+
+export type AdminClientPayment = {
+  paymentStatus?: string | null;
+  lastCharge?: AdminClientLastCharge | null;
+};
+
+export type AdminClient = AdminClientPayment & {
+  id: string;
+  userId?: string;
   legalName?: string | null;
   tradeName?: string | null;
+  cnpj?: string | null;
+  responsibleCpf?: string | null;
   responsibleName?: string | null;
   responsibleEmail?: string | null;
   responsiblePhone?: string | null;
   retentionDays?: number | null;
+  subscriptionStatus?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
   venueCount?: number;
   generalStatus?: "ok" | "attention" | string;
   [key: string]: unknown;

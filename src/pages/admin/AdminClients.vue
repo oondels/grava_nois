@@ -51,6 +51,24 @@
             {{ item.venueCount ?? 0 }}
           </template>
 
+          <template #item.paymentStatus="{ item }">
+            {{ formatPaymentStatus(item.paymentStatus) }}
+          </template>
+
+          <template #item.lastCharge="{ item }">
+            <v-chip
+              v-if="item.lastCharge"
+              size="small"
+              variant="tonal"
+              class="cursor-pointer"
+              @click="openLastCharge(item)"
+              color="light-green"
+            >
+              Cobrança
+            </v-chip>
+            <span v-else>—</span>
+          </template>
+
           <template #item.actions="{ item }">
             <v-btn size="small" variant="text" @click="openEdit(item)">Editar</v-btn>
           </template>
@@ -100,6 +118,69 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="chargeDialog" max-width="520">
+      <v-card>
+        <v-card-title class="text-h6">Última cobrança</v-card-title>
+        <v-card-text class="pt-2">
+          <div class="text-medium-emphasis mb-4">
+            {{ selectedChargeClient?.tradeName || selectedChargeClient?.legalName || "—" }}
+          </div>
+
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Status</span>
+            <span>{{ formatPaymentStatus(selectedCharge?.status) }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Valor</span>
+            <span>{{ formatMoney(selectedCharge?.amount, selectedCharge?.currency) }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Método</span>
+            <span>{{ formatPaymentMethod(selectedCharge?.method) }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Provedor</span>
+            <span>{{ selectedCharge?.provider ?? "—" }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Criado em</span>
+            <span>{{ formatDate(selectedCharge?.createdAt) }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Vencimento</span>
+            <span>{{ formatDate(selectedCharge?.dueAt) }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Pago em</span>
+            <span>{{ formatDate(selectedCharge?.paidAt) }}</span>
+          </div>
+          <div class="d-flex align-center justify-space-between py-1">
+            <span class="text-medium-emphasis">Descrição</span>
+            <span>{{ selectedCharge?.description ?? "—" }}</span>
+          </div>
+          <div
+            v-if="selectedCharge?.paymentUrl"
+            class="d-flex align-center justify-space-between py-1"
+          >
+            <span class="text-medium-emphasis">Link</span>
+            <v-btn
+              size="small"
+              variant="text"
+              :href="selectedCharge?.paymentUrl"
+              target="_blank"
+              rel="noopener"
+            >
+              Abrir
+            </v-btn>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeLastCharge">Fechar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -113,6 +194,8 @@ const headers = [
   { title: "Telefone", key: "responsiblePhone" },
   { title: "Dias de Retenção", key: "retentionDays" },
   { title: "Instalações", key: "venueCount" },
+  { title: "Status Pagamento", key: "paymentStatus" },
+  { title: "Última Cobrança", key: "lastCharge" },
   { title: "Ações", key: "actions", sortable: false },
 ];
 
@@ -132,7 +215,79 @@ const editedResponsibleName = ref<string | null>(null);
 const editedResponsiblePhone = ref<string | null>(null);
 const editedRetentionDays = ref<number | null>(null);
 
+const chargeDialog = ref(false);
+const selectedCharge = ref<AdminClient["lastCharge"] | null>(null);
+const selectedChargeClient = ref<AdminClient | null>(null);
+
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
+
+const paymentStatusLabels: Record<string, string> = {
+  pending: "Pendente",
+  paid: "Pago",
+  canceled: "Cancelado",
+  expired: "Expirado",
+  refunded: "Estornado",
+  failed: "Falhou",
+  active: "Ativo",
+  past_due: "Em atraso",
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  pix: "PIX",
+  boleto: "Boleto",
+  credit_card: "Cartão de crédito",
+  debit_card: "Cartão de débito",
+};
+
+const dateFormatter = new Intl.DateTimeFormat("pt-BR");
+
+function formatPaymentStatus(status?: string | null) {
+  if (!status) return "—";
+  return paymentStatusLabels[status] ?? status;
+}
+
+function formatPaymentMethod(method?: string | null) {
+  if (!method) return "—";
+  return paymentMethodLabels[method] ?? method;
+}
+
+function formatMoney(amount?: string | null, currency?: string | null) {
+  if (!amount) return "—";
+  const numeric = Number.parseFloat(amount);
+  if (!Number.isFinite(numeric)) {
+    return currency ? `${amount} ${currency}` : amount;
+  }
+  if (!currency) return amount;
+  try {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(numeric);
+  } catch {
+    return `${numeric.toFixed(2)} ${currency}`;
+  }
+}
+
+function formatChargeDate(charge: AdminClient["lastCharge"]) {
+  if (charge?.paidAt) return `Pago em ${dateFormatter.format(new Date(charge.paidAt))}`;
+  if (charge?.dueAt) return `Vence em ${dateFormatter.format(new Date(charge.dueAt))}`;
+  if (charge?.createdAt) return `Criado em ${dateFormatter.format(new Date(charge.createdAt))}`;
+  return "";
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  return dateFormatter.format(new Date(value));
+}
+
+function formatLastCharge(charge: AdminClient["lastCharge"]) {
+  if (!charge) return "—";
+  const parts = [
+    formatMoney(charge.amount, charge.currency),
+    formatPaymentMethod(charge.method),
+    formatPaymentStatus(charge.status),
+  ];
+  const dateText = formatChargeDate(charge);
+  if (dateText) parts.push(dateText);
+  return parts.filter(Boolean).join(" • ");
+}
 
 async function fetchClients() {
   loading.value = true;
@@ -158,6 +313,19 @@ function openEdit(client: AdminClient) {
     typeof client.retentionDays === "number" ? client.retentionDays : null;
   dialogError.value = null;
   dialog.value = true;
+}
+
+function openLastCharge(client: AdminClient) {
+  if (!client.lastCharge) return;
+  selectedCharge.value = client.lastCharge;
+  selectedChargeClient.value = client;
+  chargeDialog.value = true;
+}
+
+function closeLastCharge() {
+  chargeDialog.value = false;
+  selectedCharge.value = null;
+  selectedChargeClient.value = null;
 }
 
 function closeDialog() {
