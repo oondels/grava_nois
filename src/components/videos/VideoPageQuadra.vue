@@ -385,9 +385,6 @@ async function ensurePreview(path: string | null, bucket = "temp") {
     const res = await fetch(url.toString(), { credentials: "include" });
     if (!res.ok) throw new Error(`Falha ao assinar preview: ${res.status}`);
     const data = await res.json();
-    console.log('Preview');
-    
-    console.log(data);
     
     previewMap[path] = data?.data?.url ?? null;
   } catch {

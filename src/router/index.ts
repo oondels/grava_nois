@@ -140,7 +140,7 @@ const routes = [
         path: "financeiro",
         name: "ClientFinance",
         component: () => import("@/pages/client/ClientFinance.vue"),
-        props: { title: "Financeiro" },
+        props: { title: "Pagamentos" },
       },
     ],
   },
