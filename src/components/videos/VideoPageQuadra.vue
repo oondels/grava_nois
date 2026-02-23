@@ -178,9 +178,8 @@
                   <v-col v-for="file in state.items" :key="getKey(file)" cols="12" sm="6" md="4" lg="3">
                     <VideoCard
                       :clip="toClip(file)"
-                      :show-disabled="state.loading || previewMap[getKey(file)] === null || file.missing"
-                      :preview-loading="!!previewLoadingMap[getKey(file)]"
-                      :download-disabled="isDownloading || file.missing"
+                      :show-disabled="state.loading || !hasUrl(file) || file.missing"
+                      :download-disabled="isDownloading || !hasUrl(file) || file.missing"
                       :download-loading="activeDownloadKey === getKey(file)"
                       @show="() => onShow(file)"
                       @download="() => onDownload(file)"
@@ -257,9 +256,6 @@ const state = reactive({
 const previewMap = reactive<Record<string, string | null | undefined>>({});
 const downloadMap = reactive<Record<string, string | null | undefined>>({});
 
-// Mapa de loading de preview por key (true = carregando)
-const previewLoadingMap = reactive<Record<string, boolean>>({});
-
 // Controle global de download
 const isDownloading = ref(false);
 const activeDownloadKey = ref<string | null>(null);
@@ -293,6 +289,10 @@ function getKey(file: VideoFile): string {
   return (file.path || file.clip_id) as string;
 }
 
+function hasUrl(file: VideoFile): boolean {
+  return typeof file.url === "string" && file.url.trim().length > 0;
+}
+
 /** ================= Data Fetch ================= */
 const isRefreshing = ref(false);
 async function fetchPage(quadraId: string | null = null) {
@@ -308,7 +308,7 @@ async function fetchPage(quadraId: string | null = null) {
     const data = (await fetchVideos({
       limit: state.pageSize,
       token: state.token,
-      includeSignedUrl: false,
+      includeSignedUrl: true,
       venueId: venueId,
     })) as VideoListResponse;
 
@@ -329,7 +329,6 @@ function refresh() {
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
-  Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
   return fetchPage(selectedQuadra.value.id);
 }
 
@@ -343,7 +342,6 @@ function nextPage() {
   setTimeout(() => {
     Object.keys(previewMap).forEach((k) => delete previewMap[k]);
     Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
-    Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
     fetchPage(selectedQuadra.value.id);
   }, 500);
 }
@@ -354,7 +352,6 @@ function prevPage() {
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
-  Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
   fetchPage(selectedQuadra.value.id);
 }
 
@@ -364,34 +361,7 @@ function onChangePageSize(size: number) {
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
   Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
-  Object.keys(previewLoadingMap).forEach((k) => delete previewLoadingMap[k]);
   fetchPage(selectedQuadra.value.id);
-}
-
-/** ================= Assinatura sob demanda ================= */
-async function ensurePreview(path: string | null, bucket = "temp") {
-  if (!path) return;
-  if (previewMap[path] !== undefined) return; // já buscado (sucesso ou falha)
-  previewLoadingMap[path] = true; // indica loading no card
-  previewMap[path] = null; // marca como em progresso
-  try {
-    const base = getApiBase();
-    const url = new URL(`${base}/api/videos/sign`);
-    url.searchParams.set("bucket", bucket);
-    url.searchParams.set("path", path);
-    url.searchParams.set("kind", "preview");
-    url.searchParams.set("ttl", "3600");
-
-    const res = await fetch(url.toString(), { credentials: "include" });
-    if (!res.ok) throw new Error(`Falha ao assinar preview: ${res.status}`);
-    const data = await res.json();
-    
-    previewMap[path] = data?.data?.url ?? null;
-  } catch {
-    previewMap[path] = null; // mantém vazio para não loopar
-  } finally {
-    previewLoadingMap[path] = false;
-  }
 }
 
 async function signDownload(path: string | null, bucket = "temp") {
@@ -412,13 +382,14 @@ async function signDownload(path: string | null, bucket = "temp") {
 }
 
 async function onDownload(file: VideoFile) {
-  if (file.missing || isDownloading.value) return;
+  if (file.missing || isDownloading.value || !hasUrl(file)) return;
   const key = getKey(file);
+  const responseUrl = file.url as string;
   isDownloading.value = true;
   activeDownloadKey.value = key;
   try {
     const u = await signDownload(file.path, file.bucket);
-    if (u) window.open(u, "_blank");
+    window.open(u || responseUrl, "_blank");
   } finally {
     isDownloading.value = false;
     activeDownloadKey.value = null;
@@ -426,9 +397,8 @@ async function onDownload(file: VideoFile) {
 }
 
 function onShow(file: VideoFile) {
-  // dispara o carregamento sob demanda da prévia
-  if (file.missing) return;
-  ensurePreview(file.path, file.bucket);
+  if (file.missing || !hasUrl(file)) return;
+  previewMap[getKey(file)] = file.url;
 }
 
 const selectedQuadra = ref<any>({});
