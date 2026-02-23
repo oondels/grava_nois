@@ -26,12 +26,22 @@
 </template>
 
 <script setup lang="ts">
-import { useRegisterSW } from "virtual:pwa-register/vue";
-const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW();
 import { onMounted, onBeforeUnmount } from "vue";
-const checkUpdate = () => updateServiceWorker();
+import { useRegisterSW } from "virtual:pwa-register/vue";
 
+let swRegistration: ServiceWorkerRegistration | undefined;
 let timer: number | undefined;
+
+const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
+  onRegisteredSW(_swUrl, registration) {
+    swRegistration = registration;
+  },
+});
+
+const checkUpdate = () => {
+  swRegistration?.update();
+};
+
 
 const onVisibilityChange = () => {
   if (document.visibilityState === "visible") checkUpdate();
@@ -54,7 +64,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (timer) window.clearInterval(timer);
+  if (timer !== undefined) window.clearInterval(timer);
   document.removeEventListener("visibilitychange", onVisibilityChange);
 });
 </script>
