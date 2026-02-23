@@ -145,4 +145,25 @@ export default defineConfig({
     exclude: ["vuetify"],
     entries: ["./src/**/*.vue"],
   },
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          if (id.includes("vuetify")) return "vendor-vuetify";
+          if (id.includes("vue-router")) return "vendor-router";
+          if (id.includes("pinia")) return "vendor-state";
+          if (id.includes("notivue")) return "vendor-notifications";
+          if (id.includes("@iconify") || id.includes("@mdi") || id.includes("lucide-vue-next")) {
+            return "vendor-icons";
+          }
+          if (id.includes("axios")) return "vendor-http";
+
+          return "vendor-core";
+        },
+      },
+    },
+  },
 });
