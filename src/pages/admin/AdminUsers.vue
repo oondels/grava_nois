@@ -69,7 +69,7 @@
           <div class="text-medium-emphasis mb-4">{{ editedUser?.email }}</div>
           <v-select
             v-model="editedUserRole"
-            :items="['common', 'admin']"
+            :items="['common', 'admin', 'client']"
             label="Role"
             variant="outlined"
             density="comfortable"
