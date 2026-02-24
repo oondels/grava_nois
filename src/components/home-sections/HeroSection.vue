@@ -77,7 +77,10 @@ import { useAuthStore } from "@/store/auth";
 import LogoSymbol from "@/assets/icons/grava-nois-simbol.webp";
 import Mockup from "@/assets/images/hero-about.webp";
 
-import HeroBG from "@/assets/bak/HeroBG.webp";
+import HeroBgDesktopWebp from "@/assets/bak/HeroBG-1280.webp";
+import HeroBgDesktopAvif from "@/assets/bak/HeroBG-1280.avif";
+import HeroBgMobileWebp from "@/assets/bak/HeroBG-768.webp";
+import HeroBgMobileAvif from "@/assets/bak/HeroBG-768.avif";
 // import BasketBall from "@/assets/bak/basket_ball.png";
 // import VolleyBall from "@/assets/bak/volleysvg.svg";
 
@@ -85,7 +88,7 @@ const auth = useAuthStore();
 
 import { ChevronsDown, ClapperboardIcon, LogIn } from "lucide-vue-next";
 
-import { onMounted, onBeforeUnmount, ref, computed } from "vue";
+import { onMounted, onBeforeUnmount, ref } from "vue";
 import { prefetchRoute } from '@/utils/prefetchRoute'
 
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
@@ -144,6 +147,20 @@ let reduceMotionPref = false;
 let lastTouchYForDamp: number | null = null;
 let touchStartListenerDamp: ((e: TouchEvent) => void) | null = null;
 let touchMoveListenerDamp: ((e: TouchEvent) => void) | null = null;
+
+function pickHeroBackground(format: "avif" | "webp") {
+  const isMobile = window.matchMedia("(max-width: 960px)").matches;
+  if (format === "avif") return isMobile ? HeroBgMobileAvif : HeroBgDesktopAvif;
+  return isMobile ? HeroBgMobileWebp : HeroBgDesktopWebp;
+}
+
+function applyHeroBackground(src: string) {
+  heroBgStyle.value = {
+    backgroundImage: `url(${src})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
 
 // Zona de damping ativa somente quando a hero está on-screen
 function inDampZone() {
@@ -513,19 +530,26 @@ onBeforeUnmount(() => {
 
 // Carrega o background pesado da hero de forma deferida para evitar bloquear render
 onMounted(() => {
+  const avifBackground = pickHeroBackground("avif");
+  const webpBackground = pickHeroBackground("webp");
+
   try {
-    const img = new Image()
+    const img = new Image();
     // sinaliza ao navegador que não é prioridade máxima
-    ;(img as any).fetchPriority = 'low'
-    img.decoding = 'async'
-    img.src = HeroBG
+    ;(img as any).fetchPriority = "low";
+    img.decoding = "async";
+    img.src = avifBackground;
     img.onload = () => {
-      heroBgStyle.value = { backgroundImage: `url(${HeroBG})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    }
+      applyHeroBackground(avifBackground);
+    };
+    // Fallback para browsers sem suporte a AVIF.
+    img.onerror = () => {
+      applyHeroBackground(webpBackground);
+    };
   } catch {
-    heroBgStyle.value = { backgroundImage: `url(${HeroBG})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    applyHeroBackground(webpBackground);
   }
-})
+});
 </script>
 
 <style scoped>
