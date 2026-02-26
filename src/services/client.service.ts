@@ -10,6 +10,11 @@ export type ClientProfile = {
   responsibleName?: string | null;
   responsibleEmail?: string | null;
   responsiblePhone?: string | null;
+  cep?: string | null;
+  endereco?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
 };
 
 export type ClientProfileUpdate = {
@@ -17,6 +22,11 @@ export type ClientProfileUpdate = {
   responsibleName?: string | null;
   responsibleEmail?: string | null;
   responsiblePhone?: string | null;
+  cep?: string | null;
+  endereco?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
 };
 
 async function getMyProfile(): Promise<ClientProfile> {
