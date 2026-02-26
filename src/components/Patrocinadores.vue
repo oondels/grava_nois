@@ -5,15 +5,15 @@
     <div
       class="relative w-full overflow-hidden rounded-xl px-6 py-4 backdrop-blur-sm ring-1 bg-[#556b2f]/40 ring-[#556b2f]/30"
     >
-      <div class="marquee-container">
+      <div ref="marqueeViewport" class="marquee-container">
         <div
-          class="marquee flex items-center gap-12"
+          class="marquee-track flex items-center"
           :class="{ 'is-paused': dialogOpen }"
-          style="--marquee-duration: 30s"
+          :style="trackStyle"
         >
-          <ul class="flex items-center gap-12 shrink-0">
+          <ul ref="sequenceEl" class="marquee-sequence flex items-center gap-12 shrink-0">
             <li
-              v-for="(sponsor, i) in sponsors"
+              v-for="sponsor in sponsors"
               :key="`a-${sponsor.id}`"
               class="h-12 w-max opacity-90 hover:opacity-100 transition cursor-pointer"
               role="button"
@@ -30,15 +30,16 @@
             </li>
           </ul>
 
-          <ul class="flex items-center gap-12 shrink-0" aria-hidden="true">
+          <ul
+            v-for="copyIndex in copies"
+            :key="`copy-${copyIndex}`"
+            class="marquee-sequence flex items-center gap-12 shrink-0"
+            aria-hidden="true"
+          >
             <li
-              v-for="(sponsor, i) in sponsors"
-              :key="`b-${sponsor.id}`"
-              class="h-12 w-max opacity-90 hover:opacity-100 transition cursor-pointer"
-              role="button"
-              tabindex="0"
-              @click="openSponsor(sponsor)"
-              @keyup.enter="openSponsor(sponsor)"
+              v-for="sponsor in sponsors"
+              :key="`copy-${copyIndex}-${sponsor.id}`"
+              class="h-12 w-max opacity-90 transition"
             >
               <img :src="sponsor.logoUrl" alt="" class="h-12 w-auto object-contain" draggable="false" />
             </li>
@@ -139,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { sponsorOverrides, type SponsorOverride } from "@/data/patrocinadores";
 import { Globe } from "lucide-vue-next";
 
@@ -251,19 +252,87 @@ function normalizeUrl(url: string): string {
   if (!url || typeof url !== "string") return url;
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
+
+const marqueeViewport = ref<HTMLElement | null>(null);
+const sequenceEl = ref<HTMLElement | null>(null);
+const copyCount = ref(2);
+const loopDistancePx = ref(0);
+const SPEED_PX_PER_SECOND = 90;
+const MIN_DURATION_SECONDS = 16;
+
+const copies = computed(() => {
+  const totalExtraCopies = Math.max(1, copyCount.value - 1);
+  return Array.from({ length: totalExtraCopies }, (_, i) => i + 1);
+});
+
+const trackStyle = computed(() => {
+  const distance = Math.max(1, loopDistancePx.value);
+  const duration = Math.max(MIN_DURATION_SECONDS, distance / SPEED_PX_PER_SECOND);
+  return {
+    "--marquee-duration": `${duration.toFixed(2)}s`,
+    "--marquee-distance": `${distance}px`,
+  } as Record<string, string>;
+});
+
+function recalcMarquee() {
+  const viewport = marqueeViewport.value;
+  const sequence = sequenceEl.value;
+  if (!viewport || !sequence) return;
+
+  const sequenceWidth = Math.ceil(sequence.scrollWidth);
+  if (!sequenceWidth) return;
+
+  loopDistancePx.value = sequenceWidth;
+
+  // Garante conteúdo suficiente para cobrir telas largas sem criar "buracos".
+  const neededCopies = Math.ceil((viewport.clientWidth * 2) / sequenceWidth) + 1;
+  copyCount.value = Math.max(2, neededCopies);
+}
+
+let resizeObserver: ResizeObserver | null = null;
+let rafId = 0;
+
+function scheduleRecalc() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(() => {
+    recalcMarquee();
+  });
+}
+
+onMounted(async () => {
+  await nextTick();
+  recalcMarquee();
+
+  if (typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(() => scheduleRecalc());
+    if (marqueeViewport.value) resizeObserver.observe(marqueeViewport.value);
+    if (sequenceEl.value) resizeObserver.observe(sequenceEl.value);
+  }
+
+  window.addEventListener("resize", scheduleRecalc, { passive: true });
+});
+
+watch(sponsors, () => nextTick(() => recalcMarquee()));
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", scheduleRecalc);
+  if (resizeObserver) resizeObserver.disconnect();
+  if (rafId) cancelAnimationFrame(rafId);
+});
 </script>
 
 <style scoped>
-.marquee {
+.marquee-track {
   width: max-content;
-  animation: marquee var(--marquee-duration, 30s) linear infinite;
+  animation: sponsors-marquee-scroll var(--marquee-duration, 30s) linear infinite;
+  will-change: transform;
 }
 
-.marquee:hover {
+.marquee-track:hover {
   animation-play-state: paused;
 }
 
-.marquee.is-paused {
+.marquee-track.is-paused {
   animation-play-state: paused;
 }
 
@@ -279,12 +348,18 @@ function normalizeUrl(url: string): string {
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
 }
 
-@keyframes marquee {
+@keyframes sponsors-marquee-scroll {
   0% {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translate3d(calc(-1 * var(--marquee-distance, 200px)), 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
   }
 }
 </style>

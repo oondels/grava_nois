@@ -1,10 +1,15 @@
 <template>
-  <section ref="rootEl" class="hero" aria-labelledby="hero-title" :style="heroBgStyle">
-    <div class="hero__container">
+  <section
+    ref="rootEl"
+    class="hero relative isolate min-h-[88vh] md:min-h-[90vh] lg:min-h-screen"
+    aria-labelledby="hero-title"
+    :style="heroBgStyle"
+  >
+    <div class="hero__container mx-auto grid h-full w-full max-w-7xl grid-rows-[auto,1fr] px-4 pb-8 pt-6 sm:px-6 lg:px-8">
       <!-- Top-centered symbol-only logo -->
-      <div class="hero__logo-wrap parallax parallax--logo">
+      <div class="hero__logo-wrap parallax parallax--logo grid place-items-center py-4 lg:py-6">
         <img
-          class="hero__logo"
+          class="hero__logo h-[90px] w-[90px] object-contain"
           :src="currentIcon"
           alt="Grava Nóis logo"
           width="90"
@@ -16,37 +21,53 @@
       </div>
 
       <!-- Stack: H1 → subline → CTAs -->
-      <div class="hero__grid">
+      <div class="hero__grid grid items-center gap-8 lg:mx-auto lg:w-full lg:max-w-6xl lg:grid-cols-1 lg:justify-items-center lg:gap-12 xl:relative">
         <div
-          class="hero__content parallax parallax--content"
+          class="hero__content parallax parallax--content relative mx-auto max-w-2xl text-center lg:max-w-3xl"
           @keydown="onKeyNav"
           tabindex="0"
           aria-describedby="hero-desc"
         >
-          <h1 id="hero-title" class="hero__title">Grave seus melhores lances esportivos</h1>
-          <h1 id="hero-title"  class="hero__title mt-2">Com um clique!</h1>
-          <p id="hero-desc" class="hero__subtitle">Grava Nóis - Seu lance, nossa história.</p>
+          <h1
+            id="hero-title"
+            class="hero__title text-4xl font-black leading-[0.92] tracking-tight text-amber-100 sm:text-5xl lg:text-7xl"
+          >
+            Grave seus melhores lances esportivos
+            <span class="mt-1 block text-amber-300">Com um clique!</span>
+          </h1>
+          <p id="hero-desc" class="hero__subtitle mt-6 text-base text-slate-100/85 sm:text-lg lg:text-xl">
+            Grava Nóis - Seu lance, nossa história.
+          </p>
 
-          <span class="d-flex justify-center align-center my-7">
+          <span class="my-7 flex items-center justify-center">
             <a href="#how" class="pulse-waves" aria-label="Veja como funciona">
-              <ChevronsDown role="button" class="my-2" :size="28" />
+              <ChevronsDown role="button" class="my-2 h-6 w-6" :size="28" />
             </a>
           </span>
 
-          <div class="hero__ctas">
-            <a href="#how" class="btn btn--primary" role="button" aria-label="See how it works"
-              ><ChevronsDown class="my-2" /> Veja como funciona
+          <div class="hero__ctas mt-5 flex flex-wrap justify-center gap-3">
+            <a
+              href="#how"
+              class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/70 bg-emerald-700/95 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+              role="button"
+              aria-label="See how it works"
+            >
+              <ChevronsDown class="my-2 h-4 w-4" /> Veja como funciona
             </a>
 
-
-            <RouterLink :to="auth.isAuthenticated ? '/lances-gravanois' : '/login'" class="btn btn--primary" role="button" aria-label="View pricing">
-              <span class="d-flex align-center justify-center" v-if="auth.isAuthenticated">
-                <ClapperboardIcon class="mr-2" />
+            <RouterLink
+              :to="auth.isAuthenticated ? '/lances-gravanois' : '/login'"
+              class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              role="button"
+              aria-label="View pricing"
+            >
+              <span class="flex items-center justify-center" v-if="auth.isAuthenticated">
+                <ClapperboardIcon class="mr-2 h-4 w-4" />
                 Meus lances
               </span>
 
-              <span class="d-flex align-center justify-center" v-else>
-                <LogIn class="mr-2" />
+              <span class="flex items-center justify-center" v-else>
+                <LogIn class="mr-2 h-4 w-4" />
                 Entrar
               </span>
             </RouterLink>
@@ -55,18 +76,34 @@
         </div>
 
         <!-- Optional right-side mockup on desktop with crossfade carousel -->
-        <div class="hero__mockup parallax parallax--mockup" aria-hidden="true">
-          <div class="mockup-fader">
-            <img :src="imgA" class="fade-img" :class="{ 'is-visible': showA }" alt="" loading="eager" decoding="async" width="1280" height="800" />
-            <img :src="imgB" class="fade-img" :class="{ 'is-visible': !showA }" alt="" loading="lazy" decoding="async" width="1280" height="800" />
+        <div
+          class="hero__mockup parallax parallax--mockup relative hidden xl:absolute xl:right-0 xl:top-1/2 xl:block xl:w-[44%] xl:max-w-[620px] xl:-translate-y-1/2"
+          aria-hidden="true"
+        >
+          <div class="mockup-fader relative h-[430px] overflow-hidden rounded-3xl border border-white/15 shadow-[0_30px_60px_-28px_rgba(0,0,0,0.85)]">
+            <img
+              :src="imgA"
+              class="fade-img h-full w-full object-cover"
+              :class="{ 'is-visible': showA }"
+              alt=""
+              loading="eager"
+              decoding="async"
+              width="1280"
+              height="800"
+            />
+            <img
+              :src="imgB"
+              class="fade-img h-full w-full object-cover"
+              :class="{ 'is-visible': !showA }"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              width="1280"
+              height="800"
+            />
           </div>
+          <div class="pointer-events-none absolute -bottom-4 -left-4 h-28 w-28 rounded-full bg-emerald-400/20 blur-2xl"></div>
         </div>
-      </div>
-
-      <!-- Mobile hint overlay -->
-      <div v-if="showHint" class="hero__hint" role="status" aria-live="polite">
-        <span class="hero__hint-dot" aria-hidden="true"></span>
-        <span class="hero__hint-text">Arraste ou incline o celular</span>
       </div>
     </div>
   </section>
@@ -89,7 +126,6 @@ const auth = useAuthStore();
 import { ChevronsDown, ClapperboardIcon, LogIn } from "lucide-vue-next";
 
 import { onMounted, onBeforeUnmount, ref } from "vue";
-import { prefetchRoute } from '@/utils/prefetchRoute'
 
 // Load all hero secondary images for the carousel (png, jpg, jpeg, webp)
 const heroModules = import.meta.glob("@/assets/hero_sec_imgs/*.{png,jpg,jpeg,webp}", { eager: true });
@@ -119,11 +155,9 @@ const imgB = ref<string>("");
 const idx = ref(0);
 
 // Interaction state for mobile-first motion
-const showHint = ref(true);
 let hintTimer: number | undefined;
 const isInteracting = ref(false);
 const useGyro = ref(false);
-function prefetchLogin() { prefetchRoute('/login') }
 
 // Scroll resistance state
 const SCROLL_THRESHOLD = 42; // px drag before native scroll
@@ -320,7 +354,6 @@ function onTouchMove(ev: TouchEvent) {
 
 function onPointerDown(e?: PointerEvent) {
   isInteracting.value = true;
-  hideHintSoon(0);
   const el = rootEl.value;
   if (el) {
     el.classList.add("is-interacting");
@@ -380,12 +413,6 @@ function startAnim() {
   animRaf = requestAnimationFrame(loop);
 }
 
-// Hint
-function hideHintSoon(delay = 3200) {
-  if (hintTimer) window.clearTimeout(hintTimer);
-  hintTimer = window.setTimeout(() => (showHint.value = false), delay);
-}
-
 // Gyro/tilt support
 function deviceToTarget(beta: number, gamma: number) {
   const nx = Math.max(-0.38, Math.min(0.38, (gamma || 0) / 48));
@@ -412,7 +439,6 @@ async function enableGyro() {
     }
     window.addEventListener("deviceorientation", orientationHandler, { passive: true });
     useGyro.value = true;
-    hideHintSoon(1200);
   } catch {
     // Silencioso por compatibilidade
   }
@@ -530,6 +556,25 @@ onBeforeUnmount(() => {
 
 // Carrega o background pesado da hero de forma deferida para evitar bloquear render
 onMounted(() => {
+  applyPointerVars(0.5, 0.5);
+  posX.value = 0.5;
+  posY.value = 0.5;
+  targetX = 0.5;
+  targetY = 0.5;
+
+  if (heroImages.length > 0) {
+    imgA.value = heroImages[0];
+    imgB.value = heroImages[1 % heroImages.length] || heroImages[0];
+    showA.value = true;
+    currentIcon.value = heroImages[0] || logoSrc;
+  } else {
+    imgA.value = mockupSrc as unknown as string;
+    imgB.value = mockupSrc as unknown as string;
+    currentIcon.value = logoSrc as unknown as string;
+  }
+  startCarousel();
+  observeVisibility();
+
   const avifBackground = pickHeroBackground("avif");
   const webpBackground = pickHeroBackground("webp");
 
@@ -553,7 +598,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Contenção e visibilidade ajudam a performance sem quebrar layout */
 .hero {
   background-color: #0a0a0a;
   background-size: cover;
@@ -568,32 +612,12 @@ onMounted(() => {
   contain: layout paint style;
 }
 
-/* Ensure all hero content sits above background effects */
 .hero > * {
   position: relative;
   z-index: 1;
 }
 
-.hero__container {
-  max-width: var(--hero-max-w);
-  padding: var(--hero-padding);
-  margin: 0 auto;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0; /* explícito para evitar heranças indesejadas */
-}
-
-.hero__logo-wrap {
-  display: grid;
-  place-items: center;
-  padding-top: 24px;
-  padding-bottom: 12px;
-}
-
 .hero__logo {
-  width: 90px;
-  height: 90px;
-  object-fit: contain;
   filter: drop-shadow(0 6px 18px rgba(16, 185, 129, 0.2));
   transition: transform 0.25s ease, filter 0.25s ease;
   user-select: none;
@@ -603,38 +627,18 @@ onMounted(() => {
   filter: drop-shadow(0 10px 24px rgba(56, 189, 248, 0.25));
 }
 
-.hero__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  align-items: center;
-  gap: 28px;
-}
-
-.hero__content {
-  text-align: center;
-  margin: 0 auto;
-  max-width: 760px;
-  position: relative;
-  z-index: 1; /* ensure content sits above the background band */
-}
-
-/* Soft blurred dark band behind hero content to increase focus */
 .hero__content::before {
   content: "";
   position: absolute;
-  /* make it a thin horizontal band centered vertically */
   left: -10px;
   right: -10px;
-  top: calc(50% - 22px);
-  bottom: calc(50% - 22px);
+  top: calc(50% - 26px);
+  bottom: calc(50% - 26px);
   border-radius: 14px;
   pointer-events: none;
-  /* lighter opacity so it doesn't draw attention */
-  background: rgba(0, 0, 0, 0.14);
-  /* gentler blur to keep it subtle */
+  background: rgba(0, 0, 0, 0.16);
   filter: blur(4px);
   -webkit-filter: blur(4px);
-  /* minimal background blur, can be removed if undesired */
   backdrop-filter: blur(0.5px);
   -webkit-backdrop-filter: blur(0.5px);
   z-index: -1;
@@ -642,76 +646,12 @@ onMounted(() => {
 
 .hero__title {
   margin: 0;
-  font-family: 'Bebas Neue', var(--font-heading);
-  color: rgba(212, 209, 12, 0.9);
-  font-weight: 600;
+  font-family: "Bebas Neue", var(--font-heading);
   letter-spacing: -0.01em;
-  line-height: 1.1;
-  font-size: clamp(var(--hero-title-size-mobile), 3.5vw, var(--hero-title-size-desktop));
 }
 
 .hero__subtitle {
-  margin: 30px auto 0;
   font-family: var(--font-body);
-  font-weight: 450;
-  color: var(--hero-muted);
-  font-size: 18px;
-  max-width: 38ch;
-  z-index: 1000 !important;
-}
-
-.hero__ctas {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 20px;
-}
-
-.btn {
-  --btn-ring: rgba(56, 189, 248, 0.45);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 18px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: var(--btn-radius);
-  text-decoration: none;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.05s ease;
-  outline: none;
-}
-.btn:active {
-  transform: translateY(1px);
-}
-.btn:focus-visible {
-  outline: 3px solid var(--btn-ring);
-  outline-offset: 2px;
-}
-
-.btn--primary {
-  color: #fff;
-  background: var(--primary-color);
-  border: 1px solid color-mix(in srgb, var(--primary-color) 92%, white 8%);
-}
-.btn--primary:hover {
-  background: color-mix(in srgb, var(--primary-color) 86%, white 14%);
-}
-.btn--primary:focus-visible {
-  outline-color: color-mix(in srgb, var(--primary-light) 60%, white 40%);
-}
-
-.btn--secondary {
-  color: #e5e7eb;
-  background: transparent;
-  border: 1px solid #334155;
-}
-.btn--secondary:hover {
-  background: rgba(148, 163, 184, 0.08);
-}
-.btn--secondary:focus-visible {
-  outline-color: rgba(148, 163, 184, 0.55);
 }
 
 .pulse-waves {
@@ -765,20 +705,12 @@ onMounted(() => {
   }
 }
 
-.hero__mockup {
-  display: none;
-}
-.hero__mockup img {
-  display: block;
-}
 .mockup-fader {
   position: relative;
   width: 100%;
-  height: 0 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  border-radius: 16px;
-  box-shadow: var(--shadow-lg);
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
 }
 .fade-img {
   position: absolute;
@@ -795,50 +727,17 @@ onMounted(() => {
 }
 
 @media (min-width: 1024px) {
-  .hero__grid {
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 36px;
-  }
-  .hero__content {
-    text-align: left;
-    margin-left: 0;
-  }
   .hero__content::before {
     left: -14px;
     right: -14px;
-    top: calc(50% - 26px);
-    bottom: calc(50% - 26px);
+    top: calc(50% - 30px);
+    bottom: calc(50% - 30px);
     border-radius: 16px;
   }
-  .hero__ctas {
-    justify-content: flex-start;
-  }
-  .hero__mockup {
-    display: block;
-  }
 }
 
-/* Full-viewport height on mobile */
-@media (max-width: 1023px) {
-  .hero {
-    min-height: 100vh;
-    min-height: 100svh;
-  }
-  .hero__container {
-    min-height: 100vh;
-    min-height: 100svh;
-  }
-  .hero__grid {
-    margin-top: 50px;
-    align-content: flex-start;
-    min-height: 100%;
-  }
-}
-
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .hero__logo,
-  .btn,
   .fade-img {
     transition: none;
   }
@@ -852,13 +751,11 @@ onMounted(() => {
   }
 }
 
-/* Fundo da hero com blur sutil e camada escura (efeito estático) */
 .hero::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* replica o background do container para aplicar blur */
   background-image: inherit;
   background-size: inherit;
   background-position: inherit;
@@ -873,12 +770,10 @@ onMounted(() => {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* camada escura uniforme; ajuste a opacidade se quiser mais/menos escuro */
   background: rgba(0, 0, 0, 0.38);
   z-index: 0;
 }
 
-/* Parallax transforms tied to --mx/--my */
 .parallax {
   will-change: transform;
 }
@@ -890,48 +785,6 @@ onMounted(() => {
 }
 .parallax--mockup {
   transform: translate3d(calc(var(--mx, 0) * -8px), calc(var(--my, 0) * -8px), 0);
-}
-
-/* Hint styles (mobile only) */
-.hero__hint {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(17, 24, 39, 0.55);
-  color: #e5e7eb;
-  font-size: 13px;
-  line-height: 1;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-.hero__hint-dot {
-  width: 6px;
-  height: 6px;
-  background: #34d399;
-  border-radius: 50%;
-  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
-  animation: pulse 1.8s ease-out infinite;
-}
-.hero__hint-text {
-  letter-spacing: 0.01em;
-}
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
-  }
 }
 
 @media (max-width: 1023px) {

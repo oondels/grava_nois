@@ -1,48 +1,62 @@
 <template>
   <!-- Como Funciona -->
-  <section id="how" class="section alt" aria-labelledby="how-title">
-    <div class="container">
-      <div class="d-flex justify-center align-center">
-        <h2 id="how-title" class="section-title">Como funciona?</h2>
+  <section id="how" class="bg-[var(--bg-alt)] py-16 md:py-20 lg:py-24" aria-labelledby="how-title">
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h2 id="how-title" class="text-3xl font-black tracking-tight text-[var(--ink)] md:text-4xl lg:text-5xl">
+          Como funciona?
+        </h2>
       </div>
-      <ul class="steps">
-        <li class="step-card">
-          <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-            <VideoIcon />
-            <div class="logo-dot ml-3" aria-hidden="true"></div>
+      <ul class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        <li
+          class="step-shell relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-5 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl lg:after:absolute lg:after:left-[calc(100%+0.75rem)] lg:after:top-9 lg:after:h-px lg:after:w-6 lg:after:bg-white/20 lg:last:after:hidden"
+        >
+          <div class="mb-3 flex items-center justify-center gap-3 text-emerald-300" aria-hidden="true">
+            <VideoIcon class="h-7 w-7" />
+            <span class="h-3.5 w-3.5 rounded-full bg-red-500 shadow-[0_0_0_6px_rgba(255,77,90,0.25)]"></span>
           </div>
-          <h3>Câmeras atentas</h3>
-          <p>Captura contínua em Full HD mantendo um buffer circular de alguns minutos.</p>
+          <h3 class="text-lg font-bold text-[var(--ink)]">Câmeras atentas</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+            Captura contínua em Full HD mantendo um buffer circular de alguns minutos.
+          </p>
         </li>
 
-        <li class="step-card">
-          <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-            <VideoIcon />
-
+        <li
+          class="step-shell relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-5 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl lg:after:absolute lg:after:left-[calc(100%+0.75rem)] lg:after:top-9 lg:after:h-px lg:after:w-6 lg:after:bg-white/20 lg:last:after:hidden"
+        >
+          <div class="mb-3 flex items-center justify-center text-emerald-300" aria-hidden="true">
+            <MousePointerClick class="h-7 w-7" />
           </div>
-          <div class="step-icon" aria-hidden="true"></div>
-          <h3>Botão do lance</h3>
-          <p>No momento do lance você aperta o botão físico ou futuro atalho no app.</p>
+          <h3 class="text-lg font-bold text-[var(--ink)]">Botão do lance</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+            No momento do lance você aperta o botão físico ou futuro atalho no app.
+          </p>
         </li>
 
-        <li class="step-card">
-          <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-            <ClockPlus />
+        <li
+          class="step-shell relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-5 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl lg:after:absolute lg:after:left-[calc(100%+0.75rem)] lg:after:top-9 lg:after:h-px lg:after:w-6 lg:after:bg-white/20 lg:last:after:hidden"
+        >
+          <div class="mb-3 flex items-center justify-center text-emerald-300" aria-hidden="true">
+            <ClockPlus class="h-7 w-7" />
           </div>
-          <h3>Recorte inteligente</h3>
-          <p>O sistema salva automaticamente segundos antes e depois, totalizando 40 segundos.</p>
+          <h3 class="text-lg font-bold text-[var(--ink)]">Recorte inteligente</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+            O sistema salva automaticamente segundos antes e depois, totalizando 40 segundos.
+          </p>
         </li>
 
-        <li class="step-card">
-          <div class="step-icon d-flex flex-row justify-center align-center" aria-hidden="true">
-            <CloudDownload />
+        <li class="step-shell relative overflow-hidden rounded-2xl border border-white/15 bg-white/5 p-5 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+          <div class="mb-3 flex items-center justify-center text-emerald-300" aria-hidden="true">
+            <CloudDownload class="h-7 w-7" />
           </div>
-          <h3>Processo & plataforma</h3>
-          <p>Transcodifica, envia e disponibiliza para assistir, compartilhar e baixar.</p>
+          <h3 class="text-lg font-bold text-[var(--ink)]">Processo & plataforma</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+            Transcodifica, envia e disponibiliza para assistir, compartilhar e baixar.
+          </p>
         </li>
       </ul>
 
-      <v-btn size="small" variant="text" color="primary" class="mt-2" @click="showHowDialog = true">
+      <v-btn size="small" variant="text" color="primary" class="mt-5" @click="showHowDialog = true">
         Mais Detalhes
       </v-btn>
     </div>
@@ -147,7 +161,6 @@ function scrollToFaqFromDialog() {
 }
 </script>
 
-<style scoped></style>
 <style scoped>
 /* Responsividade do dialog */
 .dialog-card {
@@ -159,83 +172,29 @@ function scrollToFaqFromDialog() {
     border-radius: 0;
   }
 }
-/* Liquid glass inspirado na Apple para os cards de etapa */
-.steps {
-  /* espaço levemente maior entre os cards para valorizar o efeito */
-  gap: 1.1rem;
-}
-
-.step-card {
+/* Camada sutil para dar profundidade aos cards */
+.step-shell {
   position: relative;
   overflow: hidden;
-  isolation: isolate; /* garante camadas corretas */
-  border-radius: 1rem;
-  /* base translucida com bom contraste em light/dark */
-  background: color-mix(in srgb, var(--card) 52%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  /* borda interna suave e profundidade */
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 16px 48px rgba(255, 255, 255, 0.06),
-    0 10px 24px -16px rgba(0, 0, 0, 0.28);
+  isolation: isolate;
 }
 
-/* Camada de brilho/sheen fluido */
-.step-card::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    /* brilho superior esquerdo */ radial-gradient(
-      120% 80% at -10% -20%,
-      rgba(255, 255, 255, 0.28),
-      rgba(255, 255, 255, 0) 60%
-    ),
-    /* brilho inferior */ radial-gradient(60% 40% at 50% 120%, rgba(255, 255, 255, 0.08), transparent 70%),
-    /* leve tinta da marca para dar vida */
-      radial-gradient(120% 80% at 110% -20%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%);
-  transition: transform 320ms ease, opacity 240ms ease;
-  opacity: 0.9;
-}
-
-/* Película suave para reforçar o efeito vítreo */
-.step-card::after {
+.step-shell::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  background: radial-gradient(
+      120% 80% at -10% -20%,
+      rgba(255, 255, 255, 0.18),
+      rgba(255, 255, 255, 0) 60%
+    ),
+    radial-gradient(120% 80% at 110% -20%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%);
 }
 
-/* Conteúdo acima das camadas */
-.step-card > * {
+.step-shell > * {
   position: relative;
   z-index: 1;
-}
-
-/* Interações sutis */
-@media (hover: hover) {
-  .step-card:hover::before,
-  .step-card:focus-within::before {
-    transform: translate3d(2px, -2px, 0) scale(1.02);
-    opacity: 1;
-  }
-}
-
-/* Blur com fallback amplo: se suportado, aplica blur/saturate; senão, mantém a base translúcida */
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .step-card {
-    background: color-mix(in srgb, var(--bg-alt) 24%, transparent);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
-    backdrop-filter: blur(10px) saturate(120%);
-  }
-}
-
-/* Acessibilidade de movimento */
-@media (prefers-reduced-motion: reduce) {
-  .step-card::before {
-    transition: none;
-  }
 }
 </style>
