@@ -137,7 +137,11 @@
               :rules="[rules.required, rules.cep]"
               class="mb-3"
               @input="autoFillAddress"
-            />
+            >
+              <template #append-inner v-slot:loader>
+                <v-progress-circular v-if="cepLoading" indeterminate color="green" />
+              </template>
+            </v-text-field>
 
             <!-- <v-text-field
               v-model="locationForm.address"
@@ -367,7 +371,6 @@ const rules = {
   },
 };
 
-
 const canLinkSelected = computed(() => {
   if (!selectedQuadra.value) return false;
   return !quadrasVinculadas.value.some((q) => q.id === selectedQuadra.value!.id);
@@ -379,7 +382,7 @@ const quadrasVinculadas = ref<QuadraItem[]>([]);
 
 async function fetchUserQuadras() {
   try {
-    let quadras = user.value?.quadrasFiliadas
+    let quadras = user.value?.quadrasFiliadas;
 
     if (!quadras?.length) {
       const userId = user?.value?.id;
@@ -427,17 +430,17 @@ async function fetchUserQuadras() {
 
 function fetchUserLocations() {
   if (user.value) {
-    const userLocation = user?.value?.localization
+    const userLocation = user?.value?.localization;
 
     locationForm.cep = userLocation.cep || "";
-      locationForm.city = userLocation.city || "";
-      locationForm.state = userLocation.state || "";
+    locationForm.city = userLocation.city || "";
+    locationForm.state = userLocation.state || "";
   }
 }
 
 async function linkSelectedQuadra() {
   if (!selectedQuadra.value) return;
-  const userId = user?.value?.id
+  const userId = user?.value?.id;
   if (!userId) {
     notify("É necessário estar logado.", "error");
     return;
@@ -453,11 +456,8 @@ async function linkSelectedQuadra() {
 
   try {
     linkingQuadra.value = true;
-    const response = await api.patch(
-      `/users/${userId}`,
-      { quadrasFiliadas: next },
-    );
-    
+    const response = await api.patch(`/users/${userId}`, { quadrasFiliadas: next });
+
     // Atualiza estado do pinia com as quadras atualizadas
     const updatedQuadras = response.data?.quadrasFiliadas || next;
     authStore.updateQuadrasFiliadas(updatedQuadras);
@@ -648,7 +648,7 @@ const saveProfile = async () => {
 };
 
 const saveLocation = async () => {
-  const userId = user?.value?.id
+  const userId = user?.value?.id;
   if (!userId) {
     notify("É necessário estar logado.", "error");
     return;
@@ -685,9 +685,12 @@ const saveLocation = async () => {
   }
 };
 
+const cepLoading = ref(false);
 // Edições do Perfil Usuário
 async function autoFillAddress() {
   if (!locationForm.cep || locationForm.cep.length !== 8) return;
+
+  cepLoading.value = true;
 
   const cep = locationForm.cep.replace(/\D/g, "");
   if (cep.length !== 8) return;
@@ -700,7 +703,10 @@ async function autoFillAddress() {
     locationForm.address = data.logradouro || locationForm.address;
     locationForm.city = data.localidade || locationForm.city;
     locationForm.state = data.uf || locationForm.state;
-  } catch {}
+  } catch {
+  } finally {
+    cepLoading.value = false;
+  }
 }
 
 const goBack = () => {

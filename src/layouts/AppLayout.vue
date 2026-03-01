@@ -2,7 +2,7 @@
   <AppShell>
     <router-view v-slot="{ Component, route }">
       <transition name="fade" mode="out-in">
-        <div :key="route.fullPath">
+        <div :key="routeViewKey">
           <ErrorState
             v-if="routeError"
             title="Não foi possível carregar esta página"
@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onErrorCaptured } from "vue";
+import { computed, ref, watch, onErrorCaptured } from "vue";
 import { useRoute } from "vue-router";
 import AppShell from "@/components/AppShell.vue";
 import AppNotifications from "@/components/AppNotifications.vue";
@@ -32,6 +32,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 
 const route = useRoute();
 const routeError = ref<unknown>(null);
+const routeViewKey = computed(() => `${String(route.name ?? route.path)}:${JSON.stringify(route.params)}`);
 
 watch(
   () => route.fullPath,

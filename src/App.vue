@@ -1,7 +1,7 @@
 <template>
   <ReloadPrompt />
   <InstallPrompt />
-  <WhatsNewDialog v-if="!isMaintenance" />
+  <WhatsNewDialog v-if="!isMaintenance && whatsNew" />
   <AppLayout />
 </template>
 
@@ -17,6 +17,7 @@ const themeStore = useThemeStore();
 const isMaintenance = ["true", "1", "on", "yes"].includes(
   String(import.meta.env.VITE_MAINTENANCE_MODE || "").toLowerCase(),
 );
+const whatsNew = false;
 
 onMounted(() => {
   themeStore.setTheme(true);

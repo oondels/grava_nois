@@ -1,4 +1,5 @@
 // Tipos e cliente HTTP para listagem de vídeos
+import { api } from "@/services/api";
 import type { ApiResponse } from "@/types/Api";
 
 export type VideoListItem = {
@@ -19,6 +20,47 @@ export type VideoListResponse = {
   hasMore: boolean;
   nextToken: string | null;
 };
+
+type VideoListApiEnvelope = ApiResponse<VideoListResponse>;
+type VideoSignPayload = { url?: string };
+type VideoSignApiEnvelope = ApiResponse<VideoSignPayload>;
+
+const downloadUrlCache = new Map<string, string | null>();
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null;
+};
+
+const isVideoListResponse = (value: unknown): value is VideoListResponse => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    Array.isArray(value.videos) &&
+    typeof value.count === "number" &&
+    typeof value.hasMore === "boolean" &&
+    (typeof value.nextToken === "string" || value.nextToken === null)
+  );
+};
+
+const extractSignedUrl = (value: unknown): string | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  if (typeof value.url === "string" && value.url.trim().length > 0) {
+    return value.url;
+  }
+
+  if (isRecord(value.data) && typeof value.data.url === "string" && value.data.url.trim().length > 0) {
+    return value.data.url;
+  }
+
+  return null;
+};
+
+const getDownloadCacheKey = (bucket: string, path: string) => `${bucket}:${path}`;
 
 export async function fetchVideos({
   limit = 100,
@@ -43,37 +85,62 @@ export async function fetchVideos({
     throw new Error('venueId é obrigatório');
   }
 
-  const params = new URLSearchParams({
-    venueId,
-    limit: String(limit),
-    includeSignedUrl: String(includeSignedUrl),
-    ttl: String(ttl),
+  const response = await api.get<VideoListResponse | VideoListApiEnvelope>("/api/videos/list", {
+    params: {
+      venueId,
+      limit,
+      includeSignedUrl,
+      ttl,
+      ...(token ? { token } : {}),
+    },
   });
-  if (token) params.set('token', token);
 
-  const base = (import.meta as any).env?.VITE_API_BASE as string | undefined;
-  const baseUrl = base ? base.replace(/\/$/, '') : '';
-  const url = `${baseUrl}/api/videos/list?${params.toString()}`;
-
-  const res = await fetch(url, { credentials: 'include' });
-  const body = await res.json().catch(() => null as ApiResponse<VideoListResponse> | VideoListResponse | null);
-  if (!res.ok) {
-    const message =
-      (body && "message" in body && typeof body.message === "string" ? body.message : undefined) ||
-      (body && "error" in body && body.error && typeof body.error === "object" && "code" in body.error
-        ? String(body.error.code)
-        : undefined) ||
-      'Falha ao listar vídeos';
-    throw new Error(message);
+  const body = response.data;
+  if (isVideoListResponse(body)) {
+    return body;
   }
 
-  if (!body) {
-    throw new Error('Resposta vazia ao listar vídeos');
+  if (isRecord(body) && "data" in body && isVideoListResponse(body.data)) {
+    return body.data;
   }
 
-  if ("data" in body && body.data && typeof body.data === "object") {
-    return body.data as VideoListResponse;
+  throw new Error("Não foi possível interpretar a resposta de vídeos.");
+}
+
+export function clearDownloadCache() {
+  downloadUrlCache.clear();
+}
+
+export async function signDownload(path: string | null, bucket = "temp"): Promise<string | null> {
+  if (!path) return null;
+
+  const cacheKey = getDownloadCacheKey(bucket, path);
+  if (downloadUrlCache.has(cacheKey)) {
+    return downloadUrlCache.get(cacheKey) ?? null;
   }
 
-  return body as VideoListResponse;
+  const response = await api.get<VideoSignPayload | VideoSignApiEnvelope>("/api/videos/sign", {
+    params: {
+      bucket,
+      path,
+      kind: "download",
+      ttl: 3600,
+    },
+  });
+
+  const signedUrl = extractSignedUrl(response.data);
+  downloadUrlCache.set(cacheKey, signedUrl);
+  return signedUrl;
+}
+
+export async function onDownload(file: Pick<VideoListItem, "path" | "bucket" | "url" | "missing">): Promise<string | null> {
+  if (file.missing) return null;
+
+  const fallbackUrl = typeof file.url === "string" && file.url.trim().length > 0 ? file.url : null;
+  try {
+    const signedUrl = await signDownload(file.path, file.bucket);
+    return signedUrl || fallbackUrl;
+  } catch {
+    return fallbackUrl;
+  }
 }
