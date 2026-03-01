@@ -48,7 +48,7 @@ npm run test
 
 Observação:
 - `npm run build` está funcionando no estado atual.
-- `npm run test` está configurado, porém atualmente há incompatibilidade de execução com Vitest/Vuetify (ajuste pendente).
+- `npm run test` está configurado, porém atualmente falha por incompatibilidade de CLI do Vitest (flag `--setupFiles` inválida na versão em uso), com ajuste pendente.
 
 ## Rotas principais
 - `/` Home
@@ -126,7 +126,7 @@ type ApiResponse<T> = {
 ```
 
 ## PWA
-- Registro automático de Service Worker com `autoUpdate`.
+- Registro de Service Worker em modo `prompt` (atualização sob confirmação do usuário).
 - Cache de runtime (imagens, fontes e Google Fonts).
 - Prompt customizado de instalação.
 - Prompt de atualização de versão.
