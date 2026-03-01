@@ -1,36 +1,31 @@
 # Grava Nóis – Plataforma Web de Replays Esportivos
 
-Versão: 1.1.0
+Versão atual do app: `1.2.0` (conforme `package.json`).
 
 ## Visão geral
-O **Grava Nóis** é um ecossistema de captura e distribuição de replays esportivos para quadras e campos amadores. Um dispositivo local grava continuamente o jogo e, quando um atleta aciona o botão físico, o sistema recorta um trecho (antes/depois do evento), monta o clipe e envia para a nuvem. Esta aplicação web/PWA consome a API do Grava Nóis para autenticação, listagem e entrega dos vídeos.
+O **Grava Nóis** é uma aplicação web/PWA para consumo de replays esportivos de quadras e campos amadores.
+O frontend consome APIs de autenticação, vídeos e gestão (admin/cliente), com sessão baseada em cookies (`withCredentials`).
 
 ## O que este repositório entrega
-- Web app e PWA para atletas e administradores.
-- Login por email/senha e Google (OAuth via Google Identity Services).
-- Fluxo de troca de senha com validação client-side, medidor de força e tratamento de erros por campo.
-- Fluxo de recuperação de senha por e-mail (solicitação de link + redefinição por token no fragmento da URL).
-- Listagem de clipes por quadra com paginação, prévia sob demanda e download com URLs assinadas.
-- Área administrativa com dashboard e gestão de usuários, clientes e quadras.
-- Páginas de suporte: relatório de erro e solicitação de instalação.
-- Notificações globais e UI responsiva com Vuetify + utilitários Tailwind.
+- Web app e PWA para usuários finais, clientes e administradores.
+- Login por email/senha e Google (Google Identity Services).
+- Fluxo de alteração de senha para usuário autenticado.
+- Fluxo completo de recuperação de senha por e-mail (`forgot` + `reset` por token em hash `#token=...`).
+- Listagem de vídeos por quadra com paginação forward (`nextToken`), preview sob demanda e download por URL assinada.
+- Painel administrativo com dashboard e gestão de usuários/clientes/quadras.
+- Painel de cliente com visão geral e financeiro (com fallback para dados mock em endpoints ainda não implementados).
+- Páginas de suporte: contato (solicitação de instalação) e relatório de erro.
 
-## Stack principal
+## Stack
 - Vue 3 + TypeScript
 - Vite + `vite-plugin-pwa`
 - Vuetify 3 + Tailwind CSS
-- Pinia (estado)
-- Axios (HTTP)
-- Notivue (notificações)
+- Pinia
+- Axios
+- Notivue
 
-## Fluxo de alto nível
-1. Dispositivo local grava continuamente o jogo.
-2. Atleta aciona o botão e o sistema gera o clipe.
-3. O clipe é enviado para storage (ex.: S3) e a API registra metadados.
-4. A web app lista os clipes e solicita URLs assinadas para preview/download.
-
-## Configuração do ambiente
-Crie um arquivo `.env` (ou `.env.local`) na raiz:
+## Configuração de ambiente
+Crie `.env` (ou `.env.local`) na raiz:
 
 ```dotenv
 VITE_API_BASE=https://api.gravanois.com
@@ -38,9 +33,9 @@ VITE_GOOGLE_CLIENT_ID=<google_oauth_client_id>
 VITE_MAINTENANCE_MODE=false
 ```
 
-- `VITE_API_BASE`: base da API. Necessário para autenticação, listagem de vídeos e endpoints administrativos. A API usa cookies (`withCredentials`).
-- `VITE_GOOGLE_CLIENT_ID`: usado no login Google.
-- `VITE_MAINTENANCE_MODE`: se `true`, `1`, `on` ou `yes`, força o redirecionamento para `/maintenance`.
+- `VITE_API_BASE`: base da API.
+- `VITE_GOOGLE_CLIENT_ID`: client id do Google OAuth.
+- `VITE_MAINTENANCE_MODE`: se `true|1|on|yes`, redireciona para `/maintenance`.
 
 ## Scripts
 ```bash
@@ -51,34 +46,73 @@ npm run preview
 npm run test
 ```
 
+Observação:
+- `npm run build` está funcionando no estado atual.
+- `npm run test` está configurado, porém atualmente há incompatibilidade de execução com Vitest/Vuetify (ajuste pendente).
+
 ## Rotas principais
 - `/` Home
-- `/lances-gravanois` Listagem de vídeos (requer login)
-- `/login` e `/register` Autenticação
-- `/auth/change-password` Alteração de senha (mantém alias legado `/auth/update-password`)
-- `/auth/forgot-password` Solicitação de recuperação de senha
-- `/auth/password/reset` Redefinição por token recebido por e-mail (`#token=...`)
-- `/auth/callback` Callback OAuth
-- `/user-page` Perfil
-- `/contato` Solicitação de instalação
-- `/reportar-erro` Relatório de erro
-- `/admin/*` Área administrativa (requer `role=admin`)
-- `/maintenance` Modo manutenção
+- `/lances-gravanois` vídeos do usuário (requer autenticação)
+- `/login`, `/register`
+- `/auth/change-password` (alias legado `/auth/update-password`)
+- `/auth/forgot-password`
+- `/auth/password/reset`
+- `/auth/callback`
+- `/user-page`
+- `/contato`
+- `/reportar-erro`
+- `/maintenance`
+- `/admin`, `/admin/users`, `/admin/clients`, `/admin/venues` (somente admin)
+- `/client`, `/client/quadra`, `/client/financeiro` (usuário autenticado com perfil cliente/admin)
 
 ## Integração com API
-Principais endpoints consumidos pela aplicação:
-- `GET /auth/me`, `POST /auth/sign-in`, `POST /auth/sign-up`, `POST /auth/sign-out`, `POST /auth/google`, `POST /auth/refresh`, `POST /auth/change-password`
-- `POST /auth/password/forgot`, `POST /auth/password/reset/verify`, `POST /auth/password/reset`
-- `GET /api/videos/list` (paginação por `nextToken`)
-- `GET /api/videos/sign` (URLs assinadas para `preview` e `download`)
-- `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/clients`, `GET /admin/venues`
-- `PATCH /admin/users/:id`, `PATCH /admin/clients/:id`
-- `POST /notifications/report` e `POST /notifications/contact`
+Principais endpoints usados no frontend:
 
-Observação: os serviços de relatório e solicitação de instalação usam `X-Skip-Auth` para não exigir sessão.
+Autenticação:
+- `GET /auth/me`
+- `POST /auth/sign-in`
+- `POST /auth/sign-up`
+- `POST /auth/google`
+- `POST /auth/sign-out`
+- `POST /auth/refresh`
+- `POST /auth/change-password`
 
-### Padrão de resposta (Envelope)
-A API adota o formato padrão abaixo:
+Recuperação de senha:
+- `POST /auth/password/forgot`
+- `POST /auth/password/reset/verify`
+- `POST /auth/password/reset`
+
+Vídeos:
+- `GET /api/videos/list`
+- `GET /api/videos/sign`
+
+Admin:
+- `GET /admin/dashboard`
+- `GET /admin/users`
+- `GET /admin/clients`
+- `GET /admin/venues`
+- `PATCH /admin/users/:id`
+- `PATCH /admin/clients/:id`
+
+Portal cliente:
+- `GET /api/clients/me/stats`
+- `GET /client/profile`
+- `PATCH /client/profile`
+
+Perfil de usuário:
+- `GET /users/:id`
+- `PATCH /users/:id`
+- `PATCH /users/:id/location`
+
+Suporte/notificações:
+- `POST /notifications/report`
+- `POST /notifications/contact`
+
+Observações:
+- `report` e `contact` usam `X-Skip-Auth`.
+- Alguns fluxos do portal cliente (`assinatura` e `faturas`) ainda estão com implementação de API pendente e fallback mock no frontend.
+
+## Envelope de resposta da API
 
 ```ts
 type ApiResponse<T> = {
@@ -91,40 +125,33 @@ type ApiResponse<T> = {
 };
 ```
 
-Regras implementadas no frontend:
-- Tipar as chamadas com `ApiResponse<T>` (ex.: `api.get<ApiResponse<User[]>>()`).
-- Extrair o payload real com `response.data.data`.
-- Em endpoints paginados, considerar também `response.data.meta` para `page`, `limit` e `total`.
-- No interceptor de erro, priorizar `response.data.message` e fallback para `response.data.error.code`, expondo a mensagem amigável em `error.message`.
-- A estratégia de autenticação com cookies HttpOnly (`withCredentials`) permanece inalterada.
-- Endpoints que não devem acionar refresh em `401` usam cliente dedicado (`apiNoRefresh`) para evitar tentativas de `/auth/refresh` fora do fluxo de sessão.
-
 ## PWA
-- Registro automático de Service Worker com atualização.
-- Cache de imagens e fontes via Workbox.
-- Prompt de instalação customizado e alerta de atualização.
+- Registro automático de Service Worker com `autoUpdate`.
+- Cache de runtime (imagens, fontes e Google Fonts).
+- Prompt customizado de instalação.
+- Prompt de atualização de versão.
 
 ## Estrutura de pastas
-```
+```txt
 src/
-├── assets/             # Logos, imagens e ícones
-├── components/         # Componentes reutilizáveis
-├── components/home-sections/ # Seções da home
-├── components/videos/  # Cards e views de vídeos
-├── layouts/            # Layouts globais (App/Admin)
-├── pages/              # Páginas (home, auth, vídeos, admin, suporte)
-├── router/             # Rotas e guards
-├── services/           # Integrações HTTP e API
-├── store/              # Pinia stores
-├── styles/             # Variáveis e utilitários
-├── utils/              # Helpers e ícones
-└── config/             # Configs locais
+├── assets/
+├── components/
+├── layouts/
+├── pages/
+├── router/
+├── services/
+├── store/
+├── styles/
+├── test/
+├── types/
+├── utils/
+└── config/
 ```
 
 ## Versionamento
-- Seguimos SemVer (`MAJOR.MINOR.PATCH`).
-- Versão atual: `1.1.0`.
-- Histórico de mudanças em `CHANGELOG.md`.
+- Convenção SemVer (`MAJOR.MINOR.PATCH`).
+- Versão atual do pacote: `1.2.0`.
+- `CHANGELOG.md` ainda não possui entrada da `1.2.0` (pendente de atualização).
 
 ## Licença
-MIT.
+MIT
