@@ -1,7 +1,7 @@
 <template>
   <section
     ref="rootEl"
-    class="hero relative isolate min-h-[88vh] md:min-h-[90vh] lg:min-h-screen"
+    class="hero relative isolate min-h-[100svh] md:min-h-[90vh] lg:min-h-screen"
     aria-labelledby="hero-title"
     :style="heroBgStyle"
   >
@@ -40,7 +40,7 @@
           </p>
 
           <span class="my-7 flex items-center justify-center">
-            <a href="#how" class="pulse-waves" aria-label="Veja como funciona">
+            <a href="#how" class="pulse-waves" aria-label="Veja como funciona" @click.prevent="scrollToHow">
               <ChevronsDown role="button" class="my-2 h-6 w-6" :size="28" />
             </a>
           </span>
@@ -48,6 +48,7 @@
           <div class="hero__ctas mt-5 flex flex-wrap justify-center gap-3">
             <a
               href="#how"
+              @click.prevent="scrollToHow"
               class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/70 bg-emerald-700/95 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
               role="button"
               aria-label="See how it works"
@@ -194,6 +195,19 @@ function applyHeroBackground(src: string) {
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
+}
+
+function scrollToHow() {
+  const target = document.getElementById("how");
+  if (!target) return;
+
+  const headerOffset = window.matchMedia("(min-width: 768px)").matches ? 72 : 0;
+  const y = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+
+  if (window.location.hash !== "#how") {
+    window.history.replaceState(window.history.state, "", "#how");
+  }
 }
 
 // Zona de damping ativa somente quando a hero está on-screen
