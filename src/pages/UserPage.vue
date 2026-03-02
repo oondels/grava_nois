@@ -300,6 +300,7 @@ import {
 } from "lucide-vue-next";
 import LogoGravaNoisSimbol from "@/assets/icons/grava-nois-simbol.webp";
 import { getSportColor, getSportLabel } from "@/utils/formatters";
+import { fetchViaCepAddress } from "@/utils/viaCep";
 import { useSnackbar } from "@/composables/useSnackbar";
 import { api } from "@/services/api";
 
@@ -688,17 +689,13 @@ const saveLocation = async () => {
 const cepLoading = ref(false);
 // Edições do Perfil Usuário
 async function autoFillAddress() {
-  if (!locationForm.cep || locationForm.cep.length !== 8) return;
+  const cep = (locationForm.cep || "").replace(/\D/g, "");
+  if (cep.length !== 8 || cepLoading.value) return;
 
   cepLoading.value = true;
-
-  const cep = locationForm.cep.replace(/\D/g, "");
-  if (cep.length !== 8) return;
   try {
-    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (data.erro) return;
+    const data = await fetchViaCepAddress(cep);
+    if (!data) return;
 
     locationForm.address = data.logradouro || locationForm.address;
     locationForm.city = data.localidade || locationForm.city;
