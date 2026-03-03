@@ -36,21 +36,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-const hasSkipAuthHeader = (config: RetryRequestConfig) => {
-  const headers = config.headers as any;
-  if (!headers) {
-    return false;
-  }
-
-  if (typeof headers.get === "function") {
-    const value = headers.get("X-Skip-Auth") ?? headers.get("x-skip-auth");
-    return value === true || value === "true" || value === "1";
-  }
-
-  const value = headers["X-Skip-Auth"] ?? headers["x-skip-auth"];
-  return value === true || value === "true" || value === 1 || value === "1";
-};
-
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 const getApiErrorMessage = (payload: unknown): string | undefined => {
@@ -101,7 +86,7 @@ export function setupInterceptors(store: any, router: any) {
       }
 
       const requestUrl = originalRequest.url || "";
-      if (originalRequest._skipRefresh || hasSkipAuthHeader(originalRequest) || requestUrl.includes("/auth/refresh")) {
+      if (originalRequest._skipRefresh || requestUrl.includes("/auth/refresh")) {
         return Promise.reject(enrichAxiosErrorMessage(error));
       }
 

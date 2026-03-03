@@ -109,7 +109,7 @@ Suporte/notificações:
 - `POST /notifications/contact`
 
 Observações:
-- `report` e `contact` usam `X-Skip-Auth`.
+- `report` e `contact` usam o cliente `apiNoRefresh` (sem refresh automático em 401).
 - Alguns fluxos do portal cliente (`assinatura` e `faturas`) ainda estão com implementação de API pendente e fallback mock no frontend.
 
 ## Envelope de resposta da API
