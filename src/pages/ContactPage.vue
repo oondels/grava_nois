@@ -25,6 +25,8 @@
                   v-model="form.cnpjCpf"
                   label="CNPJ / CPF *"
                   :rules="[...reqRules, cpfCnpjRule]"
+                  hint="Digite apenas números: CPF com 11 dígitos ou CNPJ com 14."
+                  persistent-hint
                   variant="outlined"
                   density="comfortable"
                 />
@@ -32,6 +34,8 @@
                   v-model="form.cep"
                   label="CEP *"
                   :rules="[...reqRules, cepRule]"
+                  hint="Formato 00000-000."
+                  persistent-hint
                   variant="outlined"
                   density="comfortable"
                   :loading="cepLoading"
@@ -91,6 +95,8 @@
                     v-model="form.telefone"
                     label="Telefone *"
                     :rules="[...reqRules, telefoneRule]"
+                    hint="Com DDD e apenas números. Ex.: 75982******"
+                    persistent-hint
                     variant="outlined"
                     density="comfortable"
                     class="grow"
@@ -107,6 +113,8 @@
                   v-model="form.email"
                   label="Email *"
                   :rules="[...reqRules, emailRule]"
+                  hint="Ex.: contato@empresa.com.br"
+                  persistent-hint
                   variant="outlined"
                   density="comfortable"
                 />
