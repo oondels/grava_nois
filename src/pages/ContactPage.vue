@@ -25,6 +25,8 @@
                   v-model="form.cnpjCpf"
                   label="CNPJ / CPF *"
                   :rules="[...reqRules, cpfCnpjRule]"
+                  hint="Digite apenas números: CPF com 11 dígitos ou CNPJ com 14."
+                  persistent-hint
                   variant="outlined"
                   density="comfortable"
                 />
@@ -32,10 +34,17 @@
                   v-model="form.cep"
                   label="CEP *"
                   :rules="[...reqRules, cepRule]"
+                  hint="Formato 00000-000."
+                  persistent-hint
                   variant="outlined"
                   density="comfortable"
+                  :loading="cepLoading"
                   @blur="autoFillAddress"
-                />
+                >
+                  <template #append-inner v-slot:loader>
+                    <v-progress-circular v-if="cepLoading" indeterminate color="green" />
+                  </template>
+                </v-text-field>
                 <v-text-field
                   v-model="form.endereco"
                   label="Endereço *"
@@ -86,6 +95,8 @@
                     v-model="form.telefone"
                     label="Telefone *"
                     :rules="[...reqRules, telefoneRule]"
+                    hint="Com DDD e apenas números. Ex.: 75982******"
+                    persistent-hint
                     variant="outlined"
                     density="comfortable"
                     class="grow"
@@ -102,6 +113,8 @@
                   v-model="form.email"
                   label="Email *"
                   :rules="[...reqRules, emailRule]"
+                  hint="Ex.: contato@empresa.com.br"
+                  persistent-hint
                   variant="outlined"
                   density="comfortable"
                 />
@@ -148,14 +161,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, watch } from "vue";
 import { useSnackbar } from "@/composables/useSnackbar";
 import { solicitarInstalacao } from "@/services/solicitarInstalacao";
+import { fetchViaCepAddress } from "@/utils/viaCep";
 
 const { showSnackbar } = useSnackbar();
 const formRef = ref();
 const isValid = ref(false);
 const submitting = ref(false);
+const cepLoading = ref(false);
+const lastCheckedCep = ref("");
+const isCepValidated = ref(false);
 
 const form = reactive({
   estabelecimento: "",
@@ -210,9 +227,16 @@ const cpfCnpjRule = (v: string) => v.replace(/\D/g, "").length >= 11 || "CNPJ/CP
 const qtdCamerasRule = [(v: number) => v == null || v >= 1 || "Mínimo 1"];
 
 const handleSubmit = async () => {
-  const valid = await formRef.value?.validate();
-  if (!valid) {
+  const validation = await formRef.value?.validate();
+  const isFormValid = typeof validation === "boolean" ? validation : !!validation?.valid;
+  if (!isFormValid) {
     console.warn("Formulário inválido");
+    return;
+  }
+
+  const cepIsOk = await autoFillAddress();
+  if (!cepIsOk) {
+    showSnackbar("Informe um CEP válido para continuar.", "warning");
     return;
   }
 
@@ -251,28 +275,58 @@ const handleSubmit = async () => {
 // Auto-preenchimento simples via ViaCEP
 async function autoFillAddress() {
   const cep = form.cep.replace(/\D/g, "");
-  if (cep.length !== 8) return;
+  if (cep.length !== 8 || cepLoading.value) return false;
+  if (cep === lastCheckedCep.value && isCepValidated.value) return true;
+
+  lastCheckedCep.value = cep;
+
+  cepLoading.value = true;
   try {
-    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (data.erro) return;
-    form.endereco = data.logradouro || form.endereco;
-    form.cidade = data.localidade || form.cidade;
-    form.estado = data.uf || form.estado;
-  } catch {}
+    const data = await fetchViaCepAddress(cep);
+      if (!data) {
+        isCepValidated.value = false;
+        showSnackbar("CEP não encontrado no ViaCEP.", "warning");
+        return false;
+      }
+
+      isCepValidated.value = true;
+      form.endereco = data.logradouro || form.endereco;
+      form.cidade = data.localidade || form.cidade;
+      form.estado = data.uf || form.estado;
+    return true;
+  } catch (error) {
+    isCepValidated.value = false;
+    console.error("Erro ao consultar CEP no ViaCEP:", error);
+    showSnackbar("Não foi possível consultar o CEP. Tente novamente.", "error");
+    return false;
+  } finally {
+    cepLoading.value = false;
+  }
 }
+
+watch(
+  () => form.cep,
+  (value) => {
+    const cep = value.replace(/\D/g, "");
+    if (cep.length !== 8) {
+      isCepValidated.value = false;
+      if (cep.length === 0) lastCheckedCep.value = "";
+      return;
+    }
+
+    if (cep !== lastCheckedCep.value) {
+      void autoFillAddress();
+    }
+  },
+);
 </script>
 
 <style scoped>
 .orcamento-wrapper {
   width: min(1100px, 100% - 2rem);
   padding: clamp(1rem, 2vw, 2rem) 0 3rem;
-  background: radial-gradient(
-      900px 300px at 10% -10%,
-      color-mix(in srgb, var(--brand) 14%, transparent),
-      transparent 60%
-    ),
+  background:
+    radial-gradient(900px 300px at 10% -10%, color-mix(in srgb, var(--brand) 14%, transparent), transparent 60%),
     var(--bg);
   min-height: 100%;
 }

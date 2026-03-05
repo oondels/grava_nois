@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: [
         "grava-nois.ico",
         "favicon.ico",
@@ -19,6 +19,7 @@ export default defineConfig({
       manifest: {
         "name": "Grava Nóis",
         "short_name": "Grava Nóis",
+        "id": "/",
         "description": "Replays esportivos instantâneos — capture, compartilhe e baixe seus melhores lances.",
         "start_url": "/",
         "display": "standalone",
@@ -39,33 +40,45 @@ export default defineConfig({
             "sizes": "783x1600",
             "type": "image/jpeg",
             "form_factor": "narrow"
+          },
+          {
+            "src": "screenshots/home_wide.webp",
+            "sizes": "1280x853",
+            "type": "image/webp",
+            "form_factor": "wide"
           }
         ],
         "shortcuts": [
           {
             "name": "Contato",
-            "url": "/contato"
+            "url": "/contato",
+            "icons": [{ "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
           },
           {
             "name": "Lances GravaNois",
             "url": "/lances-gravanois",
-            "description": "Listagem de vídeos gerados e disponíveis para download."
+            "description": "Listagem de vídeos gerados e disponíveis para download.",
+            "icons": [{ "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
           },
           {
             "name": "Login",
-            "url": "/login"
+            "url": "/login",
+            "icons": [{ "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
           },
           {
             "name": "Cadastro",
-            "url": "/register"
+            "url": "/register",
+            "icons": [{ "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
           },
           {
             "name": "Página do Usuário",
-            "url": "/user-page"
+            "url": "/user-page",
+            "icons": [{ "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
           },
           {
             "name": "Reportar Problemas",
-            "url": "/reportar-erro"
+            "url": "/reportar-erro",
+            "icons": [{ "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png" }]
           }
         ],
         "icons": [
@@ -79,10 +92,17 @@ export default defineConfig({
       ,
       workbox: {
         clientsClaim: true,
-        skipWaiting: true,
+        // Em modo prompt, o novo SW deve ficar em "waiting" até o usuário confirmar.
+        skipWaiting: false,
         cleanupOutdatedCaches: true,
-        globIgnores: ["**/assets/volleysvg-*.svg", "**/*.ttf", "**/*.eot"],
-        globPatterns: ["**/*.{js,css,ico,png,svg,webp,html}"],
+        globIgnores: [
+          "**/assets/volleysvg-*.svg",
+          "**/*.ttf",
+          "**/*.eot",
+          "**/assets/*-about-*.webp",
+          "**/assets/feed-preview-*.webp",
+        ],
+        globPatterns: ["**/*.{js,css,ico,png,svg,webp,avif,html}"],
         // fallback de navegação segue para SPA (index.html) por padrão
         // Não negar /auth para permitir que o SPA processe o callback do OAuth
         navigateFallbackDenylist: [/^\/api\//],
@@ -106,6 +126,17 @@ export default defineConfig({
             options: {
               cacheName: 'app-fonts',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+          // API GET: prioriza rede e usa cache de curta duração como fallback.
+          {
+            urlPattern: ({ request, url }) => request.method === "GET" && /^\/api\//.test(url.pathname),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "api-get-cache",
+              networkTimeoutSeconds: 5,
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 5 },
             },
           },
           // Google Fonts stylesheets
@@ -144,5 +175,26 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["vuetify"],
     entries: ["./src/**/*.vue"],
+  },
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          if (id.includes("vuetify")) return "vendor-vuetify";
+          if (id.includes("vue-router")) return "vendor-router";
+          if (id.includes("pinia")) return "vendor-state";
+          if (id.includes("notivue")) return "vendor-notifications";
+          if (id.includes("@iconify") || id.includes("@mdi") || id.includes("lucide-vue-next")) {
+            return "vendor-icons";
+          }
+          if (id.includes("axios")) return "vendor-http";
+
+          return "vendor-core";
+        },
+      },
+    },
   },
 });

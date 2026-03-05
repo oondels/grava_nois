@@ -182,7 +182,7 @@
                       :download-disabled="isDownloading || !hasUrl(file) || file.missing"
                       :download-loading="activeDownloadKey === getKey(file)"
                       @show="() => onShow(file)"
-                      @download="() => onDownload(file)"
+                      @download="() => handleDownload(file)"
                     ></VideoCard>
                   </v-col>
                 </v-row>
@@ -215,7 +215,13 @@ import LogoGravaNoisCol from "@/assets/icons/grava-nois.webp";
 import thumbVideo from "@/assets/images/thumb-video.webp";
 import VideoCard from "@/components/videos/VideoCard.vue";
 import type { SportClip } from "@/store/clips";
-import { fetchVideos, type VideoListItem, type VideoListResponse } from "@/services/videos";
+import {
+  clearDownloadCache,
+  fetchVideos,
+  onDownload as resolveDownloadUrl,
+  type VideoListItem,
+  type VideoListResponse,
+} from "@/services/videos";
 
 import { useAuthStore } from "@/store/auth";
 const authStore = useAuthStore();
@@ -254,19 +260,12 @@ const state = reactive({
 
 // Mapas de URLs assinadas (lazy)
 const previewMap = reactive<Record<string, string | null | undefined>>({});
-const downloadMap = reactive<Record<string, string | null | undefined>>({});
 
 // Controle global de download
 const isDownloading = ref(false);
 const activeDownloadKey = ref<string | null>(null);
 
 /** ================= Utils ================= */
-function getApiBase() {
-  const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined;
-  if (envBase) return envBase.replace(/\/$/, "");
-  return "";
-}
-
 function toClip(file: VideoFile): SportClip {
   const key = file.path || file.clip_id;
   const recordedAt = file.captured_at || file.last_modified || new Date().toISOString();
@@ -296,20 +295,20 @@ function hasUrl(file: VideoFile): boolean {
 /** ================= Data Fetch ================= */
 const isRefreshing = ref(false);
 async function fetchPage(quadraId: string | null = null) {
-  if (!selectedQuadra.value) return;
+  const selectedId = selectedQuadra.value?.id as string | undefined;
+  const venueId = (quadraId ?? selectedId) as string | undefined;
+  if (!venueId) return;
 
   isRefreshing.value = true;
 
   state.loading = true;
   state.error = null;
   try {
-    const venueId = (quadraId ?? selectedQuadra.value.id) as string;
-
     const data = (await fetchVideos({
       limit: state.pageSize,
       token: state.token,
       includeSignedUrl: true,
-      venueId: venueId,
+      venueId,
     })) as VideoListResponse;
 
     state.items = data.videos;
@@ -324,16 +323,16 @@ async function fetchPage(quadraId: string | null = null) {
 }
 
 function refresh() {
-  if (!selectedQuadra.value) return;
+  if (!selectedQuadra.value?.id) return;
 
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
-  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  clearDownloadCache();
   return fetchPage(selectedQuadra.value.id);
 }
 
 function nextPage() {
-  if (state.loading || !state.hasMore) return;
+  if (state.loading || !state.hasMore || !selectedQuadra.value?.id) return;
   // Scroll para o topo da listagem com offset do header fixo
   scrollToListTop();
   state.loading = true;
@@ -341,55 +340,41 @@ function nextPage() {
 
   setTimeout(() => {
     Object.keys(previewMap).forEach((k) => delete previewMap[k]);
-    Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+    clearDownloadCache();
     fetchPage(selectedQuadra.value.id);
   }, 500);
 }
 
 function prevPage() {
-  if (state.loading) return;
+  if (state.loading || !selectedQuadra.value?.id) return;
   // Como a API fornece apenas paginação forward (nextToken), voltar reseta para o início
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
-  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  clearDownloadCache();
   fetchPage(selectedQuadra.value.id);
 }
 
 function onChangePageSize(size: number) {
-  if (!size || size === state.pageSize) return;
+  if (!size || size === state.pageSize || !selectedQuadra.value?.id) return;
   state.pageSize = size;
   state.token = undefined;
   Object.keys(previewMap).forEach((k) => delete previewMap[k]);
-  Object.keys(downloadMap).forEach((k) => delete downloadMap[k]);
+  clearDownloadCache();
   fetchPage(selectedQuadra.value.id);
 }
 
-async function signDownload(path: string | null, bucket = "temp") {
-  if (!path) return null;
-  if (downloadMap[path]) return downloadMap[path]; // cache
-  const base = getApiBase();
-  const url = new URL(`${base}/api/videos/sign`);
-  url.searchParams.set("bucket", bucket);
-  url.searchParams.set("path", path);
-  url.searchParams.set("kind", "download");
-  url.searchParams.set("ttl", "3600");
-
-  const res = await fetch(url.toString(), { credentials: "include" });
-  if (!res.ok) return null;
-  const data = await res.json();
-  downloadMap[path] = data?.data?.url ?? null;
-  return downloadMap[path];
-}
-
-async function onDownload(file: VideoFile) {
+async function handleDownload(file: VideoFile) {
   if (file.missing || isDownloading.value || !hasUrl(file)) return;
   const key = getKey(file);
-  const responseUrl = file.url as string;
   isDownloading.value = true;
   activeDownloadKey.value = key;
   try {
-    const u = await signDownload(file.path, file.bucket);
-    window.open(u || responseUrl, "_blank");
+    const targetUrl = await resolveDownloadUrl(file);
+    if (targetUrl) {
+      window.open(targetUrl, "_blank");
+    }
+  } catch {
+    // fallback já tratado no service
   } finally {
     isDownloading.value = false;
     activeDownloadKey.value = null;
@@ -401,7 +386,7 @@ function onShow(file: VideoFile) {
   previewMap[getKey(file)] = file.url;
 }
 
-const selectedQuadra = ref<any>({});
+const selectedQuadra = ref<any | null>(null);
 
 /**
  * Retrieves the last selected quadra or a unique quadra from available quadras.
@@ -424,18 +409,13 @@ const getLastOrUniqueQuadra = () => {
 
 // Watch para logar sempre que selectedQuadra mudar
 watch(
-  selectedQuadra,
-  (newVal, oldVal) => {
-    if (newVal === oldVal) return;
+  () => selectedQuadra.value?.id,
+  (newId, oldId) => {
+    if (!newId || newId === oldId) return;
 
+    localStorage.setItem("grn-last-quadra-id", newId);
     if (!import.meta.env.DEV) refresh();
-    if (newVal && newVal.id) {
-      localStorage.setItem("grn-last-quadra-id", newVal.id);
-    } else {
-      localStorage.removeItem("grn-last-quadra-id");
-    }
-  },
-  { deep: true }
+  }
 );
 const availableQuadras = ref([] as any[]);
 
@@ -444,11 +424,6 @@ onMounted(() => {
   availableQuadras.value = Array.isArray(quadras) ? quadras : quadras && typeof quadras === "object" ? Object.values(quadras) : [];
 
   userLoaded.value = true;
-
-  setTimeout(async () => {
-    // focusQuadra();
-    if (!import.meta.env.DEV) fetchPage()
-  }, 500);
 
   getLastOrUniqueQuadra();
 });

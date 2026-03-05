@@ -1,15 +1,14 @@
-import { api } from "@/services/api";
+import { apiNoRefresh } from "@/services/api";
 import type { ApiResponse } from "@/types/Api";
 
 export type SolicitarInstalacaoResult = Record<string, unknown>;
 
 export const solicitarInstalacao = async (form: Record<string, any>): Promise<SolicitarInstalacaoResult> => {
   try {
-    const response = await api.post<ApiResponse<SolicitarInstalacaoResult>>("/notifications/contact", form, {
+    const response = await apiNoRefresh.post<ApiResponse<SolicitarInstalacaoResult>>("/notifications/contact", form, {
       withCredentials: false,
       headers: {
         "Content-Type": "application/json",
-        "X-Skip-Auth": true,
       },
     });
 

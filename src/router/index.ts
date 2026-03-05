@@ -160,6 +160,16 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition;
     }
+    // Scroll to hash anchors (ex.: #how) with header offset on desktop
+    if (to.hash) {
+      const headerOffset =
+        typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches ? 72 : 0;
+      return {
+        el: to.hash,
+        top: headerOffset,
+        behavior: "smooth",
+      };
+    }
     // Scroll to top on all new navigations
     return { top: 0, behavior: 'smooth' };
   },
