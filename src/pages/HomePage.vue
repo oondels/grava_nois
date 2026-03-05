@@ -260,9 +260,6 @@ import HeroSection from "@/components/home-sections/HeroSection.vue";
 import HowItWorksSection from "@/components/home-sections/HowItWorksSection.vue";
 import ShowCaseSection from "@/components/home-sections/ShowCaseSection.vue";
 import Patrocinadores from "@/components/Patrocinadores.vue";
-import feedPreview from "@/assets/images/feed-preview.webp";
-
-const SOCIAL_FEED_IMAGE = feedPreview;
 
 const showTop = ref(false);
 const onScroll = () => {

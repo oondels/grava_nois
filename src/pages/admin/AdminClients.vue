@@ -2,7 +2,8 @@
   <v-container fluid class="py-6">
     <div class="d-flex align-center justify-space-between mb-4">
       <h1 class="text-h5 font-weight-bold">Clientes</h1>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+      <v-btn color="primary" @click="openCreateDialog">
+        <PlusCircle/>
         Cadastrar cliente
       </v-btn>
     </div>
@@ -89,7 +90,7 @@
             Nenhum cliente encontrado.
           </v-alert>
 
-          <v-card v-for="item in items" :key="item.id">
+          <v-card v-for="item in items" :key="item.id" class="border">
             <v-card-title class="d-flex align-center justify-space-between">
               <div>
                 <div class="text-subtitle-1 font-weight-medium">
@@ -142,7 +143,7 @@
                 {{ formatLastCharge(item.lastCharge) }}
               </div>
               <div class="d-flex justify-end mt-2">
-                <v-btn size="small" variant="text" @click="openEdit(item)">
+                <v-btn size="small" variant="outlined" @click="openEdit(item)">
                   Editar cliente
                 </v-btn>
               </div>
@@ -645,6 +646,7 @@ import {
   type AdminUser,
   type CreateClientPayload,
 } from "@/services/admin.service";
+import { PlusCircle } from "lucide-vue-next";
 
 const headers = [
   { title: "Nome Fantasia", key: "tradeName" },

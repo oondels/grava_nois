@@ -49,7 +49,7 @@
             </template>
 
             <template #item.actions="{ item }">
-              <v-btn size="small" variant="text" @click="openEdit(item)">Editar</v-btn>
+              <v-btn size="small" variant="outlined" @click="openEdit(item)">Editar</v-btn>
             </template>
           </v-data-table>
         </div>
@@ -66,7 +66,7 @@
             Nenhuma quadra encontrada.
           </v-alert>
 
-          <v-card v-for="item in items" :key="item.id">
+          <v-card class="border" v-for="item in items" :key="item.id">
             <v-card-title class="d-flex align-center justify-space-between">
               <div>
                 <div class="text-subtitle-1 font-weight-medium">
@@ -76,7 +76,7 @@
                   {{ getClientName(item) }}
                 </div>
               </div>
-              <v-btn size="small" variant="text" @click="openEdit(item)">
+              <v-btn size="small" variant="outlined" @click="openEdit(item)">
                 Editar
               </v-btn>
             </v-card-title>
@@ -107,11 +107,6 @@
               <div class="text-body-2">
                 <span class="text-medium-emphasis">Device ID:</span>
                 {{ item.deviceId || "—" }}
-              </div>
-              <div class="d-flex justify-end mt-2">
-                <v-btn size="small" variant="text" @click="openEdit(item)">
-                  Editar quadra
-                </v-btn>
               </div>
             </v-card-text>
           </v-card>
