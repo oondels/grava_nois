@@ -18,6 +18,7 @@ import {
   VCardActions,
   VCardText,
   VCardTitle,
+  VCheckbox,
   VChip,
   VChipGroup,
   VCol,
@@ -27,6 +28,7 @@ import {
   VDataTableServer,
   VDialog,
   VDivider,
+  VExpandTransition,
   VExpansionPanel,
   VExpansionPanelText,
   VExpansionPanelTitle,
@@ -130,6 +132,8 @@ const vuetify = createVuetify({
     VTextField,
     VTextarea,
     VTooltip,
+    VCheckbox,
+    VExpandTransition
   },
   theme: {
     defaultTheme: "dark",

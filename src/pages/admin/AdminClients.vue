@@ -2,6 +2,10 @@
   <v-container fluid class="py-6">
     <div class="d-flex align-center justify-space-between mb-4">
       <h1 class="text-h5 font-weight-bold">Clientes</h1>
+      <v-btn color="primary" @click="openCreateDialog">
+        <PlusCircle/>
+        Cadastrar cliente
+      </v-btn>
     </div>
 
     <v-card>
@@ -86,7 +90,7 @@
             Nenhum cliente encontrado.
           </v-alert>
 
-          <v-card v-for="item in items" :key="item.id">
+          <v-card v-for="item in items" :key="item.id" class="border">
             <v-card-title class="d-flex align-center justify-space-between">
               <div>
                 <div class="text-subtitle-1 font-weight-medium">
@@ -137,6 +141,11 @@
               <div class="text-body-2">
                 <span class="text-medium-emphasis">Última cobrança:</span>
                 {{ formatLastCharge(item.lastCharge) }}
+              </div>
+              <div class="d-flex justify-end mt-2">
+                <v-btn size="small" variant="outlined" @click="openEdit(item)">
+                  Editar cliente
+                </v-btn>
               </div>
             </v-card-text>
 
@@ -241,6 +250,11 @@
         <v-card-title class="text-h6">Editar cliente</v-card-title>
         <v-card-text class="pt-2">
           <div class="text-medium-emphasis mb-4">{{ editedClient?.legalName || "—" }}</div>
+          <div class="text-caption text-medium-emphasis mb-3">
+            Usuário vinculado:
+            <template v-if="loadingLinkedUserName">Carregando...</template>
+            <template v-else>{{ linkedUserDisplayName }}</template>
+          </div>
           <v-text-field
             v-model="editedTradeName"
             label="Nome fantasia"
@@ -272,9 +286,262 @@
           </v-alert>
         </v-card-text>
         <v-card-actions>
+          <v-btn
+            variant="tonal"
+            color="secondary"
+            :disabled="!editedClient?.id"
+            @click="openLinkUserDialog"
+          >
+            Vincular a usuário
+          </v-btn>
           <v-spacer />
           <v-btn variant="text" @click="closeDialog">Cancelar</v-btn>
           <v-btn color="primary" :loading="saving" @click="saveClient">Salvar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="linkUserDialog" max-width="860">
+      <v-card>
+        <v-card-title class="text-h6">Vincular cliente a usuário</v-card-title>
+        <v-card-text class="pt-2">
+          <div class="text-medium-emphasis mb-4">
+            Cliente: {{ editedClient?.tradeName || editedClient?.legalName || "—" }}
+          </div>
+
+          <v-alert v-if="linkUserError" type="error" variant="tonal" class="mb-3">
+            {{ linkUserError }}
+          </v-alert>
+
+          <div class="d-flex flex-wrap ga-3 mb-4">
+            <v-text-field
+              v-model="linkUserSearch"
+              label="Buscar usuário por nome ou email"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              class="flex-1-1"
+            />
+            <v-btn
+              v-if="editedClient?.userId"
+              color="warning"
+              variant="tonal"
+              :loading="unlinkingUser"
+              @click="unlinkUser"
+            >
+              Desvincular usuário
+            </v-btn>
+          </div>
+
+          <v-data-table-server
+            :headers="linkUserHeaders"
+            :items="linkUserItems"
+            :items-length="linkUserTotal"
+            :loading="linkUserLoading"
+            :search="linkUserSearch"
+            v-model:page="linkUserPage"
+            v-model:items-per-page="linkUserItemsPerPage"
+            item-value="id"
+            @update:options="fetchLinkUsers"
+          >
+            <template #item.role="{ item }">
+              <v-chip
+                size="small"
+                :color="item.role === 'admin' ? 'primary' : 'secondary'"
+                variant="tonal"
+              >
+                {{ item.role || "common" }}
+              </v-chip>
+            </template>
+
+            <template #item.isActive="{ item }">
+              <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
+                {{ item.isActive ? "Ativo" : "Inativo" }}
+              </v-chip>
+            </template>
+
+            <template #item.actions="{ item }">
+              <v-btn
+                size="small"
+                color="primary"
+                variant="text"
+                :loading="linkingUserId === item.id"
+                :disabled="editedClient?.userId === item.id"
+                @click="linkUserToClient(item)"
+              >
+                {{ editedClient?.userId === item.id ? "Vinculado" : "Vincular" }}
+              </v-btn>
+            </template>
+          </v-data-table-server>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeLinkUserDialog">Fechar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="createDialog" max-width="680">
+      <v-card>
+        <v-card-title class="text-h6">Cadastrar cliente</v-card-title>
+        <v-card-text class="pt-2">
+          <v-text-field
+            v-model="newLegalName"
+            label="Nome / Razão Social *"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newTradeName"
+            label="Nome fantasia"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newResponsibleEmail"
+            label="Email do responsável *"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newResponsibleName"
+            label="Nome do responsável"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newResponsiblePhone"
+            label="Telefone do responsável"
+            variant="outlined"
+            density="comfortable"
+          />
+          <div class="d-flex ga-3 flex-wrap">
+            <v-text-field
+              v-model="newCnpj"
+              label="CNPJ"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+            <v-text-field
+              v-model="newResponsibleCpf"
+              label="CPF do responsável"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+          </div>
+          <div class="d-flex ga-3 flex-wrap">
+            <v-select
+              v-model="newProvider"
+              :items="providerOptions"
+              item-title="title"
+              item-value="value"
+              label="Provider *"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+            <v-text-field
+              v-model.number="newRetentionDays"
+              type="number"
+              min="1"
+              label="Dias de retenção"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+          </div>
+
+          <v-checkbox
+            v-model="includeVenueData"
+            label="Cadastrar instalação (venue) agora"
+            color="primary"
+            hide-details
+            class="mt-1"
+          />
+
+          <v-expand-transition>
+            <div v-if="includeVenueData" class="mt-3">
+              <v-text-field
+                v-model="newVenueName"
+                label="Nome da instalação *"
+                variant="outlined"
+                density="comfortable"
+              />
+              <v-text-field
+                v-model="newVenueDescription"
+                label="Descrição da instalação"
+                variant="outlined"
+                density="comfortable"
+              />
+              <v-text-field
+                v-model="newVenueAddressLine"
+                label="Endereço"
+                variant="outlined"
+                density="comfortable"
+              />
+              <div class="d-flex ga-3 flex-wrap">
+                <v-text-field
+                  v-model="newVenueCountryCode"
+                  maxlength="2"
+                  label="País (ISO-2)"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueState"
+                  label="Estado"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueCity"
+                  label="Cidade"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+              </div>
+              <div class="d-flex ga-3 flex-wrap">
+                <v-text-field
+                  v-model="newVenuePostalCode"
+                  label="CEP"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueLatitude"
+                  label="Latitude"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueLongitude"
+                  label="Longitude"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+              </div>
+            </div>
+          </v-expand-transition>
+
+          <v-alert v-if="createDialogError" type="error" variant="tonal" class="mt-2">
+            {{ createDialogError }}
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeCreateDialog">Cancelar</v-btn>
+          <v-btn color="primary" :loading="creating" @click="createClient">
+            Cadastrar
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -372,7 +639,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useDisplay } from "vuetify";
-import { adminService, type AdminClient, type AdminPayment } from "@/services/admin.service";
+import {
+  adminService,
+  type AdminClient,
+  type AdminPayment,
+  type AdminUser,
+  type CreateClientPayload,
+} from "@/services/admin.service";
+import { PlusCircle } from "lucide-vue-next";
 
 const headers = [
   { title: "Nome Fantasia", key: "tradeName" },
@@ -382,6 +656,14 @@ const headers = [
   { title: "Instalações", key: "venueCount" },
   { title: "Status Pagamento", key: "paymentStatus" },
   { title: "Última Cobrança", key: "lastCharge" },
+  { title: "Ações", key: "actions", sortable: false },
+];
+
+const linkUserHeaders = [
+  { title: "Nome", key: "name" },
+  { title: "Email", key: "email" },
+  { title: "Role", key: "role" },
+  { title: "Status", key: "isActive" },
   { title: "Ações", key: "actions", sortable: false },
 ];
 
@@ -404,6 +686,42 @@ const editedTradeName = ref<string | null>(null);
 const editedResponsibleName = ref<string | null>(null);
 const editedResponsiblePhone = ref<string | null>(null);
 const editedRetentionDays = ref<number | null>(null);
+const linkUserDialog = ref(false);
+const linkUserItems = ref<AdminUser[]>([]);
+const linkUserTotal = ref(0);
+const linkUserLoading = ref(false);
+const linkUserPage = ref(1);
+const linkUserItemsPerPage = ref(10);
+const linkUserSearch = ref("");
+const linkUserError = ref<string | null>(null);
+const linkingUserId = ref<string | null>(null);
+const unlinkingUser = ref(false);
+const loadingLinkedUserName = ref(false);
+const linkedUserDisplayName = ref("Nenhum");
+const linkedUserNameById = reactive<Record<string, string>>({});
+
+const createDialog = ref(false);
+const creating = ref(false);
+const createDialogError = ref<string | null>(null);
+const newLegalName = ref("");
+const newTradeName = ref("");
+const newResponsibleEmail = ref("");
+const newResponsibleName = ref("");
+const newResponsiblePhone = ref("");
+const newCnpj = ref("");
+const newResponsibleCpf = ref("");
+const newProvider = ref<"abacate_pay" | "manual">("abacate_pay");
+const newRetentionDays = ref<number>(3);
+const includeVenueData = ref(false);
+const newVenueName = ref("");
+const newVenueDescription = ref("");
+const newVenueAddressLine = ref("");
+const newVenueCountryCode = ref("");
+const newVenueState = ref("");
+const newVenueCity = ref("");
+const newVenuePostalCode = ref("");
+const newVenueLatitude = ref("");
+const newVenueLongitude = ref("");
 
 const paymentsDialog = ref(false);
 const paymentsClient = ref<AdminClient | null>(null);
@@ -423,6 +741,7 @@ const chargesStateByClientId = reactive<Record<string, ClientChargesState>>({});
 const expandedCharges = reactive<Record<string, number | undefined>>({});
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
+let linkUserSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const paymentStatusLabels: Record<string, string> = {
   pending: "Pendente",
@@ -442,6 +761,11 @@ const paymentMethodLabels: Record<string, string> = {
   credit_card: "Cartão de crédito",
   debit_card: "Cartão de débito",
 };
+
+const providerOptions = [
+  { title: "Abacate Pay", value: "abacate_pay" as const },
+  { title: "Manual", value: "manual" as const },
+];
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR");
 
@@ -652,7 +976,218 @@ function openEdit(client: AdminClient) {
   editedRetentionDays.value =
     typeof client.retentionDays === "number" ? client.retentionDays : null;
   dialogError.value = null;
+  void hydrateLinkedUserName(client.userId);
   dialog.value = true;
+}
+
+function normalizeLinkedUserName(name?: string | null) {
+  const normalized = (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (normalized.length === 0) return "Usuário sem nome";
+  if (normalized.length === 1) return normalized[0];
+  return `${normalized[0]} ${normalized[normalized.length - 1]}`;
+}
+
+async function hydrateLinkedUserName(userId?: string | null) {
+  if (!userId) {
+    linkedUserDisplayName.value = "Nenhum";
+    loadingLinkedUserName.value = false;
+    return;
+  }
+
+  if (linkedUserNameById[userId]) {
+    linkedUserDisplayName.value = linkedUserNameById[userId];
+    loadingLinkedUserName.value = false;
+    return;
+  }
+
+  loadingLinkedUserName.value = true;
+  try {
+    const user = await adminService.getUserById(userId);
+    const normalizedName = normalizeLinkedUserName(user.name);
+    linkedUserNameById[userId] = normalizedName;
+    linkedUserDisplayName.value = normalizedName;
+  } catch {
+    linkedUserDisplayName.value = "Usuário não encontrado";
+  } finally {
+    loadingLinkedUserName.value = false;
+  }
+}
+
+async function fetchLinkUsers() {
+  linkUserLoading.value = true;
+  linkUserError.value = null;
+  try {
+    const response = await adminService.getUsers({
+      page: linkUserPage.value,
+      limit: linkUserItemsPerPage.value,
+      search: linkUserSearch.value || undefined,
+    });
+    linkUserItems.value = response.users;
+    linkUserTotal.value = response.total;
+  } catch (err: any) {
+    linkUserError.value = err?.message || "Não foi possível carregar os usuários.";
+  } finally {
+    linkUserLoading.value = false;
+  }
+}
+
+function openLinkUserDialog() {
+  if (!editedClient.value?.id) return;
+  linkUserDialog.value = true;
+  linkUserError.value = null;
+  linkUserPage.value = 1;
+  void fetchLinkUsers();
+}
+
+function closeLinkUserDialog() {
+  linkUserDialog.value = false;
+  linkUserError.value = null;
+}
+
+async function linkUserToClient(user: AdminUser) {
+  if (!editedClient.value?.id || !user.id) return;
+  linkingUserId.value = user.id;
+  linkUserError.value = null;
+  try {
+    const response = await adminService.updateClient(editedClient.value.id, {
+      userId: user.id,
+    });
+    editedClient.value = response.client;
+    const normalizedName = normalizeLinkedUserName(user.name as string | null | undefined);
+    if (user.id) {
+      linkedUserNameById[user.id] = normalizedName;
+    }
+    linkedUserDisplayName.value = normalizedName;
+    await fetchClients();
+    closeLinkUserDialog();
+  } catch (err: any) {
+    linkUserError.value = err?.message || "Não foi possível vincular o usuário.";
+  } finally {
+    linkingUserId.value = null;
+  }
+}
+
+async function unlinkUser() {
+  if (!editedClient.value?.id) return;
+  unlinkingUser.value = true;
+  linkUserError.value = null;
+  try {
+    const response = await adminService.updateClient(editedClient.value.id, {
+      userId: null,
+    });
+    editedClient.value = response.client;
+    linkedUserDisplayName.value = "Nenhum";
+    await fetchClients();
+    await fetchLinkUsers();
+  } catch (err: any) {
+    linkUserError.value = err?.message || "Não foi possível desvincular o usuário.";
+  } finally {
+    unlinkingUser.value = false;
+  }
+}
+
+function normalizeOptionalText(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+}
+
+function openCreateDialog() {
+  createDialogError.value = null;
+  newLegalName.value = "";
+  newTradeName.value = "";
+  newResponsibleEmail.value = "";
+  newResponsibleName.value = "";
+  newResponsiblePhone.value = "";
+  newCnpj.value = "";
+  newResponsibleCpf.value = "";
+  newProvider.value = "abacate_pay";
+  newRetentionDays.value = 3;
+  includeVenueData.value = false;
+  newVenueName.value = "";
+  newVenueDescription.value = "";
+  newVenueAddressLine.value = "";
+  newVenueCountryCode.value = "";
+  newVenueState.value = "";
+  newVenueCity.value = "";
+  newVenuePostalCode.value = "";
+  newVenueLatitude.value = "";
+  newVenueLongitude.value = "";
+  createDialog.value = true;
+}
+
+function closeCreateDialog() {
+  createDialog.value = false;
+  createDialogError.value = null;
+}
+
+function validateCreateClientPayload() {
+  if (!newLegalName.value.trim()) {
+    createDialogError.value = "Informe o nome/razão social.";
+    return false;
+  }
+
+  if (!newResponsibleEmail.value.trim()) {
+    createDialogError.value = "Informe o email do responsável.";
+    return false;
+  }
+
+  if (!newCnpj.value.trim() && !newResponsibleCpf.value.trim()) {
+    createDialogError.value = "Informe CNPJ ou CPF do responsável.";
+    return false;
+  }
+
+  if (includeVenueData.value && !newVenueName.value.trim()) {
+    createDialogError.value = "Informe o nome da instalação.";
+    return false;
+  }
+
+  return true;
+}
+
+async function createClient() {
+  if (!validateCreateClientPayload()) return;
+
+  creating.value = true;
+  createDialogError.value = null;
+
+  const payload: CreateClientPayload = {
+    legalName: newLegalName.value.trim(),
+    responsibleEmail: newResponsibleEmail.value.trim(),
+    provider: newProvider.value,
+    retentionDays: newRetentionDays.value > 0 ? newRetentionDays.value : 3,
+    tradeName: normalizeOptionalText(newTradeName.value),
+    responsibleName: normalizeOptionalText(newResponsibleName.value),
+    responsiblePhone: normalizeOptionalText(newResponsiblePhone.value),
+    cnpj: normalizeOptionalText(newCnpj.value),
+    responsibleCpf: normalizeOptionalText(newResponsibleCpf.value),
+  };
+
+  if (includeVenueData.value) {
+    payload.venueData = {
+      venueName: newVenueName.value.trim(),
+      description: normalizeOptionalText(newVenueDescription.value),
+      addressLine: normalizeOptionalText(newVenueAddressLine.value),
+      countryCode: normalizeOptionalText(newVenueCountryCode.value)?.toUpperCase(),
+      state: normalizeOptionalText(newVenueState.value),
+      city: normalizeOptionalText(newVenueCity.value),
+      postalCode: normalizeOptionalText(newVenuePostalCode.value),
+      latitude: normalizeOptionalText(newVenueLatitude.value),
+      longitude: normalizeOptionalText(newVenueLongitude.value),
+    };
+  }
+
+  try {
+    await adminService.createClient(payload);
+    await fetchClients();
+    closeCreateDialog();
+  } catch (err: any) {
+    createDialogError.value = err?.message || "Não foi possível cadastrar o cliente.";
+  } finally {
+    creating.value = false;
+  }
 }
 
 function openClientPayments(client: AdminClient) {
@@ -701,6 +1236,28 @@ watch(search, () => {
     page.value = 1;
     fetchClients();
   }, 350);
+});
+
+watch(linkUserSearch, () => {
+  if (!linkUserDialog.value) return;
+  if (linkUserSearchTimer) clearTimeout(linkUserSearchTimer);
+  linkUserSearchTimer = setTimeout(() => {
+    linkUserPage.value = 1;
+    fetchLinkUsers();
+  }, 350);
+});
+
+watch(includeVenueData, (enabled) => {
+  if (enabled) return;
+  newVenueName.value = "";
+  newVenueDescription.value = "";
+  newVenueAddressLine.value = "";
+  newVenueCountryCode.value = "";
+  newVenueState.value = "";
+  newVenueCity.value = "";
+  newVenuePostalCode.value = "";
+  newVenueLatitude.value = "";
+  newVenueLongitude.value = "";
 });
 
 onMounted(fetchClients);

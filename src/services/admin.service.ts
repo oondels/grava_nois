@@ -1,17 +1,15 @@
 import { api } from "@/services/api";
 import type { ApiResponse } from "@/types/Api";
 
-export type DashboardStats = {
+export type DashboardMetrics = {
   totalUsers: { active: number; inactive: number };
   totalClients: number;
   totalVenues: { online: number; offline: number };
   totalVideos: number;
-  dashboard?: {
-    totalUsers: { active: number; inactive: number };
-    totalClients: number;
-    totalVenues: { online: number; offline: number };
-    totalVideos: number;
-  }
+};
+
+export type DashboardStats = {
+  dashboard: DashboardMetrics;
 };
 
 export type AdminUser = {
@@ -82,11 +80,30 @@ export type AdminVenue = {
   id?: string;
   name?: string | null;
   venueName?: string | null;
+  description?: string | null;
+  addressLine?: string | null;
+  countryCode?: string | null;
+  state?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  cameraCount?: number;
+  firmwareVersion?: string | null;
+  uploadEndpoint?: string | null;
+  bufferPreSeconds?: number;
+  bufferPostSeconds?: number;
+  sportType?: string | null;
+  active?: boolean;
   paymentStatus?: string | null;
+  installationStatus?: string | null;
   isOnline?: boolean;
+  deviceId?: string | null;
+  deviceSecret?: string | null;
+  contractMethod?: string | null;
+  contractId?: string | null;
   client?: AdminClient | null;
   [key: string]: unknown;
-  venues?: AdminVenue[];
 };
 
 export type UsersList = {
@@ -151,6 +168,49 @@ export type UpdateClientPayload = {
   responsibleEmail?: string | null;
   responsiblePhone?: string | null;
   retentionDays?: number;
+  userId?: string | null;
+};
+
+export type UpdateVenuePayload = {
+  venueName?: string;
+  description?: string | null;
+  addressLine?: string | null;
+  countryCode?: string | null;
+  state?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  active?: boolean;
+  isOnline?: boolean;
+  paymentStatus?: "none" | "active" | "past_due" | "canceled";
+  installationStatus?: "active" | "paused" | "decommissioned";
+  deviceId?: string;
+  deviceSecret?: string;
+  regenerateDeviceCredentials?: boolean;
+};
+
+export type CreateClientVenuePayload = {
+  venueName: string;
+  description?: string;
+  addressLine?: string;
+  countryCode?: string;
+  state?: string;
+  city?: string;
+  postalCode?: string;
+  latitude?: string;
+  longitude?: string;
+};
+
+export type CreateClientPayload = {
+  legalName: string;
+  tradeName?: string;
+  responsibleEmail: string;
+  responsibleName?: string;
+  responsiblePhone?: string;
+  cnpj?: string;
+  responsibleCpf?: string;
+  provider: "abacate_pay" | "manual" | "stripe" | "mercado_pago";
+  retentionDays?: number;
+  venueData?: CreateClientVenuePayload;
 };
 
 export type UpdateUserResponse = {
@@ -159,6 +219,19 @@ export type UpdateUserResponse = {
 
 export type UpdateClientResponse = {
   client: AdminClient;
+};
+
+export type UpdateVenueResponse = {
+  venue: AdminVenue;
+  credentialsGenerated: boolean;
+};
+
+export type CreateClientResponse = {
+  client: AdminClient;
+};
+
+export type GetUserByIdResponse = {
+  user: AdminUser;
 };
 
 async function getDashboardStats(): Promise<DashboardStats> {
@@ -235,6 +308,27 @@ async function updateClient(id: string, payload: UpdateClientPayload): Promise<U
   return response.data.data;
 }
 
+async function updateVenue(
+  id: string,
+  payload: UpdateVenuePayload
+): Promise<UpdateVenueResponse> {
+  const response = await api.patch<ApiResponse<UpdateVenueResponse>>(
+    `/admin/venues/${id}`,
+    payload
+  );
+  return response.data.data;
+}
+
+async function getUserById(id: string): Promise<AdminUser> {
+  const response = await api.get<ApiResponse<GetUserByIdResponse>>(`/users/${id}`);
+  return response.data.data.user;
+}
+
+async function createClient(payload: CreateClientPayload): Promise<CreateClientResponse> {
+  const response = await api.post<ApiResponse<CreateClientResponse>>("/admin/clients", payload);
+  return response.data.data;
+}
+
 export const adminService = {
   getDashboardStats,
   getUsers,
@@ -243,4 +337,7 @@ export const adminService = {
   getVenues,
   updateUser,
   updateClient,
+  updateVenue,
+  getUserById,
+  createClient,
 };
