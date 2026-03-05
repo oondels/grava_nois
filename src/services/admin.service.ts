@@ -153,11 +153,40 @@ export type UpdateClientPayload = {
   retentionDays?: number;
 };
 
+export type CreateClientVenuePayload = {
+  venueName: string;
+  description?: string;
+  addressLine?: string;
+  countryCode?: string;
+  state?: string;
+  city?: string;
+  postalCode?: string;
+  latitude?: string;
+  longitude?: string;
+};
+
+export type CreateClientPayload = {
+  legalName: string;
+  tradeName?: string;
+  responsibleEmail: string;
+  responsibleName?: string;
+  responsiblePhone?: string;
+  cnpj?: string;
+  responsibleCpf?: string;
+  provider: "abacate_pay" | "manual" | "stripe" | "mercado_pago";
+  retentionDays?: number;
+  venueData?: CreateClientVenuePayload;
+};
+
 export type UpdateUserResponse = {
   user: AdminUser;
 };
 
 export type UpdateClientResponse = {
+  client: AdminClient;
+};
+
+export type CreateClientResponse = {
   client: AdminClient;
 };
 
@@ -235,6 +264,11 @@ async function updateClient(id: string, payload: UpdateClientPayload): Promise<U
   return response.data.data;
 }
 
+async function createClient(payload: CreateClientPayload): Promise<CreateClientResponse> {
+  const response = await api.post<ApiResponse<CreateClientResponse>>("/admin/clients", payload);
+  return response.data.data;
+}
+
 export const adminService = {
   getDashboardStats,
   getUsers,
@@ -243,4 +277,5 @@ export const adminService = {
   getVenues,
   updateUser,
   updateClient,
+  createClient,
 };

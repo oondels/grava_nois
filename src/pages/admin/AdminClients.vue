@@ -2,6 +2,9 @@
   <v-container fluid class="py-6">
     <div class="d-flex align-center justify-space-between mb-4">
       <h1 class="text-h5 font-weight-bold">Clientes</h1>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+        Cadastrar cliente
+      </v-btn>
     </div>
 
     <v-card>
@@ -137,6 +140,11 @@
               <div class="text-body-2">
                 <span class="text-medium-emphasis">Última cobrança:</span>
                 {{ formatLastCharge(item.lastCharge) }}
+              </div>
+              <div class="d-flex justify-end mt-2">
+                <v-btn size="small" variant="text" @click="openEdit(item)">
+                  Editar cliente
+                </v-btn>
               </div>
             </v-card-text>
 
@@ -279,6 +287,170 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="createDialog" max-width="680">
+      <v-card>
+        <v-card-title class="text-h6">Cadastrar cliente</v-card-title>
+        <v-card-text class="pt-2">
+          <v-text-field
+            v-model="newLegalName"
+            label="Nome / Razão Social *"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newTradeName"
+            label="Nome fantasia"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newResponsibleEmail"
+            label="Email do responsável *"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newResponsibleName"
+            label="Nome do responsável"
+            variant="outlined"
+            density="comfortable"
+          />
+          <v-text-field
+            v-model="newResponsiblePhone"
+            label="Telefone do responsável"
+            variant="outlined"
+            density="comfortable"
+          />
+          <div class="d-flex ga-3 flex-wrap">
+            <v-text-field
+              v-model="newCnpj"
+              label="CNPJ"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+            <v-text-field
+              v-model="newResponsibleCpf"
+              label="CPF do responsável"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+          </div>
+          <div class="d-flex ga-3 flex-wrap">
+            <v-select
+              v-model="newProvider"
+              :items="providerOptions"
+              item-title="title"
+              item-value="value"
+              label="Provider *"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+            <v-text-field
+              v-model.number="newRetentionDays"
+              type="number"
+              min="1"
+              label="Dias de retenção"
+              variant="outlined"
+              density="comfortable"
+              class="flex-1-1"
+            />
+          </div>
+
+          <v-checkbox
+            v-model="includeVenueData"
+            label="Cadastrar instalação (venue) agora"
+            color="primary"
+            hide-details
+            class="mt-1"
+          />
+
+          <v-expand-transition>
+            <div v-if="includeVenueData" class="mt-3">
+              <v-text-field
+                v-model="newVenueName"
+                label="Nome da instalação *"
+                variant="outlined"
+                density="comfortable"
+              />
+              <v-text-field
+                v-model="newVenueDescription"
+                label="Descrição da instalação"
+                variant="outlined"
+                density="comfortable"
+              />
+              <v-text-field
+                v-model="newVenueAddressLine"
+                label="Endereço"
+                variant="outlined"
+                density="comfortable"
+              />
+              <div class="d-flex ga-3 flex-wrap">
+                <v-text-field
+                  v-model="newVenueCountryCode"
+                  maxlength="2"
+                  label="País (ISO-2)"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueState"
+                  label="Estado"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueCity"
+                  label="Cidade"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+              </div>
+              <div class="d-flex ga-3 flex-wrap">
+                <v-text-field
+                  v-model="newVenuePostalCode"
+                  label="CEP"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueLatitude"
+                  label="Latitude"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+                <v-text-field
+                  v-model="newVenueLongitude"
+                  label="Longitude"
+                  variant="outlined"
+                  density="comfortable"
+                  class="flex-1-1"
+                />
+              </div>
+            </div>
+          </v-expand-transition>
+
+          <v-alert v-if="createDialogError" type="error" variant="tonal" class="mt-2">
+            {{ createDialogError }}
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeCreateDialog">Cancelar</v-btn>
+          <v-btn color="primary" :loading="creating" @click="createClient">
+            Cadastrar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-dialog v-model="paymentsDialog" max-width="720">
       <v-card>
         <v-card-title class="text-h6">Cobranças do cliente</v-card-title>
@@ -372,7 +544,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useDisplay } from "vuetify";
-import { adminService, type AdminClient, type AdminPayment } from "@/services/admin.service";
+import {
+  adminService,
+  type AdminClient,
+  type AdminPayment,
+  type CreateClientPayload,
+} from "@/services/admin.service";
 
 const headers = [
   { title: "Nome Fantasia", key: "tradeName" },
@@ -404,6 +581,29 @@ const editedTradeName = ref<string | null>(null);
 const editedResponsibleName = ref<string | null>(null);
 const editedResponsiblePhone = ref<string | null>(null);
 const editedRetentionDays = ref<number | null>(null);
+
+const createDialog = ref(false);
+const creating = ref(false);
+const createDialogError = ref<string | null>(null);
+const newLegalName = ref("");
+const newTradeName = ref("");
+const newResponsibleEmail = ref("");
+const newResponsibleName = ref("");
+const newResponsiblePhone = ref("");
+const newCnpj = ref("");
+const newResponsibleCpf = ref("");
+const newProvider = ref<"abacate_pay" | "manual">("abacate_pay");
+const newRetentionDays = ref<number>(3);
+const includeVenueData = ref(false);
+const newVenueName = ref("");
+const newVenueDescription = ref("");
+const newVenueAddressLine = ref("");
+const newVenueCountryCode = ref("");
+const newVenueState = ref("");
+const newVenueCity = ref("");
+const newVenuePostalCode = ref("");
+const newVenueLatitude = ref("");
+const newVenueLongitude = ref("");
 
 const paymentsDialog = ref(false);
 const paymentsClient = ref<AdminClient | null>(null);
@@ -442,6 +642,11 @@ const paymentMethodLabels: Record<string, string> = {
   credit_card: "Cartão de crédito",
   debit_card: "Cartão de débito",
 };
+
+const providerOptions = [
+  { title: "Abacate Pay", value: "abacate_pay" as const },
+  { title: "Manual", value: "manual" as const },
+];
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR");
 
@@ -655,6 +860,107 @@ function openEdit(client: AdminClient) {
   dialog.value = true;
 }
 
+function normalizeOptionalText(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+}
+
+function openCreateDialog() {
+  createDialogError.value = null;
+  newLegalName.value = "";
+  newTradeName.value = "";
+  newResponsibleEmail.value = "";
+  newResponsibleName.value = "";
+  newResponsiblePhone.value = "";
+  newCnpj.value = "";
+  newResponsibleCpf.value = "";
+  newProvider.value = "abacate_pay";
+  newRetentionDays.value = 3;
+  includeVenueData.value = false;
+  newVenueName.value = "";
+  newVenueDescription.value = "";
+  newVenueAddressLine.value = "";
+  newVenueCountryCode.value = "";
+  newVenueState.value = "";
+  newVenueCity.value = "";
+  newVenuePostalCode.value = "";
+  newVenueLatitude.value = "";
+  newVenueLongitude.value = "";
+  createDialog.value = true;
+}
+
+function closeCreateDialog() {
+  createDialog.value = false;
+  createDialogError.value = null;
+}
+
+function validateCreateClientPayload() {
+  if (!newLegalName.value.trim()) {
+    createDialogError.value = "Informe o nome/razão social.";
+    return false;
+  }
+
+  if (!newResponsibleEmail.value.trim()) {
+    createDialogError.value = "Informe o email do responsável.";
+    return false;
+  }
+
+  if (!newCnpj.value.trim() && !newResponsibleCpf.value.trim()) {
+    createDialogError.value = "Informe CNPJ ou CPF do responsável.";
+    return false;
+  }
+
+  if (includeVenueData.value && !newVenueName.value.trim()) {
+    createDialogError.value = "Informe o nome da instalação.";
+    return false;
+  }
+
+  return true;
+}
+
+async function createClient() {
+  if (!validateCreateClientPayload()) return;
+
+  creating.value = true;
+  createDialogError.value = null;
+
+  const payload: CreateClientPayload = {
+    legalName: newLegalName.value.trim(),
+    responsibleEmail: newResponsibleEmail.value.trim(),
+    provider: newProvider.value,
+    retentionDays: newRetentionDays.value > 0 ? newRetentionDays.value : 3,
+    tradeName: normalizeOptionalText(newTradeName.value),
+    responsibleName: normalizeOptionalText(newResponsibleName.value),
+    responsiblePhone: normalizeOptionalText(newResponsiblePhone.value),
+    cnpj: normalizeOptionalText(newCnpj.value),
+    responsibleCpf: normalizeOptionalText(newResponsibleCpf.value),
+  };
+
+  if (includeVenueData.value) {
+    payload.venueData = {
+      venueName: newVenueName.value.trim(),
+      description: normalizeOptionalText(newVenueDescription.value),
+      addressLine: normalizeOptionalText(newVenueAddressLine.value),
+      countryCode: normalizeOptionalText(newVenueCountryCode.value)?.toUpperCase(),
+      state: normalizeOptionalText(newVenueState.value),
+      city: normalizeOptionalText(newVenueCity.value),
+      postalCode: normalizeOptionalText(newVenuePostalCode.value),
+      latitude: normalizeOptionalText(newVenueLatitude.value),
+      longitude: normalizeOptionalText(newVenueLongitude.value),
+    };
+  }
+
+  try {
+    await adminService.createClient(payload);
+    await fetchClients();
+    closeCreateDialog();
+  } catch (err: any) {
+    createDialogError.value = err?.message || "Não foi possível cadastrar o cliente.";
+  } finally {
+    creating.value = false;
+  }
+}
+
 function openClientPayments(client: AdminClient) {
   paymentsClient.value = client;
   paymentsDialog.value = true;
@@ -701,6 +1007,19 @@ watch(search, () => {
     page.value = 1;
     fetchClients();
   }, 350);
+});
+
+watch(includeVenueData, (enabled) => {
+  if (enabled) return;
+  newVenueName.value = "";
+  newVenueDescription.value = "";
+  newVenueAddressLine.value = "";
+  newVenueCountryCode.value = "";
+  newVenueState.value = "";
+  newVenueCity.value = "";
+  newVenuePostalCode.value = "";
+  newVenueLatitude.value = "";
+  newVenueLongitude.value = "";
 });
 
 onMounted(fetchClients);

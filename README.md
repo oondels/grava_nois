@@ -72,6 +72,7 @@ Principais endpoints consumidos pela aplicação:
 - `GET /api/videos/list` (paginação por `nextToken`)
 - `GET /api/videos/sign` (URLs assinadas para `preview` e `download`)
 - `GET /admin/dashboard`, `GET /admin/users`, `GET /admin/clients`, `GET /admin/venues`
+- `POST /admin/clients` (cadastro de cliente com `provider` e `venueData` opcional)
 - `PATCH /admin/users/:id`, `PATCH /admin/clients/:id`
 - `POST /notifications/report` e `POST /notifications/contact`
 
