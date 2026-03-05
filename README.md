@@ -12,6 +12,7 @@ O **Grava Nóis** é um ecossistema de captura e distribuição de replays espor
 - Fluxo de recuperação de senha por e-mail (solicitação de link + redefinição por token no fragmento da URL).
 - Listagem de clipes por quadra com paginação, prévia sob demanda e download com URLs assinadas.
 - Área administrativa com dashboard e gestão de usuários, clientes e quadras.
+- Dashboard administrativo com gráficos (barra, donut e linha) baseados em `GET /admin/dashboard`.
 - Páginas de suporte: relatório de erro e solicitação de instalação.
 - Notificações globais e UI responsiva com Vuetify + utilitários Tailwind.
 
@@ -19,6 +20,7 @@ O **Grava Nóis** é um ecossistema de captura e distribuição de replays espor
 - Vue 3 + TypeScript
 - Vite + `vite-plugin-pwa`
 - Vuetify 3 + Tailwind CSS
+- ApexCharts (`vue3-apexcharts`)
 - Pinia (estado)
 - Axios (HTTP)
 - Notivue (notificações)

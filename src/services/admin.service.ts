@@ -1,17 +1,15 @@
 import { api } from "@/services/api";
 import type { ApiResponse } from "@/types/Api";
 
-export type DashboardStats = {
+export type DashboardMetrics = {
   totalUsers: { active: number; inactive: number };
   totalClients: number;
   totalVenues: { online: number; offline: number };
   totalVideos: number;
-  dashboard?: {
-    totalUsers: { active: number; inactive: number };
-    totalClients: number;
-    totalVenues: { online: number; offline: number };
-    totalVideos: number;
-  }
+};
+
+export type DashboardStats = {
+  dashboard: DashboardMetrics;
 };
 
 export type AdminUser = {
