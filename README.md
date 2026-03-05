@@ -13,6 +13,8 @@ O frontend consome APIs de autenticação, vídeos e gestão (admin/cliente), co
 - Fluxo completo de recuperação de senha por e-mail (`forgot` + `reset` por token em hash `#token=...`).
 - Listagem de vídeos por quadra com paginação forward (`nextToken`), preview sob demanda e download por URL assinada.
 - Painel administrativo com dashboard e gestão de usuários/clientes/quadras.
+- Dashboard administrativo com gráficos (barra, donut e linha) baseados em `GET /admin/dashboard`.
+- Gestão de clientes no admin com vínculo/desvínculo de cliente para usuário.
 - Painel de cliente com visão geral e financeiro (com fallback para dados mock em endpoints ainda não implementados).
 - Páginas de suporte: contato (solicitação de instalação) e relatório de erro.
 
@@ -20,6 +22,7 @@ O frontend consome APIs de autenticação, vídeos e gestão (admin/cliente), co
 - Vue 3 + TypeScript
 - Vite + `vite-plugin-pwa`
 - Vuetify 3 + Tailwind CSS
+- ApexCharts (`vue3-apexcharts`)
 - Pinia
 - Axios
 - Notivue
@@ -91,8 +94,9 @@ Admin:
 - `GET /admin/users`
 - `GET /admin/clients`
 - `GET /admin/venues`
+- `POST /admin/clients` (cadastro de cliente com `provider` e `venueData` opcional)
 - `PATCH /admin/users/:id`
-- `PATCH /admin/clients/:id`
+- `PATCH /admin/clients/:id` (inclui vínculo/desvínculo por `userId`)
 
 Portal cliente:
 - `GET /api/clients/me/stats`
