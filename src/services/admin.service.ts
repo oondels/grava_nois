@@ -80,11 +80,30 @@ export type AdminVenue = {
   id?: string;
   name?: string | null;
   venueName?: string | null;
+  description?: string | null;
+  addressLine?: string | null;
+  countryCode?: string | null;
+  state?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  cameraCount?: number;
+  firmwareVersion?: string | null;
+  uploadEndpoint?: string | null;
+  bufferPreSeconds?: number;
+  bufferPostSeconds?: number;
+  sportType?: string | null;
+  active?: boolean;
   paymentStatus?: string | null;
+  installationStatus?: string | null;
   isOnline?: boolean;
+  deviceId?: string | null;
+  deviceSecret?: string | null;
+  contractMethod?: string | null;
+  contractId?: string | null;
   client?: AdminClient | null;
   [key: string]: unknown;
-  venues?: AdminVenue[];
 };
 
 export type UsersList = {
@@ -152,6 +171,23 @@ export type UpdateClientPayload = {
   userId?: string | null;
 };
 
+export type UpdateVenuePayload = {
+  venueName?: string;
+  description?: string | null;
+  addressLine?: string | null;
+  countryCode?: string | null;
+  state?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  active?: boolean;
+  isOnline?: boolean;
+  paymentStatus?: "none" | "active" | "past_due" | "canceled";
+  installationStatus?: "active" | "paused" | "decommissioned";
+  deviceId?: string;
+  deviceSecret?: string;
+  regenerateDeviceCredentials?: boolean;
+};
+
 export type CreateClientVenuePayload = {
   venueName: string;
   description?: string;
@@ -183,6 +219,11 @@ export type UpdateUserResponse = {
 
 export type UpdateClientResponse = {
   client: AdminClient;
+};
+
+export type UpdateVenueResponse = {
+  venue: AdminVenue;
+  credentialsGenerated: boolean;
 };
 
 export type CreateClientResponse = {
@@ -267,6 +308,17 @@ async function updateClient(id: string, payload: UpdateClientPayload): Promise<U
   return response.data.data;
 }
 
+async function updateVenue(
+  id: string,
+  payload: UpdateVenuePayload
+): Promise<UpdateVenueResponse> {
+  const response = await api.patch<ApiResponse<UpdateVenueResponse>>(
+    `/admin/venues/${id}`,
+    payload
+  );
+  return response.data.data;
+}
+
 async function getUserById(id: string): Promise<AdminUser> {
   const response = await api.get<ApiResponse<GetUserByIdResponse>>(`/users/${id}`);
   return response.data.data.user;
@@ -285,6 +337,7 @@ export const adminService = {
   getVenues,
   updateUser,
   updateClient,
+  updateVenue,
   getUserById,
   createClient,
 };
