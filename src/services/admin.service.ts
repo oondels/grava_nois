@@ -149,6 +149,7 @@ export type UpdateClientPayload = {
   responsibleEmail?: string | null;
   responsiblePhone?: string | null;
   retentionDays?: number;
+  userId?: string | null;
 };
 
 export type CreateClientVenuePayload = {
@@ -186,6 +187,10 @@ export type UpdateClientResponse = {
 
 export type CreateClientResponse = {
   client: AdminClient;
+};
+
+export type GetUserByIdResponse = {
+  user: AdminUser;
 };
 
 async function getDashboardStats(): Promise<DashboardStats> {
@@ -262,6 +267,11 @@ async function updateClient(id: string, payload: UpdateClientPayload): Promise<U
   return response.data.data;
 }
 
+async function getUserById(id: string): Promise<AdminUser> {
+  const response = await api.get<ApiResponse<GetUserByIdResponse>>(`/users/${id}`);
+  return response.data.data.user;
+}
+
 async function createClient(payload: CreateClientPayload): Promise<CreateClientResponse> {
   const response = await api.post<ApiResponse<CreateClientResponse>>("/admin/clients", payload);
   return response.data.data;
@@ -275,5 +285,6 @@ export const adminService = {
   getVenues,
   updateUser,
   updateClient,
+  getUserById,
   createClient,
 };

@@ -249,6 +249,11 @@
         <v-card-title class="text-h6">Editar cliente</v-card-title>
         <v-card-text class="pt-2">
           <div class="text-medium-emphasis mb-4">{{ editedClient?.legalName || "—" }}</div>
+          <div class="text-caption text-medium-emphasis mb-3">
+            Usuário vinculado:
+            <template v-if="loadingLinkedUserName">Carregando...</template>
+            <template v-else>{{ linkedUserDisplayName }}</template>
+          </div>
           <v-text-field
             v-model="editedTradeName"
             label="Nome fantasia"
@@ -280,9 +285,98 @@
           </v-alert>
         </v-card-text>
         <v-card-actions>
+          <v-btn
+            variant="tonal"
+            color="secondary"
+            :disabled="!editedClient?.id"
+            @click="openLinkUserDialog"
+          >
+            Vincular a usuário
+          </v-btn>
           <v-spacer />
           <v-btn variant="text" @click="closeDialog">Cancelar</v-btn>
           <v-btn color="primary" :loading="saving" @click="saveClient">Salvar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="linkUserDialog" max-width="860">
+      <v-card>
+        <v-card-title class="text-h6">Vincular cliente a usuário</v-card-title>
+        <v-card-text class="pt-2">
+          <div class="text-medium-emphasis mb-4">
+            Cliente: {{ editedClient?.tradeName || editedClient?.legalName || "—" }}
+          </div>
+
+          <v-alert v-if="linkUserError" type="error" variant="tonal" class="mb-3">
+            {{ linkUserError }}
+          </v-alert>
+
+          <div class="d-flex flex-wrap ga-3 mb-4">
+            <v-text-field
+              v-model="linkUserSearch"
+              label="Buscar usuário por nome ou email"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              class="flex-1-1"
+            />
+            <v-btn
+              v-if="editedClient?.userId"
+              color="warning"
+              variant="tonal"
+              :loading="unlinkingUser"
+              @click="unlinkUser"
+            >
+              Desvincular usuário
+            </v-btn>
+          </div>
+
+          <v-data-table-server
+            :headers="linkUserHeaders"
+            :items="linkUserItems"
+            :items-length="linkUserTotal"
+            :loading="linkUserLoading"
+            :search="linkUserSearch"
+            v-model:page="linkUserPage"
+            v-model:items-per-page="linkUserItemsPerPage"
+            item-value="id"
+            @update:options="fetchLinkUsers"
+          >
+            <template #item.role="{ item }">
+              <v-chip
+                size="small"
+                :color="item.role === 'admin' ? 'primary' : 'secondary'"
+                variant="tonal"
+              >
+                {{ item.role || "common" }}
+              </v-chip>
+            </template>
+
+            <template #item.isActive="{ item }">
+              <v-chip size="small" :color="item.isActive ? 'success' : 'error'" variant="tonal">
+                {{ item.isActive ? "Ativo" : "Inativo" }}
+              </v-chip>
+            </template>
+
+            <template #item.actions="{ item }">
+              <v-btn
+                size="small"
+                color="primary"
+                variant="text"
+                :loading="linkingUserId === item.id"
+                :disabled="editedClient?.userId === item.id"
+                @click="linkUserToClient(item)"
+              >
+                {{ editedClient?.userId === item.id ? "Vinculado" : "Vincular" }}
+              </v-btn>
+            </template>
+          </v-data-table-server>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeLinkUserDialog">Fechar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -548,6 +642,7 @@ import {
   adminService,
   type AdminClient,
   type AdminPayment,
+  type AdminUser,
   type CreateClientPayload,
 } from "@/services/admin.service";
 
@@ -559,6 +654,14 @@ const headers = [
   { title: "Instalações", key: "venueCount" },
   { title: "Status Pagamento", key: "paymentStatus" },
   { title: "Última Cobrança", key: "lastCharge" },
+  { title: "Ações", key: "actions", sortable: false },
+];
+
+const linkUserHeaders = [
+  { title: "Nome", key: "name" },
+  { title: "Email", key: "email" },
+  { title: "Role", key: "role" },
+  { title: "Status", key: "isActive" },
   { title: "Ações", key: "actions", sortable: false },
 ];
 
@@ -581,6 +684,19 @@ const editedTradeName = ref<string | null>(null);
 const editedResponsibleName = ref<string | null>(null);
 const editedResponsiblePhone = ref<string | null>(null);
 const editedRetentionDays = ref<number | null>(null);
+const linkUserDialog = ref(false);
+const linkUserItems = ref<AdminUser[]>([]);
+const linkUserTotal = ref(0);
+const linkUserLoading = ref(false);
+const linkUserPage = ref(1);
+const linkUserItemsPerPage = ref(10);
+const linkUserSearch = ref("");
+const linkUserError = ref<string | null>(null);
+const linkingUserId = ref<string | null>(null);
+const unlinkingUser = ref(false);
+const loadingLinkedUserName = ref(false);
+const linkedUserDisplayName = ref("Nenhum");
+const linkedUserNameById = reactive<Record<string, string>>({});
 
 const createDialog = ref(false);
 const creating = ref(false);
@@ -623,6 +739,7 @@ const chargesStateByClientId = reactive<Record<string, ClientChargesState>>({});
 const expandedCharges = reactive<Record<string, number | undefined>>({});
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
+let linkUserSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const paymentStatusLabels: Record<string, string> = {
   pending: "Pendente",
@@ -857,7 +974,117 @@ function openEdit(client: AdminClient) {
   editedRetentionDays.value =
     typeof client.retentionDays === "number" ? client.retentionDays : null;
   dialogError.value = null;
+  void hydrateLinkedUserName(client.userId);
   dialog.value = true;
+}
+
+function normalizeLinkedUserName(name?: string | null) {
+  const normalized = (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (normalized.length === 0) return "Usuário sem nome";
+  if (normalized.length === 1) return normalized[0];
+  return `${normalized[0]} ${normalized[normalized.length - 1]}`;
+}
+
+async function hydrateLinkedUserName(userId?: string | null) {
+  if (!userId) {
+    linkedUserDisplayName.value = "Nenhum";
+    loadingLinkedUserName.value = false;
+    return;
+  }
+
+  if (linkedUserNameById[userId]) {
+    linkedUserDisplayName.value = linkedUserNameById[userId];
+    loadingLinkedUserName.value = false;
+    return;
+  }
+
+  loadingLinkedUserName.value = true;
+  try {
+    const user = await adminService.getUserById(userId);
+    const normalizedName = normalizeLinkedUserName(user.name);
+    linkedUserNameById[userId] = normalizedName;
+    linkedUserDisplayName.value = normalizedName;
+  } catch {
+    linkedUserDisplayName.value = "Usuário não encontrado";
+  } finally {
+    loadingLinkedUserName.value = false;
+  }
+}
+
+async function fetchLinkUsers() {
+  linkUserLoading.value = true;
+  linkUserError.value = null;
+  try {
+    const response = await adminService.getUsers({
+      page: linkUserPage.value,
+      limit: linkUserItemsPerPage.value,
+      search: linkUserSearch.value || undefined,
+    });
+    linkUserItems.value = response.users;
+    linkUserTotal.value = response.total;
+  } catch (err: any) {
+    linkUserError.value = err?.message || "Não foi possível carregar os usuários.";
+  } finally {
+    linkUserLoading.value = false;
+  }
+}
+
+function openLinkUserDialog() {
+  if (!editedClient.value?.id) return;
+  linkUserDialog.value = true;
+  linkUserError.value = null;
+  linkUserPage.value = 1;
+  void fetchLinkUsers();
+}
+
+function closeLinkUserDialog() {
+  linkUserDialog.value = false;
+  linkUserError.value = null;
+}
+
+async function linkUserToClient(user: AdminUser) {
+  if (!editedClient.value?.id || !user.id) return;
+  linkingUserId.value = user.id;
+  linkUserError.value = null;
+  try {
+    const response = await adminService.updateClient(editedClient.value.id, {
+      userId: user.id,
+    });
+    editedClient.value = response.client;
+    const normalizedName = normalizeLinkedUserName(user.name as string | null | undefined);
+    if (user.id) {
+      linkedUserNameById[user.id] = normalizedName;
+    }
+    linkedUserDisplayName.value = normalizedName;
+    await fetchClients();
+    closeLinkUserDialog();
+  } catch (err: any) {
+    linkUserError.value = err?.message || "Não foi possível vincular o usuário.";
+  } finally {
+    linkingUserId.value = null;
+  }
+}
+
+async function unlinkUser() {
+  if (!editedClient.value?.id) return;
+  unlinkingUser.value = true;
+  linkUserError.value = null;
+  try {
+    const response = await adminService.updateClient(editedClient.value.id, {
+      userId: null,
+    });
+    editedClient.value = response.client;
+    linkedUserDisplayName.value = "Nenhum";
+    await fetchClients();
+    await fetchLinkUsers();
+  } catch (err: any) {
+    linkUserError.value = err?.message || "Não foi possível desvincular o usuário.";
+  } finally {
+    unlinkingUser.value = false;
+  }
 }
 
 function normalizeOptionalText(value: string): string | undefined {
@@ -1006,6 +1233,15 @@ watch(search, () => {
   searchTimer = setTimeout(() => {
     page.value = 1;
     fetchClients();
+  }, 350);
+});
+
+watch(linkUserSearch, () => {
+  if (!linkUserDialog.value) return;
+  if (linkUserSearchTimer) clearTimeout(linkUserSearchTimer);
+  linkUserSearchTimer = setTimeout(() => {
+    linkUserPage.value = 1;
+    fetchLinkUsers();
   }, 350);
 });
 
