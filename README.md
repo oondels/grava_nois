@@ -6,6 +6,8 @@ Versão atual do app: `1.2.0` (conforme `package.json`).
 O **Grava Nóis** é uma aplicação web/PWA para consumo de replays esportivos de quadras e campos amadores.
 O frontend consome APIs de autenticação, vídeos e gestão (admin/cliente), com sessão baseada em cookies (`withCredentials`).
 
+Lookup principal para auditoria e navegação técnica: [`docs/specs/DESIGN_SPEC.md`](docs/specs/DESIGN_SPEC.md).
+
 ## O que este repositório entrega
 - Web app e PWA para usuários finais, clientes e administradores.
 - Login por email/senha e Google (Google Identity Services).
